@@ -17,15 +17,24 @@ new #[Layout('layouts.admin')] class extends Component
     public $statusFilter = 'pending';
     public $search = '';
 
+    /**
+     * Base query scope shared by the listing and the action guards,
+     * so "what's visible" and "what's actionable" can never drift apart.
+     */
+    protected function coordinatorRequestsQuery()
+    {
+        return ResourceRequest::whereHas('user', function ($q) {
+            $q->whereHas('roles', function ($role) {
+                $role->where('name', 'coordinator');
+            });
+        });
+    }
+
     #[Computed]
     public function requests()
     {
-        $query = ResourceRequest::with(['user', 'department', 'requestType', 'items'])
-            ->whereHas('user', function ($q) {
-                $q->whereHas('roles', function ($role) {
-                    $role->where('name', 'coordinator');
-                });
-            });
+        $query = $this->coordinatorRequestsQuery()
+            ->with(['user', 'department', 'requestType', 'items']);
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -49,36 +58,26 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function pendingCount()
     {
-        return ResourceRequest::whereHas('user', function ($q) {
-                $q->whereHas('roles', fn($r) => $r->where('name', 'coordinator'));
-            })
-            ->where('status', 'pending')
-            ->count();
+        return $this->coordinatorRequestsQuery()->where('status', 'pending')->count();
     }
 
     #[Computed]
     public function approvedCount()
     {
-        return ResourceRequest::whereHas('user', function ($q) {
-                $q->whereHas('roles', fn($r) => $r->where('name', 'coordinator'));
-            })
-            ->where('status', 'approved')
-            ->count();
+        return $this->coordinatorRequestsQuery()->where('status', 'approved')->count();
     }
 
     #[Computed]
     public function rejectedCount()
     {
-        return ResourceRequest::whereHas('user', function ($q) {
-                $q->whereHas('roles', fn($r) => $r->where('name', 'coordinator'));
-            })
-            ->where('status', 'rejected')
-            ->count();
+        return $this->coordinatorRequestsQuery()->where('status', 'rejected')->count();
     }
 
     public function approve($id)
     {
-        $request = ResourceRequest::findOrFail($id);
+        // Guard: only ever touch a request that actually belongs to a coordinator.
+        $request = $this->coordinatorRequestsQuery()->findOrFail($id);
+
         $request->update(['status' => 'approved']);
 
         Notification::create([
@@ -93,7 +92,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function reject($id)
     {
-        $request = ResourceRequest::findOrFail($id);
+        // Guard: only ever touch a request that actually belongs to a coordinator.
+        $request = $this->coordinatorRequestsQuery()->findOrFail($id);
+
         $request->update(['status' => 'rejected']);
 
         Notification::create([

@@ -41,6 +41,18 @@
                     </button>
 
                 </li>
+
+                {{-- Department Badge (coordinator's assigned department) --}}
+                @if (Auth::user()->department)
+                    <li class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 bg-[#123524]/5 border border-[#123524]/10 rounded-full">
+                        <svg class="size-3.5 text-[#123524]/60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                        </svg>
+                        <span class="text-xs font-medium text-[#123524]">
+                            {{ Auth::user()->department->department_name }}
+                        </span>
+                    </li>
+                @endif
             </ul>
 
             {{-- Right: Notifications + User Dropdown --}}
@@ -195,7 +207,7 @@
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                             </div>
                             <div class="hidden sm:block text-left">
-                                <span class="text-xs font-medium text-foreground">{{ Auth::user()->name }}</span>
+                                <span class="text-xs font-medium text-foreground block leading-tight">{{ Auth::user()->name }}</span>
                             </div>
                             <svg class="shrink-0 size-3 text-muted-foreground-1 hidden sm:block"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
@@ -217,9 +229,11 @@
                                     <div>
                                         <p class="text-sm font-semibold text-foreground">{{ Auth::user()->name }}</p>
                                         <p class="text-xs text-muted-foreground-1">{{ Auth::user()->email }}</p>
-                                        <p class="text-[10px] uppercase tracking-wide text-[#B8862A] font-semibold mt-0.5">
-                                            {{ Auth::user()->roles->first()->name ?? 'No Role' }}
-                                        </p>
+                                        <div class="flex items-center gap-1.5 mt-1">
+                                            <span class="text-[10px] uppercase tracking-wide text-[#B8862A] font-semibold">
+                                                {{ Auth::user()->roles->first()->name ?? 'No Role' }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
