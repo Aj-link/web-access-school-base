@@ -21,7 +21,16 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-[#0E1A14] via-[#0E1A14]/40 to-[#0E1A14]/10"></div>
 
                 <div class="relative h-full flex flex-col justify-between p-10">
-                    <div></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 shrink-0 rounded-full bg-white ring-2 ring-[#D4A537]/50 p-1 shadow-lg">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
+                                 alt="CSAV logo"
+                                 class="w-full h-full object-contain">
+                        </div>
+                        <span class="text-white font-semibold leading-tight drop-shadow-md" style="font-family: 'Fraunces', serif; font-size: 1.1rem;">
+                            Colegio De Sta. Ana<br>de Victorias, Inc.
+                        </span>
+                    </div>
 
                     <div>
                         <p class="text-sm text-white/75 max-w-xs mb-6">
@@ -52,18 +61,6 @@
 
             <!-- Right: Register form -->
             <div class="relative bg-white dark:bg-[#16281F] p-10 sm:p-12">
-
-                <!-- Logo beside the heading -->
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-11 h-11 shrink-0 rounded-full bg-white ring-2 ring-[#D4A537]/50 p-1 shadow-sm">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
-                             alt="CSAV logo"
-                             class="w-full h-full object-contain">
-                    </div>
-                    <span class="text-sm font-semibold text-[#123524] dark:text-green-200 leading-tight" style="font-family: 'Fraunces', serif;">
-                        Colegio De Sta. Ana de Victorias, Inc.
-                    </span>
-                </div>
 
                 <h2 class="text-[#123524] dark:text-green-200 mb-1" style="font-family: 'Fraunces', serif; font-size: 1.75rem; font-weight: 700;">Create your account</h2>
                 <p class="text-sm text-gray-500 dark:text-neutral-400 mb-7">Fill in your details to get started</p>
