@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
         $adminRole       = Role::firstOrCreate(['name' => 'admin']);
         $facultyRole     = Role::firstOrCreate(['name' => 'faculty']);
         $studentRole     = Role::firstOrCreate(['name' => 'student']);
-        $coordinatorRole = Role::firstOrCreate(['name' => 'coordinator']);
+        $programHeadRole = Role::firstOrCreate(['name' => 'program head']);
 
         // Define permissions
         $permissions = [
@@ -47,7 +47,7 @@ class PermissionSeeder extends Seeder
             'can_create',
         ]);
 
-        $coordinatorRole->syncPermissions([
+        $programHeadRole->syncPermissions([
             'can_view',
             'can_create',
         ]);

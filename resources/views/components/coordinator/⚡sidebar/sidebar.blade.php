@@ -34,7 +34,7 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0" role="dialog" tabindex="-
         <ul class="flex flex-col gap-y-1">
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.dashboard')
+                {{ request()->routeIs('programHead.dashboard')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
                 focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/dashboard">
@@ -53,20 +53,20 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0" role="dialog" tabindex="-
         <ul class="flex flex-col gap-y-1">
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.facility')
+                {{ request()->routeIs('programHead.facility')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/facility">
+                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/programHead/facility">
               <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m4.5 0v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>
               Facility Requests
             </a>
           </li>
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.material')
+                {{ request()->routeIs('programHead.material')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/material">
+                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/programHead/material">
               <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg>
               Material Requests
             </a>
@@ -82,10 +82,10 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0" role="dialog" tabindex="-
         <ul class="flex flex-col gap-y-1">
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.request-to-admin.*')
+                {{ request()->routeIs('programHead.request-to-admin.*')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/request-to-admin/view-request">
+                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/programHead/request-to-admin/view-request">
               <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
               Request to Admin
             </a>
@@ -101,10 +101,10 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0" role="dialog" tabindex="-
         <ul class="flex flex-col gap-y-1">
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.resource-allocation')
+                {{ request()->routeIs('programHead.resource-allocation')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/resource-allocation">
+                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/programHead/resource-allocation">
               <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
               Resource Allocation
             </a>
@@ -120,10 +120,10 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0" role="dialog" tabindex="-
         <ul class="flex flex-col gap-y-1">
           <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('coordinator.notifications')
+                {{ request()->routeIs('programHead.notifications')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
                     : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/coordinator/notifications">
+                focus:outline-hidden focus:bg-sidebar-2-nav-focus" href="/programHead/notifications">
               <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
               Notifications
             </a>

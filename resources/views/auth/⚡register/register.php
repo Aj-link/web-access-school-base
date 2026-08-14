@@ -25,22 +25,22 @@ new class extends Component
         'email'         => 'required|email|unique:users,email|ends_with:@csav.edu.ph',
         'password'      => 'required|string|min:6|confirmed',
         'department_id' => 'required|exists:departments,id',
-        'role'          => 'required|in:student,faculty,coordinator',
+        'role'          => 'required|in:student,faculty,program head',
         'terms'         => 'accepted',
     ];
 
     protected array $messages = [
-    'email.unique'      => 'This email address is already registered. Please log in instead.',
-    'email.ends_with'   => 'Only @csav.edu.ph email addresses are allowed.',
-    'email.required'    => 'Please enter your email address.',
-    'email.email'       => 'Please enter a valid email address.',
-    'name.required'     => 'Please enter your full name.',
-    'password.min'      => 'Password must be at least 6 characters.',
-    'password.confirmed'=> 'Passwords do not match.',
-    'department_id.required' => 'Please select your department.',
-    'role.required'     => 'Please select your role.',
-    'terms.accepted'    => 'You must agree to the Terms of Service.',
-];
+        'email.unique'            => 'This email address is already registered. Please log in instead.',
+        'email.ends_with'         => 'Only @csav.edu.ph email addresses are allowed.',
+        'email.required'          => 'Please enter your email address.',
+        'email.email'             => 'Please enter a valid email address.',
+        'name.required'           => 'Please enter your full name.',
+        'password.min'            => 'Password must be at least 6 characters.',
+        'password.confirmed'      => 'Passwords do not match.',
+        'department_id.required'  => 'Please select your department.',
+        'role.required'           => 'Please select your role.',
+        'terms.accepted'          => 'You must agree to the Terms of Service.',
+    ];
 
     #[Computed]
     public function departments()
@@ -49,33 +49,33 @@ new class extends Component
     }
 
     public function register()
-{
-    $this->validate();
+    {
+        $this->validate();
 
-    $user = User::create([
-        'name'          => $this->name,
-        'email'         => $this->email,
-        'password'      => Hash::make($this->password),
-        'department_id' => $this->department_id,
-        'status'        => 'pending',
-    ]);
+        $user = User::create([
+            'name'          => $this->name,
+            'email'         => $this->email,
+            'password'      => Hash::make($this->password),
+            'department_id' => $this->department_id,
+            'status'        => 'pending',
+        ]);
 
-    $user->assignRole($this->role);
+        $user->assignRole($this->role);
 
-    // Notify all admins – corrected status and type
-   $admins = User::role('admin')->get();
-foreach ($admins as $admin) {
-    Notification::create([
-        'user_id' => $admin->id,
-        'message' => "New {$this->role} registration pending approval: {$this->name}",
-        'type'    => 'Gmail',
-        'status'  => 'pending',
-    ]);
-}
+        // Notify all admins – corrected status and type
+        $admins = User::role('admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'message' => "New {$this->role} registration pending approval: {$this->name}",
+                'type'    => 'Gmail',
+                'status'  => 'pending',
+            ]);
+        }
 
-    Auth::login($user);
-    session()->regenerate();
+        Auth::login($user);
+        session()->regenerate();
 
-    return redirect()->route('waiting');
-}
+        return redirect()->route('waiting');
+    }
 };

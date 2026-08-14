@@ -42,7 +42,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function (){
 });
 
 
-Route::middleware(['auth', 'coordinator', 'department'])->prefix('coordinator')->group(function (){
+Route::middleware(['auth', 'programHead', 'department'])->prefix('coordinator')->group(function (){
     Route::livewire('/dashboard', 'pages::coordinator.dashboard')->name('coordinator.dashboard');
 
     Route::livewire('/facility', 'pages::coordinator.reservation-facility')->name('coordinator.facility');

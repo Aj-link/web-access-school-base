@@ -16,21 +16,14 @@
             <!-- Left: Photo panel -->
             <div class="relative hidden md:block bg-[#123524]">
                 <img src="{{ asset('images/csav_building.jpg') }}"
-                     alt="Colegio De Sta. Ana de Victorias campus"
+                     alt="Colegio De Sta. Ana de Victorias, Inc. campus"
                      class="absolute inset-0 w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#0E1A14] via-[#0E1A14]/40 to-[#0E1A14]/10"></div>
 
                 <div class="relative h-full flex flex-col justify-between p-10">
-                    <div class="flex items-center gap-3">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
-                             alt="CSAV logo"
-                             class="w-10 h-10 object-contain">
-                        </div>
+                    <div></div>
 
                     <div>
-                        <h1 class="leading-[1.05] text-white mb-4" style="font-family: 'Fraunces', serif; font-size: 2.6rem; font-weight: 700;">
-                            Join the<br>CSAV<br>Community
-                        </h1>
                         <p class="text-sm text-white/75 max-w-xs mb-6">
                             Create an account to reserve facilities, request materials, and track your requests in one place.
                         </p>
@@ -60,13 +53,16 @@
             <!-- Right: Register form -->
             <div class="relative bg-white dark:bg-[#16281F] p-10 sm:p-12">
 
-                <!-- Signature element: CSAV seal, straddling the panel seam -->
-                <div class="hidden md:flex absolute -left-9 top-14 items-center justify-center">
-                    <div class="w-[72px] h-[72px] rounded-full bg-white border-4 border-white dark:border-[#16281F] shadow-lg flex items-center justify-center p-2">
+                <!-- Logo beside the heading -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-11 h-11 shrink-0 rounded-full bg-white ring-2 ring-[#D4A537]/50 p-1 shadow-sm">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
                              alt="CSAV logo"
                              class="w-full h-full object-contain">
                     </div>
+                    <span class="text-sm font-semibold text-[#123524] dark:text-green-200 leading-tight" style="font-family: 'Fraunces', serif;">
+                        Colegio De Sta. Ana de Victorias, Inc.
+                    </span>
                 </div>
 
                 <h2 class="text-[#123524] dark:text-green-200 mb-1" style="font-family: 'Fraunces', serif; font-size: 1.75rem; font-weight: 700;">Create your account</h2>
@@ -129,11 +125,11 @@
                                 Faculty
                             </button>
 
-                            {{-- Coordinator --}}
+                            {{-- Program Head --}}
                             <button type="button"
-                                wire:click="$set('role', 'coordinator')"
+                                wire:click="$set('role', 'program head')"
                                 class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-sm font-medium transition
-                                    {{ $role === 'coordinator'
+                                    {{ $role === 'program head'
                                         ? 'bg-[#123524] text-white border-[#123524] shadow-md'
                                         : 'bg-white dark:bg-[#0E1A14] text-[#123524] dark:text-green-100 border-[#D8D4C8] dark:border-[#2A4B3A] hover:border-[#1C6B45] hover:bg-[#F5F2E9] dark:hover:bg-[#16281F]' }}">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -141,7 +137,7 @@
                                     <rect x="9" y="3" width="6" height="4" rx="1"/>
                                     <path d="M9 12h6M9 16h4"/>
                                 </svg>
-                                Coordinator
+                                Program Head
                             </button>
 
                         </div>

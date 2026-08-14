@@ -16,21 +16,15 @@
             <!-- Left: Diagonal photo panel -->
             <div class="relative hidden md:block bg-[#123524]">
                 <img src="{{ asset('images/csav_building.jpg') }}"
-                     alt="Colegio De Sta. Ana de Victorias campus"
+                     alt="Colegio De Sta. Ana de Victorias, Inc. campus"
                      class="absolute inset-0 w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#0E1A14] via-[#0E1A14]/40 to-[#0E1A14]/10"></div>
 
                 <div class="relative h-full flex flex-col justify-between p-10">
-                    <div class="flex items-center gap-3">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
-                             alt="CSAV logo"
-                             class="w-10 h-10 object-contain">
+                    <div class="flex items-start gap-3">
                     </div>
 
                     <div>
-                        <h1 class="leading-[1.05] text-white mb-4" style="font-family: 'Fraunces', serif; font-size: 2.6rem; font-weight: 700;">
-                            Colegio De<br>Sta. Ana<br>de Victorias
-                        </h1>
                         <p class="text-sm text-white/75 max-w-xs">
                             Reserve facilities, request materials, and track approvals — one system for every student, faculty member, and coordinator on campus.
                         </p>
@@ -44,19 +38,22 @@
                      alt="CSAV logo"
                      class="w-14 h-14 object-contain mx-auto mb-3">
                 <p class="text-xs font-semibold uppercase tracking-[0.25em] text-[#1C6B45] dark:text-[#7FBF8E] mb-2">Est. Campus Portal</p>
-                <h1 class="text-[#123524] dark:text-green-200 mb-1" style="font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 700;">Colegio De Sta. Ana de Victorias</h1>
+                <h1 class="text-[#123524] dark:text-green-200 mb-1" style="font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 700;">Colegio De Sta. Ana de Victorias, Inc.</h1>
             </div>
 
             <!-- Right: Login form -->
             <div class="relative bg-white dark:bg-[#16281F] p-10 sm:p-12 flex flex-col justify-center">
 
-                <!-- Signature element: CSAV seal, straddling the panel seam -->
-                <div class="hidden md:flex absolute -left-9 top-1/2 -translate-y-1/2 items-center justify-center">
-                    <div class="w-[72px] h-[72px] rounded-full bg-white border-4 border-white dark:border-[#16281F] shadow-lg flex items-center justify-center p-2">
+                <!-- Logo beside the school name -->
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-11 h-11 shrink-0 rounded-full bg-white ring-2 ring-[#D4A537]/50 p-1 shadow-sm">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
                              alt="CSAV logo"
                              class="w-full h-full object-contain">
                     </div>
+                    <span class="text-sm font-semibold text-[#123524] dark:text-green-200 leading-tight" style="font-family: 'Fraunces', serif;">
+                        Colegio De Sta. Ana de Victorias, Inc.
+                    </span>
                 </div>
 
                 <h2 class="text-[#123524] dark:text-green-200 mb-1" style="font-family: 'Fraunces', serif; font-size: 1.75rem; font-weight: 700;">Welcome back</h2>

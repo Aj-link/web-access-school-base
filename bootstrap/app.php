@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\CoordinatorMiddleware;
 use App\Http\Middleware\DepartmentMiddleware;
 use App\Http\Middleware\FacultyMiddleware;
+use App\Http\Middleware\ProgramHeaderMiddleware;
 use App\Http\Middleware\StudentMiddleware;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
@@ -23,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'faculty' => FacultyMiddleware::class,
             'student' => StudentMiddleware::class,
-            'coordinator' => CoordinatorMiddleware::class,
+            'programHead' => ProgramHeaderMiddleware::class,
             'department' => DepartmentMiddleware::class,
             'role' => RoleMiddleware::class,
         ]);
