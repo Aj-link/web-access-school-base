@@ -33,8 +33,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function (){
     //manage coordinator
     Route::livewire('/manage-coordinator', 'pages::admin.manage-coordinator')->name('admin.manage-coordinator');
 
-    //Facilities
-    Route::livewire('/facilities-calendar', 'pages::admin.facilities.facility-calendar')->name('admin.facilities-calendar');
+    //schedule
+    Route::livewire('/schedule', 'pages::admin.schedule.view-schedule')->name('admin.schedule');
+    Route::livewire('/schedule/create', 'pages::admin.schedule.create-schedule')->name('admin.schedule.create');
+    Route::livewire('/schedule/{schedule}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
 
     //Inventory
     Route::livewire('/inventory-stock-material', 'pages::admin.inventory.stock-material')->name('admin.inventory-stock-material');

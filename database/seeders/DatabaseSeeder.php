@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         PermissionSeeder::class,
         DepartmentSeeder::class,
         RequestTypeSeeder::class,
+        NstpScheduleSeeder::class,
     ]);
     }
 }
