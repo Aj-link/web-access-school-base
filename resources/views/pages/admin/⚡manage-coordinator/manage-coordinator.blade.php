@@ -1,8 +1,8 @@
 <div class="select-none">
 <div class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
     <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Coordinator Requests</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Review and approve requests submitted by coordinators</p>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Program Head Requests</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Review and approve requests submitted by program heads</p>
     </div>
 
     {{-- Stats --}}

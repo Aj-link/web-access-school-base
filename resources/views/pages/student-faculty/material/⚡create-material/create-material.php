@@ -78,18 +78,18 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ]);
         }
 
-        // Notify all coordinators
-        $coordinators = User::role('coordinator')->get();
-        foreach ($coordinators as $coordinator) {
+        // Notify all program heads about the new material request
+        $programHeads = User::role('program head')->get();
+        foreach ($programHeads as $programHead) {
             Notification::create([
-                'user_id' => $coordinator->id,
+                'user_id' => $programHead->id,
                 'message' => "New material request from {$user->name}: {$request->items->count()} item(s).",
                 'type' => 'Gmail',
                 'status' => 'pending',
             ]);
         }
 
-        session()->flash('success', 'Material request submitted! Waiting for coordinator approval.');
+        session()->flash('success', 'Material request submitted! Waiting for program head approval.');
         return redirect()->route('portal.material');
     }
 

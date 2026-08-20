@@ -22,7 +22,7 @@ new #[Layout('layouts.admin')] class extends Component
     public function accept(int $id)
     {
         ResourceRequest::findOrFail($id)->update([
-            'status' => 'coordinator_review',
+            'status' => 'program head_review',
         ]);
     }
 

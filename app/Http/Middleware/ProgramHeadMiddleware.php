@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ProgramHeaderMiddleware
+class ProgramHeadMiddleware
 {
     /**
      * Handle an incoming request.
@@ -15,7 +15,7 @@ class ProgramHeaderMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-         if (! $request->user() || ! $request->user()->hasRole('program head')) {
+        if (! $request->user() || ! $request->user()->hasRole('program head')) {
             abort(403, 'Deny access if unauthorized');
         }
         return $next($request);

@@ -39,7 +39,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::livewire('/schedule/{schedule}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
 
     //Calendar
-    Route::livewire('/calendar', 'pages::admin.schedule.calendar.calendar-schedule')->name('admin.calendar');
+    Route::livewire('/calendar', 'pages::admin.schedule.calendar.')->name('admin.calendar');
 
 
     //Inventory
@@ -48,7 +48,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 });
 
 
-Route::middleware(['auth', 'programHead', 'department'])->prefix('coordinator')->group(function () {
+Route::middleware(['auth', 'program head', 'department'])->prefix('programHead')->group(function () {
     Route::livewire('/dashboard', 'pages::coordinator.dashboard')->name('coordinator.dashboard');
 
     Route::livewire('/facility', 'pages::coordinator.reservation-facility')->name('coordinator.facility');

@@ -21,11 +21,11 @@ new #[Layout('layouts.admin')] class extends Component
      * Base query scope shared by the listing and the action guards,
      * so "what's visible" and "what's actionable" can never drift apart.
      */
-    protected function coordinatorRequestsQuery()
+    protected function programHeadRequestsQuery()
     {
         return ResourceRequest::whereHas('user', function ($q) {
             $q->whereHas('roles', function ($role) {
-                $role->where('name', 'coordinator');
+                $role->where('name', 'program head');
             });
         });
     }
@@ -33,7 +33,7 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function requests()
     {
-        $query = $this->coordinatorRequestsQuery()
+        $query = $this->programHeadRequestsQuery()
             ->with(['user', 'department', 'requestType', 'items']);
 
         if ($this->search) {
@@ -58,25 +58,25 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function pendingCount()
     {
-        return $this->coordinatorRequestsQuery()->where('status', 'pending')->count();
+        return $this->programHeadRequestsQuery()->where('status', 'pending')->count();
     }
 
     #[Computed]
     public function approvedCount()
     {
-        return $this->coordinatorRequestsQuery()->where('status', 'approved')->count();
+        return $this->programHeadRequestsQuery()->where('status', 'approved')->count();
     }
 
     #[Computed]
     public function rejectedCount()
     {
-        return $this->coordinatorRequestsQuery()->where('status', 'rejected')->count();
+        return $this->programHeadRequestsQuery()->where('status', 'rejected')->count();
     }
 
     public function approve($id)
     {
-        // Guard: only ever touch a request that actually belongs to a coordinator.
-        $request = $this->coordinatorRequestsQuery()->findOrFail($id);
+        // Guard: only ever touch a request that actually belongs to a program head.
+        $request = $this->programHeadRequestsQuery()->findOrFail($id);
 
         $request->update(['status' => 'approved']);
 
@@ -87,13 +87,13 @@ new #[Layout('layouts.admin')] class extends Component
             'status'  => 'pending',
         ]);
 
-        session()->flash('message', 'Request approved and coordinator notified.');
+        session()->flash('message', 'Request approved and program head notified.');
     }
 
     public function reject($id)
     {
-        // Guard: only ever touch a request that actually belongs to a coordinator.
-        $request = $this->coordinatorRequestsQuery()->findOrFail($id);
+        // Guard: only ever touch a request that actually belongs to a program head.
+        $request = $this->programHeadRequestsQuery()->findOrFail($id);
 
         $request->update(['status' => 'rejected']);
 
@@ -104,7 +104,7 @@ new #[Layout('layouts.admin')] class extends Component
             'status'  => 'pending',
         ]);
 
-        session()->flash('message', 'Request rejected and coordinator notified.');
+        session()->flash('message', 'Request rejected and program head notified.');
     }
 
     public function clearFilters()

@@ -95,21 +95,21 @@ new #[Layout('layouts.student-faculty')] class extends Component
             'end_time'     => $this->end_time,
         ]);
 
-        // Notify only coordinators from the same department
-        $coordinators = User::role('coordinator')
+        // Notify only program heads from the same department
+        $programHeads = User::role('program head')
             ->where('department_id', Auth::user()->department_id)
             ->get();
 
-        foreach ($coordinators as $coordinator) {
+        foreach ($programHeads as $programHead) {
             Notification::create([
-                'user_id' => $coordinator->id,
+                'user_id' => $programHead->id,
                 'message' => Auth::user()->name . ' submitted a facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')',
                 'type'    => 'Gmail',
                 'status'  => 'pending',
             ]);
         }
 
-        session()->flash('success', 'Reservation submitted! Waiting for coordinator approval.');
+        session()->flash('success', 'Reservation submitted! Waiting for program head approval.');
 
         return redirect()->route('portal.reservation');
     }
