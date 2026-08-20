@@ -34,17 +34,24 @@ new #[Layout('layouts.admin')] class extends Component
     public function users()
     {
         return User::with('roles', 'department')
-            ->whereHas('roles', fn($q) => $q->whereIn('name', ['student', 'faculty', 'coordinator']))
-            ->when($this->search, fn($q) =>
-                $q->where(fn($q) =>
+            ->whereHas('roles', fn($q) => $q->whereIn('name', ['student', 'faculty', 'program head']))
+            ->when(
+                $this->search,
+                fn($q) =>
+                $q->where(
+                    fn($q) =>
                     $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
+                        ->orWhere('email', 'like', '%' . $this->search . '%')
                 )
             )
-            ->when($this->roleFilter !== 'all', fn($q) =>
+            ->when(
+                $this->roleFilter !== 'all',
+                fn($q) =>
                 $q->whereHas('roles', fn($q) => $q->where('name', $this->roleFilter))
             )
-            ->when($this->statusFilter !== 'all', fn($q) =>
+            ->when(
+                $this->statusFilter !== 'all',
+                fn($q) =>
                 $q->where('status', $this->statusFilter)
             )
             ->whereIn('status', ['pending', 'approved', 'rejected'])

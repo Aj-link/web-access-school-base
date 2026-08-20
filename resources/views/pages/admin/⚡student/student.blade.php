@@ -22,7 +22,7 @@
                     <option value="all">All Roles</option>
                     <option value="student">Student</option>
                     <option value="faculty">Faculty</option>
-                    <option value="coordinator">Coordinator</option>
+                    <option value="program head">Program Head</option>
                 </select>
 
                 {{-- Status Filter --}}
@@ -74,7 +74,7 @@
                             <span class="px-2 py-1 text-xs font-medium rounded-full
                                 @if($role === 'student') bg-blue-100 text-blue-700
                                 @elseif($role === 'faculty') bg-purple-100 text-purple-700
-                                @elseif($role === 'coordinator') bg-yellow-100 text-yellow-700
+                                @elseif($role === 'program head') bg-yellow-100 text-yellow-700
                                 @else bg-gray-100 text-gray-600 @endif">
                                 {{ ucfirst($role) }}
                             </span>
