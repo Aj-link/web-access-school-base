@@ -14,9 +14,9 @@ new #[Layout('layouts::admin')] class extends Component
     public function users()
     {
         // Fetch all users with their roles
-        return User::with('roles')->where(function($query){
+        return User::with('roles')->where(function ($query) {
             $query->whereHas('roles', fn($q) => $q->where('name', 'student'))
                 ->where('status', 'approved');
-        })->orWhereHas('roles', fn($r) => $r->whereIn('name', ['admin','coordinator','faculty']))->select('id','name','email','created_at')->paginate(5);
+        })->orWhereHas('roles', fn($r) => $r->whereIn('name', ['admin', 'program head', 'faculty']))->select('id', 'name', 'email', 'created_at')->paginate(5);
     }
 };

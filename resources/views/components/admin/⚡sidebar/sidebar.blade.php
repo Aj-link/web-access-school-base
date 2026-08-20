@@ -95,7 +95,7 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
 
             {{-- Facility Calendar --}}
             <div class="pt-3 mt-3 flex flex-col border-t border-sidebar-2-divider first:border-t-0 first:pt-0 first:mt-0">
-                <span class="block ps-2.5 mb-2 font-medium text-xs uppercase text-muted-foreground-1">Facilities</span>
+                <span class="block ps-2.5 mb-2 font-medium text-xs uppercase text-muted-foreground-1">Schedule</span>
                 <ul class="flex flex-col gap-y-1">
                     <li>
                         <a class="w-full flex items-center gap-x-2 py-2 px-2.5 text-sm text-sidebar-2-nav-foreground rounded-lg hover:bg-sidebar-2-nav-hover focus:outline-hidden focus:bg-sidebar-2-nav-focus"
@@ -107,6 +107,19 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
                                 <line x1="3" y1="10" x2="21" y2="10"/>
                             </svg>
                             Schedule Calendar
+                        </a>
+                    </li>
+
+                    <li>
+                        <a class="w-full flex items-center gap-x-2 py-2 px-2.5 text-sm text-sidebar-2-nav-foreground rounded-lg hover:bg-sidebar-2-nav-hover focus:outline-hidden focus:bg-sidebar-2-nav-focus"
+                            href="/admin/calendar">
+                            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Calendar
                         </a>
                     </li>
                 </ul>

@@ -8,7 +8,7 @@ Route::livewire('/register', 'auth::register')->name('register');
 Route::livewire('/waiting', 'auth::waiting')->name('waiting');
 
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function (){
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::livewire('/dashboard', 'pages::admin.dashboard')->name('admin.dashboard');
     Route::livewire('/facility', 'pages::admin.reservation-facility')->name('admin.facility');
     Route::livewire('/material', 'pages::admin.reservation-material')->name('admin.material');
@@ -38,13 +38,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function (){
     Route::livewire('/schedule/create', 'pages::admin.schedule.create-schedule')->name('admin.schedule.create');
     Route::livewire('/schedule/{schedule}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
 
+    //Calendar
+    Route::livewire('/calendar', 'pages::admin.schedule.calendar.calendar-schedule')->name('admin.calendar');
+
+
     //Inventory
     Route::livewire('/inventory-stock-material', 'pages::admin.inventory.stock-material')->name('admin.inventory-stock-material');
     Route::livewire('/inventory-stock-history', 'pages::admin.inventory.stock-history')->name('admin.inventory-stock-history');
 });
 
 
-Route::middleware(['auth', 'programHead', 'department'])->prefix('coordinator')->group(function (){
+Route::middleware(['auth', 'programHead', 'department'])->prefix('coordinator')->group(function () {
     Route::livewire('/dashboard', 'pages::coordinator.dashboard')->name('coordinator.dashboard');
 
     Route::livewire('/facility', 'pages::coordinator.reservation-facility')->name('coordinator.facility');
@@ -62,7 +66,7 @@ Route::middleware(['auth', 'programHead', 'department'])->prefix('coordinator')-
     Route::livewire('/request-to-admin/{id}/edit', 'pages::coordinator.request-to-admin.edit-request')->name('coordinator.request-to-admin.edit-request');
 });
 
-Route::middleware(['auth', 'role:faculty|student', 'department'])->prefix('portal')->group(function (){
+Route::middleware(['auth', 'role:faculty|student', 'department'])->prefix('portal')->group(function () {
     Route::livewire('/dashboard', 'pages::student-faculty.dashbaord')->name('portal.dashboard');
     //Create reservation
     Route::livewire('/reservation', 'pages::student-faculty.reservation.view-reservation')->name('portal.reservation');
