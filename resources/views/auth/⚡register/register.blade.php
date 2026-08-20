@@ -1,7 +1,6 @@
 <div class="select-none">
     <div class="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FAF7EF] dark:bg-[#0E1A14] px-6 py-10" style="font-family: 'Inter', sans-serif;">
 
-        <!-- Subtle grille pattern, echoes the building's iron railings -->
         <svg class="absolute inset-0 w-full h-full opacity-[0.04] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <pattern id="grille2" width="28" height="28" patternUnits="userSpaceOnUse">
@@ -36,7 +35,6 @@
                         <p class="text-sm text-white/75 max-w-xs mb-6">
                             Create an account to reserve facilities, request materials, and track your requests in one place.
                         </p>
-
                         <div class="flex gap-3">
                             <div class="flex-1 bg-white/10 backdrop-blur rounded-xl px-4 py-3 border border-white/15">
                                 <p class="text-sm font-semibold text-white">Quick access</p>
@@ -94,7 +92,6 @@
                         <label class="block text-sm font-medium text-[#123524] dark:text-[#7FBF8E] mb-2">I am a...</label>
                         <div class="grid grid-cols-3 gap-3">
 
-                            {{-- Student --}}
                             <button type="button"
                                 wire:click="$set('role', 'student')"
                                 class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-sm font-medium transition
@@ -108,7 +105,6 @@
                                 Student
                             </button>
 
-                            {{-- Faculty --}}
                             <button type="button"
                                 wire:click="$set('role', 'faculty')"
                                 class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-sm font-medium transition
@@ -122,7 +118,6 @@
                                 Faculty
                             </button>
 
-                            {{-- Program Head --}}
                             <button type="button"
                                 wire:click="$set('role', 'program head')"
                                 class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-sm font-medium transition
@@ -158,23 +153,55 @@
                         @enderror
                     </div>
 
-                    {{-- Password --}}
-                    <div>
+                    {{-- ✅ Password with show/hide --}}
+                    <div x-data="{ show: false }">
                         <label class="block text-sm font-medium text-[#123524] dark:text-[#7FBF8E]">Password</label>
-                        <input type="password" wire:model="password"
-                               class="mt-2 w-full px-4 py-3 rounded-lg border border-[#D8D4C8] focus:ring-2 focus:ring-[#1C6B45] focus:border-[#1C6B45] dark:bg-[#0E1A14] dark:border-[#2A4B3A] dark:text-green-100 transition"
-                               placeholder="••••••••">
+                        <div class="relative mt-2">
+                            <input :type="show ? 'text' : 'password'"
+                                   wire:model="password"
+                                   class="w-full px-4 py-3 pr-12 rounded-lg border border-[#D8D4C8] focus:ring-2 focus:ring-[#1C6B45] focus:border-[#1C6B45] dark:bg-[#0E1A14] dark:border-[#2A4B3A] dark:text-green-100 transition"
+                                   placeholder="••••••••">
+                            <button type="button"
+                                    @click="show = !show"
+                                    class="absolute inset-y-0 right-0 flex items-center px-3.5 text-gray-400 hover:text-[#123524] dark:hover:text-green-300 transition"
+                                    :aria-label="show ? 'Hide password' : 'Show password'">
+                                {{-- Eye open (visible when password is hidden) --}}
+                                <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                </svg>
+                                {{-- Eye slash (visible when password is shown) --}}
+                                <svg x-show="show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" x-cloak>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                                </svg>
+                            </button>
+                        </div>
                         @error('password')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- Confirm Password --}}
-                    <div>
+                    {{-- ✅ Confirm Password with show/hide --}}
+                    <div x-data="{ show: false }">
                         <label class="block text-sm font-medium text-[#123524] dark:text-[#7FBF8E]">Confirm Password</label>
-                        <input type="password" wire:model="password_confirmation"
-                               class="mt-2 w-full px-4 py-3 rounded-lg border border-[#D8D4C8] focus:ring-2 focus:ring-[#1C6B45] focus:border-[#1C6B45] dark:bg-[#0E1A14] dark:border-[#2A4B3A] dark:text-green-100 transition"
-                               placeholder="••••••••">
+                        <div class="relative mt-2">
+                            <input :type="show ? 'text' : 'password'"
+                                   wire:model="password_confirmation"
+                                   class="w-full px-4 py-3 pr-12 rounded-lg border border-[#D8D4C8] focus:ring-2 focus:ring-[#1C6B45] focus:border-[#1C6B45] dark:bg-[#0E1A14] dark:border-[#2A4B3A] dark:text-green-100 transition"
+                                   placeholder="••••••••">
+                            <button type="button"
+                                    @click="show = !show"
+                                    class="absolute inset-y-0 right-0 flex items-center px-3.5 text-gray-400 hover:text-[#123524] dark:hover:text-green-300 transition"
+                                    :aria-label="show ? 'Hide password' : 'Show password'">
+                                <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                </svg>
+                                <svg x-show="show" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" x-cloak>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Terms --}}
