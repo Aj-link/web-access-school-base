@@ -39,7 +39,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::livewire('/schedule/{schedule}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
 
     //Calendar
-    Route::livewire('/calendar', 'pages::admin.schedule.calendar.')->name('admin.calendar');
+    Route::livewire('/calendar', 'pages::admin.schedule.calendar.calendar-schedule')->name('admin.calendar');
 
 
     //Inventory
