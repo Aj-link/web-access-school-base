@@ -105,6 +105,10 @@
                         <p class="text-xs text-gray-400 italic">No materials added. Click "+ Add Material" if you need equipment/supplies (e.g. bench, projector).</p>
                     @endif
 
+                    @if(empty($availableResources) || (is_countable($availableResources) && count($availableResources) === 0))
+                        <p class="text-xs text-amber-600 italic mt-1">No materials are currently allocated to your department.</p>
+                    @endif
+
                     <div class="space-y-3">
                         @foreach($materials as $index => $material)
                             <div wire:key="material-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">

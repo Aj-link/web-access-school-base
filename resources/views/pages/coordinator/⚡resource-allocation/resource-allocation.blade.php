@@ -90,192 +90,95 @@
     </div>
     @endif
 
-    {{-- Pending Requests vs Availability --}}
-    @if($this->pendingMaterialRequests->isNotEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Requests Awaiting Your Approval</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Approving deducts the requested amount from your department's allocated stock immediately.
-            </p>
-        </div>
+    {{-- Pending Facility Reservations --}}
+@if($this->pendingFacilityRequests->isNotEmpty())
+<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Facility Reservations</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Approving locks in the room for that date and time — conflicting bookings are blocked automatically.
+        </p>
+    </div>
 
-        {{-- Desktop / tablet table --}}
-        <div class="hidden sm:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900/50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Requested By</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Material</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Requested</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Available</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    @foreach($this->pendingMaterialRequests as $item)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
-                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ $item->requester_name }}</td>
-                        <td class="px-6 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{{ $item->item_name }}</td>
-                        <td class="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $item->requested_formatted }}</td>
-                        <td class="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $item->available_formatted }}</td>
-                        <td class="px-6 py-3 text-center whitespace-nowrap">
-                            @if($item->enough)
-                                <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                                    Enough Stock
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
-                                    Not Enough — Request Admin
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap">
-                            <div class="flex items-center justify-end gap-2">
-                                <button
-                                    type="button"
-                                    wire:click="approveRequest({{ $item->request_id }})"
-                                    wire:confirm="Approve this request? {{ $item->requested_formatted }} of {{ $item->item_name }} will be deducted from your department's stock."
-                                    @disabled(!$item->enough)
-                                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                                >
-                                    Approve
-                                </button>
-                                <button
-                                    type="button"
-                                    wire:click="openReject({{ $item->request_id }})"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                                >
-                                    Reject
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-
-                    @if($rejectingRequestId === $item->request_id)
-                    <tr>
-                        <td colspan="6" class="px-6 py-4 bg-gray-50 dark:bg-gray-900/40">
-                            <div class="flex items-start gap-3">
-                                <div class="flex-1">
-                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                                        Reason for rejecting {{ $item->item_name }} (optional)
-                                    </label>
-                                    <textarea
-                                        wire:model="rejectRemarks"
-                                        rows="2"
-                                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
-                                        placeholder="e.g. Insufficient justification, wrong department, etc."
-                                    ></textarea>
-                                </div>
-                                <div class="flex flex-col gap-2 pt-5">
-                                    <button
-                                        type="button"
-                                        wire:click="confirmReject"
-                                        class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition"
-                                    >
-                                        Confirm Reject
-                                    </button>
-                                    <button
-                                        type="button"
-                                        wire:click="cancelReject"
-                                        class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endif
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Mobile stacked cards --}}
-        <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
-            @foreach($this->pendingMaterialRequests as $item)
-            <div class="px-4 py-4 space-y-3">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $item->item_name }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Requested by {{ $item->requester_name }}</p>
+    <div class="divide-y divide-gray-100 dark:divide-gray-700">
+        @foreach($this->pendingFacilityRequests as $item)
+        <div class="px-4 sm:px-6 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            {{ $item->facility_name }}
+                        </span>
+                        @if($item->has_conflict)
+                            <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
+                                Time Conflict — Already Booked
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                                Slot Free
+                            </span>
+                        @endif
                     </div>
-                    @if($item->enough)
-                        <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                            Enough Stock
-                        </span>
-                    @else
-                        <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
-                            Not Enough
-                        </span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }}
+                        &middot;
+                        {{ \Carbon\Carbon::parse($item->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($item->end_time)->format('g:i A') }}
+                        &middot;
+                        Requested by {{ $item->requester_name }}
+                    </p>
+                    @if($item->purpose)
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">"{{ Str::limit($item->purpose, 80) }}"</p>
                     @endif
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md px-3 py-2">
-                        <p class="text-gray-400 dark:text-gray-500 uppercase tracking-wide">Requested</p>
-                        <p class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ $item->requested_formatted }}</p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md px-3 py-2">
-                        <p class="text-gray-400 dark:text-gray-500 uppercase tracking-wide">Available</p>
-                        <p class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ $item->available_formatted }}</p>
-                    </div>
-                </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                     <button
                         type="button"
                         wire:click="approveRequest({{ $item->request_id }})"
-                        wire:confirm="Approve this request? {{ $item->requested_formatted }} of {{ $item->item_name }} will be deducted from your department's stock."
-                        @disabled(!$item->enough)
-                        class="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        wire:confirm="Approve this facility reservation for {{ $item->facility_name }}?"
+                        @disabled($item->has_conflict)
+                        class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
                     >
                         Approve
                     </button>
                     <button
                         type="button"
                         wire:click="openReject({{ $item->request_id }})"
-                        class="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                         Reject
                     </button>
                 </div>
-
-                @if($rejectingRequestId === $item->request_id)
-                <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
-                        Reason for rejecting (optional)
-                    </label>
-                    <textarea
-                        wire:model="rejectRemarks"
-                        rows="2"
-                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
-                        placeholder="e.g. Insufficient justification, wrong department, etc."
-                    ></textarea>
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            wire:click="confirmReject"
-                            class="flex-1 px-3 py-2 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition"
-                        >
-                            Confirm Reject
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="cancelReject"
-                            class="flex-1 px-3 py-2 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-                @endif
             </div>
-            @endforeach
+
+            @if($rejectingRequestId === $item->request_id)
+            <div class="mt-3 bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Reason for rejecting (optional)
+                </label>
+                <textarea
+                    wire:model="rejectRemarks"
+                    rows="2"
+                    class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
+                    placeholder="e.g. Conflicts with another event, missing details, etc."
+                ></textarea>
+                <div class="flex gap-2">
+                    <button type="button" wire:click="confirmReject"
+                        class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition">
+                        Confirm Reject
+                    </button>
+                    <button type="button" wire:click="cancelReject"
+                        class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+            @endif
         </div>
+        @endforeach
     </div>
-    @endif
+</div>
+@endif
 
     {{-- Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">

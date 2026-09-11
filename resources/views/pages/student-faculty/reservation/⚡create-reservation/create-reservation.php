@@ -11,6 +11,7 @@ use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 new #[Layout('layouts.student-faculty')] class extends Component
 {
@@ -55,7 +56,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
         $this->used_date = date('Y-m-d');
 
         // ✅ Load facilities from the resources table managed by admin
-        // Admin adds/removes facilities via the inventory/stock management page
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         if ($facilityType) {
@@ -65,7 +65,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
                 ->pluck('resource_name')
                 ->toArray();
         } else {
-            // ✅ Fallback: any resource with "Facility" in the type name
+            // Fallback: any resource with "Facility" in the type name
             $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
                 $q->where('type_name', 'like', '%facility%')
                   ->orWhere('type_name', 'like', '%Facility%')
@@ -76,15 +76,27 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->toArray();
         }
 
-        // ✅ Load materials (non-facility resources) for the optional picker
-        $this->availableResources = Resource::where('status', 'available')
-            ->where('quantity_available', '>', 0)
-            ->whereHas('resourceType', fn($q) =>
-                $q->where('type_name', 'not like', '%facility%')
-                  ->where('type_name', 'not like', '%Facility%')
-            )
-            ->orderBy('resource_name')
-            ->get();
+        // ✅ FIX: Materials scoped to what's actually allocated to the user's OWN department
+        // (previously pulled global quantity_available, letting any user request
+        // materials never allocated to their department)
+        $departmentId = Auth::user()->department_id;
+
+        $this->availableResources = $departmentId
+            ? DB::table('resource_all_locations')
+                ->join('resources', 'resources.id', '=', 'resource_all_locations.resource_id')
+                ->join('resource_types', 'resource_types.id', '=', 'resources.resource_type_id')
+                ->where('resource_all_locations.department_id', $departmentId)
+                ->where('resource_all_locations.allocated_quantity', '>', 0)
+                ->where('resources.status', 'available')
+                ->where('resource_types.type_name', '!=', 'Facility')
+                ->select(
+                    'resources.id',
+                    'resources.resource_name',
+                    'resource_all_locations.allocated_quantity as quantity_available'
+                )
+                ->orderBy('resources.resource_name')
+                ->get()
+            : collect();
     }
 
     public function addMaterial(): void
@@ -107,28 +119,36 @@ new #[Layout('layouts.student-faculty')] class extends Component
             return;
         }
 
+        $departmentId = Auth::user()->department_id;
+
         $selectedMaterials = collect($this->materials)
             ->filter(fn($m) => !empty($m['resource_id']))
             ->values();
 
-        // Validate requested quantity against actual stock
+        // ✅ FIX: Validate requested quantity against the DEPARTMENT'S allocation,
+        // not the resource's global quantity_available.
         foreach ($selectedMaterials as $i => $material) {
-            $resource = Resource::find($material['resource_id']);
+            $allocation = DB::table('resource_all_locations')
+                ->join('resources', 'resources.id', '=', 'resource_all_locations.resource_id')
+                ->where('resource_all_locations.resource_id', $material['resource_id'])
+                ->where('resource_all_locations.department_id', $departmentId)
+                ->select('resource_all_locations.allocated_quantity', 'resources.resource_name')
+                ->first();
 
-            if (!$resource) {
-                $this->addError("materials.$i.resource_id", 'This material is no longer available.');
+            if (!$allocation) {
+                $this->addError("materials.$i.resource_id", 'This material is not allocated to your department.');
                 return;
             }
 
-            if ((int) $material['quantity'] > $resource->quantity_available) {
-                $this->addError("materials.$i.quantity", "Only {$resource->quantity_available} {$resource->resource_name} available.");
+            if ((int) $material['quantity'] > $allocation->allocated_quantity) {
+                $this->addError("materials.$i.quantity", "Only {$allocation->allocated_quantity} {$allocation->resource_name} available.");
                 return;
             }
         }
 
         $request = ResourceRequest::create([
             'user_id'                          => Auth::id(),
-            'department_id'                    => Auth::user()->department_id,
+            'department_id'                    => $departmentId,
             'request_type_id'                  => 1,
             'purpose'                          => $this->purpose,
             'status'                           => 'pending',
@@ -161,7 +181,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
         // Notify program heads in the same department
         $programHeads = User::role('program head')
-            ->where('department_id', Auth::user()->department_id)
+            ->where('department_id', $departmentId)
             ->get();
 
         $materialsSummary = $selectedMaterials->isNotEmpty()

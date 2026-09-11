@@ -27,10 +27,6 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     /**
      * Format a raw pcs quantity according to the resource's unit.
-     * e.g. 40 pcs @ Pack(40) -> "1 Pack"
-     *      20 pcs @ Pack(40) -> "20 pcs"          (less than a full pack — no "0 Packs" prefix)
-     *      65 pcs @ Pack(30) -> "2 Packs + 5 pcs"
-     *      45 pcs @ Pcs      -> "45 Pcs"
      */
     protected function formatQuantity(int $qtyInPcs, ?string $unit, ?int $piecesPerPack): string
     {
@@ -38,7 +34,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             $packs     = intdiv($qtyInPcs, $piecesPerPack);
             $remainder = $qtyInPcs % $piecesPerPack;
 
-            // Less than one full pack left — just show raw pcs, no "0 Packs" clutter
             if ($packs === 0) {
                 return "{$remainder} pcs";
             }
@@ -54,9 +49,24 @@ new #[Layout('layouts.coordinator')] class extends Component
     }
 
     /**
-     * Compact "at a glance" summary — top materials currently held by this
-     * department, for a quick view at the top of the page.
+     * ✅ NEW: does a given facility+date+time overlap an already-approved
+     * reservation for the same facility? Used both to warn on the pending
+     * list and to hard-block approval.
      */
+    protected function facilityHasConflict(string $facilityName, string $date, string $startTime, string $endTime, int $excludeRequestId): bool
+    {
+        return DB::table('request_items as ri')
+            ->join('requests as req', 'req.id', '=', 'ri.request_id')
+            ->where('req.status', 'approved')
+            ->where('req.id', '!=', $excludeRequestId)
+            ->whereNull('ri.resource_id') // facility line only
+            ->where('ri.item_name', $facilityName)
+            ->whereDate('ri.request_date', $date)
+            ->where('ri.start_time', '<', $endTime)
+            ->where('ri.end_time', '>', $startTime)
+            ->exists();
+    }
+
     #[Computed]
     public function materialsSummary()
     {
@@ -66,12 +76,7 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->join('resources as r', 'r.id', '=', 'ral.resource_id')
             ->where('ral.department_id', $departmentId)
             ->where('ral.allocated_quantity', '>', 0)
-            ->select(
-                'r.resource_name',
-                'ral.allocated_quantity',
-                'r.unit',
-                'r.pieces_per_pack'
-            )
+            ->select('r.resource_name', 'ral.allocated_quantity', 'r.unit', 'r.pieces_per_pack')
             ->orderByDesc('ral.allocated_quantity')
             ->limit(6)
             ->get()
@@ -91,14 +96,7 @@ new #[Layout('layouts.coordinator')] class extends Component
         $paginator = DB::table('resource_all_locations as ral')
             ->join('resources as r', 'r.id', '=', 'ral.resource_id')
             ->where('ral.department_id', Auth::user()->department_id)
-            ->select(
-                'ral.id',
-                'ral.resource_id',
-                'ral.allocated_quantity',
-                'r.resource_name',
-                'r.unit',
-                'r.pieces_per_pack'
-            )
+            ->select('ral.id', 'ral.resource_id', 'ral.allocated_quantity', 'r.resource_name', 'r.unit', 'r.pieces_per_pack')
             ->orderByDesc('ral.updated_at')
             ->paginate(10);
 
@@ -120,9 +118,9 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->sum('allocated_quantity');
     }
 
-    // ✅ Pending material requests from this department waiting on Program Head's
-    // approval, cross-checked against what's currently allocated so the
-    // Program Head can see availability before deciding.
+    // Pending MATERIAL line items (resource_id set) from this department.
+    // Note: this deliberately excludes the facility line itself — see
+    // pendingFacilityRequests() below for those.
     #[Computed]
     public function pendingMaterialRequests()
     {
@@ -135,10 +133,8 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->join('resources as r', 'r.id', '=', 'ri.resource_id')
             ->join('users as u', 'u.id', '=', 'req.user_id')
             ->where('req.department_id', Auth::user()->department_id)
-            // Student/faculty submissions sit at 'pending' status waiting
-            // directly on the Program Head.
             ->where('req.status', 'pending')
-            ->whereNotNull('ri.resource_id')  // material line items only
+            ->whereNotNull('ri.resource_id')
             ->select(
                 'req.id as request_id',
                 'ri.resource_id',
@@ -169,10 +165,51 @@ new #[Layout('layouts.coordinator')] class extends Component
     }
 
     /**
-     * ✅ Approve a material request: deduct the requested quantity from the
-     * department's allocated stock (resource_all_locations) and mark the
-     * request approved. Uses two-pass validation (check everything first,
-     * then deduct) so a multi-item request never deducts partially.
+     * ✅ NEW: Pending FACILITY reservations (the room/facility line item
+     * itself, resource_id is null). Previously these never appeared
+     * anywhere for the Program Head to act on if the reservation had no
+     * materials attached — this surfaces them and flags scheduling
+     * conflicts against already-approved bookings before you click Approve.
+     */
+    #[Computed]
+    public function pendingFacilityRequests()
+    {
+        return DB::table('request_items as ri')
+            ->join('requests as req', 'req.id', '=', 'ri.request_id')
+            ->join('users as u', 'u.id', '=', 'req.user_id')
+            ->where('req.department_id', Auth::user()->department_id)
+            ->where('req.status', 'pending')
+            ->where('req.request_type_id', 1) // facility reservations only
+            ->whereNull('ri.resource_id')      // the facility line itself
+            ->select(
+                'req.id as request_id',
+                'ri.item_name as facility_name',
+                'ri.request_date',
+                'ri.start_time',
+                'ri.end_time',
+                'req.purpose',
+                'u.name as requester_name'
+            )
+            ->get()
+            ->map(function ($item) {
+                $item->has_conflict = $this->facilityHasConflict(
+                    $item->facility_name,
+                    $item->request_date,
+                    $item->start_time,
+                    $item->end_time,
+                    $item->request_id
+                );
+                return $item;
+            });
+    }
+
+    /**
+     * ✅ Approve a request (facility, material, or both):
+     *   - If it has a facility line, block approval if that room/time
+     *     overlaps an already-approved booking (double-booking guard).
+     *   - If it has material line items, deduct them from the department's
+     *     allocated stock — two-pass so a multi-item request never
+     *     deducts partially.
      */
     public function approveRequest(int $requestId): void
     {
@@ -189,15 +226,36 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        $items = DB::table('request_items')
-            ->where('request_id', $requestId)
-            ->whereNotNull('resource_id')
-            ->get();
+        $items = DB::table('request_items')->where('request_id', $requestId)->get();
+
+        $materialItems = $items->whereNotNull('resource_id');
+        $facilityItem  = $items->whereNull('resource_id')->first();
 
         try {
-            DB::transaction(function () use ($items, $departmentId, $requestId) {
-                // Pass 1: validate every item has enough allocated stock
-                foreach ($items as $item) {
+            DB::transaction(function () use ($materialItems, $facilityItem, $departmentId, $requestId, $request) {
+
+                // ✅ FIX: block approval if the room is already booked for an
+                // overlapping time on that date.
+                if ($facilityItem) {
+                    $conflict = $this->facilityHasConflict(
+                        $facilityItem->item_name,
+                        $facilityItem->request_date,
+                        $facilityItem->start_time,
+                        $facilityItem->end_time,
+                        $requestId
+                    );
+
+                    if ($conflict) {
+                        throw new \RuntimeException(
+                            "\"{$facilityItem->item_name}\" is already booked for an overlapping time on " .
+                            \Carbon\Carbon::parse($facilityItem->request_date)->format('M d, Y') .
+                            ". Reject this request or ask the requester to choose another slot."
+                        );
+                    }
+                }
+
+                // Pass 1: validate every material item has enough allocated stock
+                foreach ($materialItems as $item) {
                     $allocation = DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
                         ->where('department_id', $departmentId)
@@ -212,7 +270,7 @@ new #[Layout('layouts.coordinator')] class extends Component
                 }
 
                 // Pass 2: deduct, now that we know every item can be fulfilled
-                foreach ($items as $item) {
+                foreach ($materialItems as $item) {
                     DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
                         ->where('department_id', $departmentId)
@@ -236,12 +294,18 @@ new #[Layout('layouts.coordinator')] class extends Component
                 );
             });
 
-            session()->flash('message', 'Request approved and stock deducted.');
+            session()->flash('message', 'Request approved.');
         } catch (\RuntimeException $e) {
             session()->flash('error', $e->getMessage());
         }
 
-        unset($this->allocations, $this->pendingMaterialRequests, $this->totalAllocated, $this->materialsSummary);
+        unset(
+            $this->allocations,
+            $this->pendingMaterialRequests,
+            $this->pendingFacilityRequests,
+            $this->totalAllocated,
+            $this->materialsSummary
+        );
     }
 
     public function openReject(int $requestId): void
@@ -290,6 +354,12 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->rejectingRequestId = null;
         $this->rejectRemarks = '';
 
-        unset($this->allocations, $this->pendingMaterialRequests, $this->totalAllocated, $this->materialsSummary);
+        unset(
+            $this->allocations,
+            $this->pendingMaterialRequests,
+            $this->pendingFacilityRequests,
+            $this->totalAllocated,
+            $this->materialsSummary
+        );
     }
 };
