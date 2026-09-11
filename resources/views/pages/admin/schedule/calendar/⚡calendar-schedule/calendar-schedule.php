@@ -67,87 +67,67 @@ new #[Layout('layouts.admin')] class extends Component
         return $days;
     }
 
-    #[Computed]
-    public function daysWithEvents(): array
-    {
-        $carbon = \Carbon\Carbon::create($this->year, $this->month, 1);
+   #[Computed]
+public function daysWithEvents(): array
+{
+    $carbon = \Carbon\Carbon::create($this->year, $this->month, 1);
 
-        // ===== SCHEDULE DISABLED =====
-        // $schedules = Schedule::all();
-        // Uncomment above and the schedule blocks below to re-enable class schedule dots.
-        // ===== END SCHEDULE DISABLED =====
+    $days = [];
 
-        $days = [];
+    for ($d = 1; $d <= $carbon->daysInMonth; $d++) {
+        $date = \Carbon\Carbon::create($this->year, $this->month, $d);
 
-        for ($d = 1; $d <= $carbon->daysInMonth; $d++) {
-            $date = \Carbon\Carbon::create($this->year, $this->month, $d);
-
-            // ===== SCHEDULE DISABLED =====
-            // $dayCode = $this->getDayCode($date->dayOfWeek);
-            // $hasSchedule = $schedules->contains(
-            //     fn($s) => in_array($dayCode, $this->expandDayCode($s->day_type))
-            // );
-            // ===== END SCHEDULE DISABLED =====
-
-            $hasReservation = ResourceRequest::with('items')
-                ->where('request_type_id', 1)
-                ->where('status', 'approved')
-                ->whereHas('items', fn($q) =>
-                    $q->whereDate('request_date', $date->format('Y-m-d'))
-                )
-                ->exists();
-
-            $hasMaterial = ResourceRequest::where('request_type_id', 2)
-                ->where('status', 'approved')
-                ->whereDate('created_at', $date->format('Y-m-d'))
-                ->exists();
-
-            if ($hasReservation || $hasMaterial) {
-                $days[$date->format('Y-m-d')] = [
-                    // 'schedule'    => $hasSchedule, // ===== SCHEDULE DISABLED =====
-                    'reservation' => $hasReservation,
-                    'material'    => $hasMaterial,
-                ];
-            }
-        }
-
-        return $days;
-    }
-
-    #[Computed]
-    public function selectedDateEvents()
-    {
-        if (!$this->selectedDate) return [];
-
-        // ===== SCHEDULE DISABLED =====
-        // $date    = \Carbon\Carbon::parse($this->selectedDate);
-        // $dayCode = $this->getDayCode($date->dayOfWeek);
-        // $schedules = Schedule::all()
-        //     ->filter(fn($s) => in_array($dayCode, $this->expandDayCode($s->day_type)))
-        //     ->sortBy(fn($s) => \Carbon\Carbon::parse($s->start_time)->format('Hi'))
-        //     ->values();
-        // ===== END SCHEDULE DISABLED =====
-
-        $reservations = ResourceRequest::with(['user.department', 'items'])
-            ->where('request_type_id', 1)
+        $hasReservation = ResourceRequest::where('request_type_id', 1)
             ->where('status', 'approved')
             ->whereHas('items', fn($q) =>
-                $q->whereDate('request_date', $this->selectedDate)
+                $q->whereDate('request_date', $date->format('Y-m-d'))
             )
-            ->get();
+            ->exists();
 
-        $materials = ResourceRequest::with(['user.department', 'items'])
-            ->where('request_type_id', 2)
+        $hasMaterial = ResourceRequest::where('request_type_id', 2)
             ->where('status', 'approved')
-            ->whereDate('created_at', $this->selectedDate)
-            ->get();
+            ->whereHas('items', fn($q) =>
+                $q->whereDate('request_date', $date->format('Y-m-d'))
+            )
+            ->exists();
 
-        return [
-            // 'schedules'    => $schedules, // ===== SCHEDULE DISABLED =====
-            'reservations' => $reservations,
-            'materials'    => $materials,
-        ];
+        if ($hasReservation || $hasMaterial) {
+            $days[$date->format('Y-m-d')] = [
+                'reservation' => $hasReservation,
+                'material'    => $hasMaterial,
+            ];
+        }
     }
+
+    return $days;
+}
+
+#[Computed]
+public function selectedDateEvents()
+{
+    if (!$this->selectedDate) return [];
+
+    $reservations = ResourceRequest::with(['user.department', 'items'])
+        ->where('request_type_id', 1)
+        ->where('status', 'approved')
+        ->whereHas('items', fn($q) =>
+            $q->whereDate('request_date', $this->selectedDate)
+        )
+        ->get();
+
+    $materials = ResourceRequest::with(['user.department', 'items'])
+        ->where('request_type_id', 2)
+        ->where('status', 'approved')
+        ->whereHas('items', fn($q) =>
+            $q->whereDate('request_date', $this->selectedDate)
+        )
+        ->get();
+
+    return [
+        'reservations' => $reservations,
+        'materials'    => $materials,
+    ];
+}
 
     // ===== SCHEDULE DISABLED =====
     // private function getDayCode(int $dayOfWeek): string

@@ -186,22 +186,21 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     public function addMaterial(): void
-    {
-        $this->validate([
-            'resource_name'     => 'required|string|max:255',
-            'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
-            'initial_quantity'  => 'required|integer|min:0',
-            'unit'              => 'required|in:Pcs,Pack',
-            'pieces_per_pack'   => 'required_if:unit,Pack|integer|min:1',
-            'material_supplier' => 'nullable|string|max:255',
-        ]);
+{
+    $this->validate([
+        'resource_name'     => 'required|string|max:255',
+        'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
+        'initial_quantity'  => 'required|integer|min:0',
+        'unit'              => 'required|in:Pcs,Pack',
+        'pieces_per_pack'   => 'exclude_unless:unit,Pack|required|integer|min:1',
+        'material_supplier' => 'nullable|string|max:255',
+    ]);
 
+    try {
         $resourceType = ResourceType::firstOrCreate(
             ['type_name' => $this->type_name]
         );
 
-        // Convert to total PCS for internal tracking (stats/low-stock stay accurate),
-        // while remembering the unit + pack size for display purposes.
         $totalPcs = $this->unit === 'Pack'
             ? $this->initial_quantity * $this->pieces_per_pack
             : $this->initial_quantity;
@@ -233,7 +232,12 @@ new #[Layout('layouts.admin')] class extends Component
 
         $this->closeModal();
         session()->flash('success', 'Material added successfully.');
+
+    } catch (\Throwable $e) {
+        report($e); // logs to storage/logs/laravel.log
+        session()->flash('error', 'Could not add material: ' . $e->getMessage());
     }
+}
 
     public function delete(int $id): void
     {

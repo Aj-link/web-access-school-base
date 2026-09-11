@@ -32,17 +32,22 @@ new #[Layout('layouts.admin')] class extends Component
      * matching the search filter, sorted by name.
      */
     #[Computed]
-    public function facilities()
-    {
-        $facilityType = ResourceType::where('type_name', 'Facility')->first();
+public function facilities()
+{
+    $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
-        return Resource::query()
-            ->when($facilityType, fn($q) => $q->where('resource_type_id', $facilityType->id))
-            ->when(
-                $this->search,
-                fn($q) => $q->where('resource_name', 'like', '%' . $this->search . '%')
-            )
-            ->orderBy('resource_name')
-            ->get();
+    // No "Facility" type exists yet -> there can be no facilities. Return empty, not everything.
+    if (! $facilityType) {
+        return collect();
     }
+
+    return Resource::query()
+        ->where('resource_type_id', $facilityType->id)
+        ->when(
+            $this->search,
+            fn($q) => $q->where('resource_name', 'like', '%' . $this->search . '%')
+        )
+        ->orderBy('resource_name')
+        ->get();
+}
 };
