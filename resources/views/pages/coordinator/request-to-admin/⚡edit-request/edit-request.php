@@ -6,6 +6,7 @@ use App\Models\Request as ResourceRequest;
 use App\Models\RequestItem;
 use App\Models\RequestType;
 use App\Models\Resource;
+use App\Models\ResourceType;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -31,86 +32,102 @@ new #[Layout('layouts.coordinator')] class extends Component
     public $availableResources = [];
 
     public function mount(int $id)
-    {
-        $request = ResourceRequest::with('items')->findOrFail($id);
+{
+    $request = ResourceRequest::with('items')->findOrFail($id);
 
-        if ($request->user_id !== Auth::id()) {
-            abort(403, 'You do not own this request.');
-        }
-
-        if ($request->status !== 'pending') {
-            session()->flash('error', 'This request can no longer be edited.');
-            redirect()->route('coordinator.request-to-admin.view-request');
-            return;
-        }
-
-        $this->requestModel = $request;
-
-        $this->request_type_id = $request->request_type_id;
-        $this->purpose = $request->purpose;
-
-        $facilities = [];
-
-        for ($floor = 1; $floor <= 4; $floor++) {
-            for ($room = 1; $room <= 5; $room++) {
-                $facilities[] = 'ROOM ' . (($floor * 100) + $room);
-            }
-        }
-
-        for ($floor = 1; $floor <= 4; $floor++) {
-            for ($room = 1; $room <= 5; $room++) {
-                $facilities[] = 'NBR ' . (($floor * 100) + $room);
-            }
-        }
-
-        for ($i = 1; $i <= 3; $i++) {
-            $facilities[] = 'LAB ' . $i;
-        }
-
-        $facilities[] = 'LISC';
-
-        $this->facilityOptions = $facilities;
-
-        $this->availableResources = Resource::where('status', 'available')
-            ->where('quantity_available', '>', 0)
-            ->orderBy('resource_name')
-            ->get();
-
-        if ($this->request_type_id == 1) {
-            $facilityItem = $request->items->firstWhere('resource_id', null);
-
-            if ($facilityItem) {
-                $this->facility_name = $facilityItem->item_name;
-                $this->start_time    = $facilityItem->start_time;
-                $this->end_time      = $facilityItem->end_time;
-                $this->request_date  = $facilityItem->request_date;
-            }
-
-            $this->materials = $request->items
-                ->whereNotNull('resource_id')
-                ->map(fn ($item) => [
-                    'id'          => $item->id,
-                    'resource_id' => $item->resource_id,
-                    'quantity'    => $item->quantity,
-                ])
-                ->values()
-                ->toArray();
-        }
-
-        if ($this->request_type_id == 2) {
-            $firstItem = $request->items->first();
-            $this->request_date = $firstItem?->request_date;
-
-            $this->materials = $request->items
-                ->map(fn ($item) => [
-                    'id'          => $item->id,
-                    'resource_id' => $item->resource_id,
-                    'quantity'    => $item->quantity,
-                ])
-                ->values()
-                ->toArray();
-        }
+    if ($request->user_id !== Auth::id()) {
+        abort(403, 'You do not own this request.');
     }
+
+    if ($request->status !== 'pending') {
+        session()->flash('error', 'This request can no longer be edited.');
+        redirect()->route('coordinator.request-to-admin.view-request');
+        return;
+    }
+
+    $this->requestModel = $request;
+
+    $this->request_type_id = $request->request_type_id;
+    $this->purpose = $request->purpose;
+
+    // ✅ Load facilities from the resources table managed by admin
+    // Admin adds/removes facilities via the inventory/stock management page
+    $facilityType = ResourceType::where('type_name', 'Facility')->first();
+
+    if ($facilityType) {
+        $this->facilityOptions = Resource::where('resource_type_id', $facilityType->id)
+            ->where('status', 'available')
+            ->orderBy('resource_name')
+            ->pluck('resource_name')
+            ->toArray();
+    } else {
+        // ✅ Fallback: any resource with "Facility" in the type name
+        $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
+            $q->where('type_name', 'like', '%facility%')
+              ->orWhere('type_name', 'like', '%Facility%')
+        )
+        ->where('status', 'available')
+        ->orderBy('resource_name')
+        ->pluck('resource_name')
+        ->toArray();
+    }
+
+    // ✅ Materials dropdown must EXCLUDE facilities — a room is not a "material"
+    $this->availableResources = Resource::where('status', 'available')
+        ->where('quantity_available', '>', 0)
+        ->where(function ($q) {
+            $q->whereHas('resourceType', function ($q2) {
+                $q2->where('type_name', '!=', 'Facility')
+                   ->where('type_name', 'not like', '%facility%');
+            })->orWhereDoesntHave('resourceType');
+        })
+        ->orderBy('resource_name')
+        ->get()
+        // ✅ Attach a human-readable "2 Packs" / "45 Pcs" label for the dropdown
+        ->map(function ($resource) {
+            $resource->available_formatted = $this->formatQuantity(
+                (int) $resource->quantity_available,
+                $resource->unit,
+                $resource->pieces_per_pack
+            );
+            return $resource;
+        });
+
+    if ($this->request_type_id == 1) {
+        $facilityItem = $request->items->firstWhere('resource_id', null);
+
+        if ($facilityItem) {
+            $this->facility_name = $facilityItem->item_name;
+            $this->start_time    = $facilityItem->start_time;
+            $this->end_time      = $facilityItem->end_time;
+            $this->request_date  = $facilityItem->request_date;
+        }
+
+        $this->materials = $request->items
+            ->whereNotNull('resource_id')
+            ->map(fn ($item) => [
+                'id'          => $item->id,
+                'resource_id' => $item->resource_id,
+                'quantity'    => $item->quantity,
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    if ($this->request_type_id == 2) {
+        $firstItem = $request->items->first();
+        $this->request_date = $firstItem?->request_date;
+
+        $this->materials = $request->items
+            ->map(fn ($item) => [
+                'id'          => $item->id,
+                'resource_id' => $item->resource_id,
+                'quantity'    => $item->quantity,
+            ])
+            ->values()
+            ->toArray();
+    }
+}
 
     protected function rules()
     {
@@ -157,6 +174,117 @@ new #[Layout('layouts.coordinator')] class extends Component
         return RequestType::all();
     }
 
+    /**
+     * Format a raw pcs quantity according to the resource's unit.
+     * e.g. 60 pcs @ Pack(30) -> "2 Packs"
+     *      65 pcs @ Pack(30) -> "2 Packs + 5 pcs"
+     *      45 pcs @ Pcs      -> "45 Pcs"
+     */
+    protected function formatQuantity(int $qtyInPcs, ?string $unit, ?int $piecesPerPack): string
+    {
+        if ($unit === 'Pack' && $piecesPerPack) {
+            $packs     = intdiv($qtyInPcs, $piecesPerPack);
+            $remainder = $qtyInPcs % $piecesPerPack;
+
+            if ($remainder === 0) {
+                return "{$packs} Pack" . ($packs === 1 ? '' : 's');
+            }
+
+            return "{$packs} Pack" . ($packs === 1 ? '' : 's') . " + {$remainder} pcs";
+        }
+
+        return "{$qtyInPcs} Pcs";
+    }
+
+    /**
+     * Look up a resource from the already-loaded $availableResources list
+     * (used in the blade to compute live Available/Requesting per row
+     * without extra queries).
+     */
+    public function getMaterialResource($resourceId)
+    {
+        if (!$resourceId) return null;
+
+        return collect($this->availableResources)->firstWhere('id', (int) $resourceId);
+    }
+
+    /**
+     * How much this item was already holding before edits — this is
+     * "returned to stock" if it stays, so it should count toward what's
+     * available to re-allocate on this same row.
+     */
+    protected function alreadyHeldQuantity($materialId): int
+    {
+        if (!$materialId) {
+            return 0;
+        }
+
+        return RequestItem::find($materialId)?->quantity ?? 0;
+    }
+
+    /**
+     * How much stock is available for the selected resource, formatted
+     * ("45 Pcs" or "3 Packs + 5 pcs"). Includes whatever this row already
+     * holds, since editing this row doesn't compete with itself.
+     */
+    public function getAvailableStock($resourceId, $materialId = null): ?string
+    {
+        $resource = $this->getMaterialResource($resourceId);
+
+        if (!$resource) {
+            return null;
+        }
+
+        $effectiveAvailable = (int) $resource->quantity_available + $this->alreadyHeldQuantity($materialId);
+
+        return $this->formatQuantity($effectiveAvailable, $resource->unit, $resource->pieces_per_pack);
+    }
+
+    /**
+     * Real-time "Requesting: 1 Pack + 20 pcs" (or "50 Pcs") breakdown shown
+     * under the quantity input as the requester types. Quantity is always
+     * typed in raw Pcs — this is just a live preview.
+     */
+    public function getQuantityBreakdown($resourceId, $quantity): ?string
+    {
+        $resource = $this->getMaterialResource($resourceId);
+
+        if (!$resource) {
+            return null;
+        }
+
+        $qty = (int) $quantity;
+
+        if ($qty <= 0) {
+            return null;
+        }
+
+        return $this->formatQuantity($qty, $resource->unit, $resource->pieces_per_pack);
+    }
+
+    /**
+     * Real-time check: does the typed quantity exceed what's available to
+     * re-allocate (current stock + whatever this row already holds)?
+     */
+    public function getStockWarning($resourceId, $quantity, $materialId = null): ?string
+    {
+        $resource = $this->getMaterialResource($resourceId);
+
+        if (!$resource || $quantity === '' || $quantity === null) {
+            return null;
+        }
+
+        $qty = (int) $quantity;
+        $effectiveAvailable = (int) $resource->quantity_available + $this->alreadyHeldQuantity($materialId);
+
+        if ($qty > $effectiveAvailable) {
+            $formatted = $this->formatQuantity($effectiveAvailable, $resource->unit, $resource->pieces_per_pack);
+            return "Exceeds available stock ({$formatted})";
+        }
+
+        return null;
+    }
+
     public function addMaterial()
     {
         $this->materials[] = ['id' => null, 'resource_id' => '', 'quantity' => 1];
@@ -191,7 +319,12 @@ new #[Layout('layouts.coordinator')] class extends Component
                 : 0;
 
             if ((int) $material['quantity'] > ($resource->quantity_available + $alreadyHeld)) {
-                $this->addError("materials.$i.quantity", "Only {$resource->quantity_available} {$resource->resource_name} available.");
+                $available = $this->formatQuantity(
+                    (int) $resource->quantity_available + $alreadyHeld,
+                    $resource->unit,
+                    $resource->pieces_per_pack
+                );
+                $this->addError("materials.$i.quantity", "Only {$available} of {$resource->resource_name} available.");
                 return;
             }
         }

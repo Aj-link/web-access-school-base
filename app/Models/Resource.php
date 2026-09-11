@@ -17,6 +17,8 @@ class Resource extends Model
         'resource_type_id',
         'resource_name',
         'description',
+        'unit',
+        'pieces_per_pack',
         'quantity_available',
         'status',
     ];

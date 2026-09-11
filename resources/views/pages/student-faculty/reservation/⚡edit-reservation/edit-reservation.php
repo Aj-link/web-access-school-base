@@ -5,6 +5,7 @@ namespace App\Livewire\Portal;
 use App\Models\Request as ResourceRequest;
 use App\Models\RequestItem;
 use App\Models\Resource;
+use App\Models\ResourceType;
 use App\Models\Notification;
 use App\Models\User;
 use Livewire\Attributes\Layout;
@@ -82,31 +83,42 @@ new #[Layout('layouts.student-faculty')] class extends Component
             'quantity'    => $item->quantity,
         ])->values()->toArray();
 
-        // Same facility list as Create form
-        $facilities = [];
+        // ✅ Load facilities from the resources table managed by admin (same as Create form)
+        $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
-        for ($floor = 1; $floor <= 4; $floor++) {
-            for ($room = 1; $room <= 5; $room++) {
-                $facilities[] = 'ROOM ' . (($floor * 100) + $room);
-            }
+        if ($facilityType) {
+            $this->facilityOptions = Resource::where('resource_type_id', $facilityType->id)
+                ->where('status', 'available')
+                ->orderBy('resource_name')
+                ->pluck('resource_name')
+                ->toArray();
+        } else {
+            // ✅ Fallback: any resource with "Facility" in the type name
+            $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
+                $q->where('type_name', 'like', '%facility%')
+                  ->orWhere('type_name', 'like', '%Facility%')
+            )
+            ->where('status', 'available')
+            ->orderBy('resource_name')
+            ->pluck('resource_name')
+            ->toArray();
         }
 
-        for ($floor = 1; $floor <= 4; $floor++) {
-            for ($room = 1; $room <= 5; $room++) {
-                $facilities[] = 'NBR ' . (($floor * 100) + $room);
-            }
+        // ✅ Make sure the currently selected facility_name still appears in the
+        // dropdown even if it's since been renamed/deactivated in resources,
+        // so editing doesn't silently blank out the existing selection.
+        if ($this->facility_name && !in_array($this->facility_name, $this->facilityOptions)) {
+            $this->facilityOptions[] = $this->facility_name;
+            sort($this->facilityOptions);
         }
 
-        for ($i = 1; $i <= 3; $i++) {
-            $facilities[] = 'LAB ' . $i;
-        }
-
-        $facilities[] = 'LISC';
-
-        $this->facilityOptions = $facilities;
-
+        // ✅ Load materials (non-facility resources) for the optional picker — same as Create
         $this->availableResources = Resource::where('status', 'available')
             ->where('quantity_available', '>', 0)
+            ->whereHas('resourceType', fn($q) =>
+                $q->where('type_name', 'not like', '%facility%')
+                  ->where('type_name', 'not like', '%Facility%')
+            )
             ->orderBy('resource_name')
             ->get();
     }

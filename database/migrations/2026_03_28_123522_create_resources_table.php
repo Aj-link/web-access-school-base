@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('resource_name');
             $table->longText('description');
             $table->integer('quantity_available')->default(0);
+            $table->string('unit')->default('Pcs')->nullable();
+            $table->unsignedInteger('pieces_per_pack')->nullable();
             $table->string('status')->default('available');
             $table->timestamps();
         });

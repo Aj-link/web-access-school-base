@@ -36,7 +36,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     //schedule
     Route::livewire('/schedule', 'pages::admin.schedule.view-schedule')->name('admin.schedule');
     Route::livewire('/schedule/create', 'pages::admin.schedule.create-schedule')->name('admin.schedule.create');
-    Route::livewire('/schedule/{schedule}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
+    Route::livewire('/schedule/{id}/edit', 'pages::admin.schedule.edit-schedule')->name('admin.schedule.edit');
 
     //Calendar
     Route::livewire('/calendar', 'pages::admin.schedule.calendar.calendar-schedule')->name('admin.calendar');

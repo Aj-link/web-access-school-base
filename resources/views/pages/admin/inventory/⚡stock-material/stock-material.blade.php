@@ -226,6 +226,12 @@
                                                 @else text-green-600 dark:text-green-400 @endif">
                                                     {{ number_format($material->quantity_available) }}
                                                 </span>
+                                                <span class="text-xs text-gray-400 dark:text-neutral-500">
+                                                    {{ $material->unit ?? 'Pcs' }}
+                                                    @if (($material->unit ?? 'Pcs') === 'Pack' && $material->pieces_per_pack)
+                                                        ({{ $material->pieces_per_pack }}/pack)
+                                                    @endif
+                                                </span>
                                                 @if ($material->quantity_available == 0)
                                                     <span
                                                         class="py-0.5 px-1.5 text-[10px] font-medium bg-red-100 text-red-800 rounded-full dark:bg-red-900 dark:text-red-400">Out
@@ -254,25 +260,20 @@
                                             @endif
                                         </td>
 
-                                        {{-- Status --}}
+                                        {{-- Status: now shows the REAL status, no supplier override --}}
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @php
-                                                $hasSupplier =
-                                                    $material->latestStock && !empty($material->latestStock->supplier);
-                                                $displayStatus = $hasSupplier ? $material->status : 'unavailable';
-                                            @endphp
                                             <span
                                                 class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-full
-        @if ($displayStatus === 'available') bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-400
-        @elseif($displayStatus === 'maintenance') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400
-        @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400 @endif">
+                                                @if ($material->status === 'available') bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-400
+                                                @elseif($material->status === 'maintenance') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400
+                                                @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400 @endif">
                                                 <span
                                                     class="size-1.5 rounded-full inline-block
-            @if ($displayStatus === 'available') bg-teal-500
-            @elseif($displayStatus === 'maintenance') bg-yellow-500
-            @else bg-red-500 @endif">
+                                                    @if ($material->status === 'available') bg-teal-500
+                                                    @elseif($material->status === 'maintenance') bg-yellow-500
+                                                    @else bg-red-500 @endif">
                                                 </span>
-                                                {{ ucfirst($displayStatus) }}
+                                                {{ ucfirst($material->status) }}
                                             </span>
                                         </td>
 
@@ -370,7 +371,7 @@
                                 @foreach ($this->allResources as $res)
                                     <option value="{{ $res->id }}"
                                         {{ $resource_id == $res->id ? 'selected' : '' }}>
-                                        {{ $res->resource_name }} ({{ $res->quantity_available }} units)
+                                        {{ $res->resource_name }} ({{ $res->quantity_available }} {{ $res->unit ?? 'Pcs' }})
                                     </option>
                                 @endforeach
                             </select>
@@ -382,7 +383,16 @@
                         {{-- Quantity --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Quantity to Add <span class="text-red-500">*</span>
+                                @php
+                                    $selectedResource = $resource_id
+                                        ? $this->allResources->firstWhere('id', (int) $resource_id)
+                                        : null;
+                                @endphp
+                                Quantity to Add
+                                @if ($selectedResource && ($selectedResource->unit ?? 'Pcs') === 'Pack')
+                                    (in Packs, {{ $selectedResource->pieces_per_pack }} pcs each)
+                                @endif
+                                <span class="text-red-500">*</span>
                             </label>
                             <input type="number" wire:model="quantity_added" min="1" autofocus
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
@@ -400,24 +410,6 @@
                                 placeholder="e.g. ABC Trading, National Bookstore"
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
                             @error('supplier')
-                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Unit Price --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Unit Price
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3">
-                                    <span class="text-gray-500 text-sm dark:text-neutral-400">₱</span>
-                                </div>
-                                <input type="number" wire:model="unit_price" min="0" step="0.01"
-                                    placeholder="0.00"
-                                    class="py-2 ps-7 pe-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                            </div>
-                            @error('unit_price')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
@@ -487,18 +479,6 @@
                             @enderror
                         </div>
 
-                        {{-- Description --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Description <span class="text-red-500">*</span>
-                            </label>
-                            <textarea wire:model="description" rows="2" placeholder="Brief description of the material..."
-                                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400"></textarea>
-                            @error('description')
-                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
                         {{-- Type --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
@@ -512,17 +492,57 @@
                             @enderror
                         </div>
 
-                        {{-- Initial Quantity --}}
+                        {{-- Unit --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Initial Quantity <span class="text-red-500">*</span>
+                                Unit <span class="text-red-500">*</span>
                             </label>
-                            <input type="number" wire:model="initial_quantity" min="0" placeholder="0"
+                            <select wire:model.live="unit"
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                            @error('initial_quantity')
+                                <option value="Pcs">Pcs</option>
+                                <option value="Pack">Pack</option>
+                            </select>
+                            @error('unit')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        {{-- Initial Quantity + (conditionally) Pcs per Pack --}}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                    {{ $unit === 'Pack' ? 'Number of Packs' : 'Initial Quantity' }}
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" wire:model="initial_quantity" min="0" placeholder="0"
+                                    class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                @error('initial_quantity')
+                                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            @if ($unit === 'Pack')
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                        Pcs per Pack <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" wire:model="pieces_per_pack" min="1" placeholder="e.g. 30"
+                                        class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                    @error('pieces_per_pack')
+                                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
+                        </div>
+
+                        @if ($unit === 'Pack' && $initial_quantity > 0 && $pieces_per_pack > 0)
+                            <p class="text-xs text-gray-500 dark:text-neutral-400 -mt-2">
+                                = {{ $initial_quantity }} pack(s) × {{ $pieces_per_pack }} pcs =
+                                <span class="font-semibold text-gray-700 dark:text-neutral-300">
+                                    {{ $initial_quantity * $pieces_per_pack }} total pcs
+                                </span>
+                            </p>
+                        @endif
 
                         {{-- Supplier --}}
                         <div>
@@ -533,24 +553,6 @@
                                 placeholder="e.g. ABC Trading, National Bookstore"
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
                             @error('material_supplier')
-                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Unit Price --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Unit Price
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3">
-                                    <span class="text-gray-500 text-sm dark:text-neutral-400">₱</span>
-                                </div>
-                                <input type="number" wire:model="material_unit_price" min="0" step="0.01"
-                                    placeholder="0.00"
-                                    class="py-2 ps-7 pe-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                            </div>
-                            @error('material_unit_price')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                             @enderror
                         </div>

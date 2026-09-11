@@ -11,6 +11,24 @@
               <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">Reservation Facilities</h2>
               <p class="text-sm text-gray-600 dark:text-neutral-400">Review and manage facility reservations from students</p>
             </div>
+
+            {{-- Facility / Material Tabs --}}
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-neutral-700 rounded-lg p-1">
+              <a href="{{ route('coordinator.facility') }}" wire:navigate
+                 class="px-4 py-1.5 text-sm font-medium rounded-md transition
+                   {{ request()->routeIs('coordinator.facility')
+                        ? 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 shadow-sm'
+                        : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200' }}">
+                Facility
+              </a>
+              <a href="{{ route('coordinator.material') }}" wire:navigate
+                 class="px-4 py-1.5 text-sm font-medium rounded-md transition
+                   {{ request()->routeIs('coordinator.material')
+                        ? 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 shadow-sm'
+                        : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200' }}">
+                Material
+              </a>
+            </div>
           </div>
 
           {{-- Table --}}

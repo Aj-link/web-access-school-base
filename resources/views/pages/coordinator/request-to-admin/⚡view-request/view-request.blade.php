@@ -62,7 +62,7 @@
 
                                     {{-- Items --}}
                                     <td class="px-6 py-4">
-                                        <ul class="text-xs space-y-1 {{ $isMaterial ? 'text-red-600' : 'text-gray-600 dark:text-neutral-400' }}">
+                                        <ul class="text-xs space-y-1.5 {{ $isMaterial ? 'text-red-600' : 'text-gray-600 dark:text-neutral-400' }}">
                                             @foreach($request->items as $item)
                                                 <li class="flex items-center gap-1.5 flex-wrap">
                                                     @if($isMaterial)
@@ -72,7 +72,9 @@
                                                     @endif
                                                     <span class="font-medium">{{ $item->item_name ?? 'N/A' }}</span>
                                                     @if($isMaterial)
-                                                        <span class="text-red-400">x{{ $item->quantity }}</span>
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold text-[11px]">
+                                                            Qty: {{ $item->quantity }}
+                                                        </span>
                                                     @endif
                                                     @if($item->request_date)
                                                         <span class="text-gray-400">({{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }})</span>

@@ -15,6 +15,8 @@ new #[Layout('layouts.admin')] class extends Component
 {
     use WithPagination;
 
+    protected array $excludedTypes = ['Facility'];
+
     public string $search       = '';
     public string $statusFilter = '';
     public bool $showModal      = false;
@@ -24,7 +26,6 @@ new #[Layout('layouts.admin')] class extends Component
     public int    $resource_id    = 0;
     public int    $quantity_added = 1;
     public string $supplier       = '';
-    public string $unit_price     = '';
     public string $arrival_date   = '';
     public string $arrival_time   = '';
     public string $remarks        = '';
@@ -34,8 +35,9 @@ new #[Layout('layouts.admin')] class extends Component
     public string $description          = '';
     public string $type_name            = '';
     public int    $initial_quantity     = 0;
+    public string $unit                 = 'Pcs'; // Pcs | Pack
+    public int    $pieces_per_pack      = 0;      // only used when unit = Pack
     public string $material_supplier    = '';
-    public string $material_unit_price  = '';
 
     public function mount(): void
     {
@@ -47,10 +49,31 @@ new #[Layout('layouts.admin')] class extends Component
         $this->resetPage();
     }
 
+    // Reset pcs-per-pack when switching back to Pcs so stale data doesn't linger
+    public function updatedUnit(): void
+    {
+        if ($this->unit === 'Pcs') {
+            $this->pieces_per_pack = 0;
+        }
+    }
+
+    protected function materialsBaseQuery()
+    {
+        return Resource::whereHas('resourceType', function ($q) {
+            $q->whereNotIn('type_name', $this->excludedTypes);
+        })
+        ->orWhereDoesntHave('resourceType');
+    }
+
     #[Computed]
     public function materials()
     {
         return Resource::with(['resourceType', 'latestStock'])
+            ->where(function ($q) {
+                $q->whereHas('resourceType', function ($q2) {
+                    $q2->whereNotIn('type_name', $this->excludedTypes);
+                })->orWhereDoesntHave('resourceType');
+            })
             ->when($this->search, fn($q) =>
                 $q->where('resource_name', 'like', '%' . $this->search . '%')
                   ->orWhere('description', 'like', '%' . $this->search . '%')
@@ -65,19 +88,25 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function allResources()
     {
-        return Resource::orderBy('resource_name')->get();
+        return Resource::whereHas('resourceType', function ($q) {
+                $q->whereNotIn('type_name', $this->excludedTypes);
+            })
+            ->orWhereDoesntHave('resourceType')
+            ->orderBy('resource_name')
+            ->get();
     }
 
     #[Computed]
     public function totalMaterials(): int
     {
-        return Resource::count();
+        return $this->materialsBaseQuery()->count();
     }
 
     #[Computed]
     public function lowStock(): int
     {
-        return Resource::where('quantity_available', '<=', 5)
+        return $this->materialsBaseQuery()
+            ->where('quantity_available', '<=', 5)
             ->where('quantity_available', '>', 0)
             ->count();
     }
@@ -85,18 +114,20 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function outOfStock(): int
     {
-        return Resource::where('quantity_available', 0)->count();
+        return $this->materialsBaseQuery()
+            ->where('quantity_available', 0)
+            ->count();
     }
 
     #[Computed]
     public function totalUnits(): int
     {
-        return Resource::sum('quantity_available');
+        return $this->materialsBaseQuery()->sum('quantity_available');
     }
 
     public function openStockModal(int $id): void
     {
-        $this->reset(['quantity_added', 'supplier', 'unit_price', 'arrival_time', 'remarks']);
+        $this->reset(['quantity_added', 'supplier', 'arrival_time', 'remarks']);
         $this->resource_id  = $id;
         $this->arrival_date = now()->format('Y-m-d');
         $this->showModal    = true;
@@ -107,12 +138,13 @@ new #[Layout('layouts.admin')] class extends Component
         $this->showModal    = false;
         $this->showAddModal = false;
         $this->reset([
-            'resource_id', 'quantity_added', 'supplier', 'unit_price',
+            'resource_id', 'quantity_added', 'supplier',
             'arrival_date', 'arrival_time', 'remarks',
             'resource_name', 'description', 'type_name', 'initial_quantity',
-            'material_supplier', 'material_unit_price',
+            'unit', 'pieces_per_pack', 'material_supplier',
         ]);
         $this->arrival_date = now()->format('Y-m-d');
+        $this->unit         = 'Pcs';
     }
 
     public function addStock(): void
@@ -121,21 +153,27 @@ new #[Layout('layouts.admin')] class extends Component
             'resource_id'    => 'required|exists:resources,id',
             'quantity_added' => 'required|integer|min:1',
             'supplier'       => 'nullable|string|max:255',
-            'unit_price'     => 'nullable|numeric|min:0',
         ]);
 
         $resource = Resource::with('resourceType')->findOrFail($this->resource_id);
-        $before   = $resource->quantity_available;
-        $after    = $before + $this->quantity_added;
+
+        // If the resource is tracked in Packs, treat quantity_added as PACKS added,
+        // and convert to pcs using its stored pieces_per_pack.
+        $addedInPcs = $this->quantity_added;
+        if ($resource->unit === 'Pack' && $resource->pieces_per_pack) {
+            $addedInPcs = $this->quantity_added * $resource->pieces_per_pack;
+        }
+
+        $before = $resource->quantity_available;
+        $after  = $before + $addedInPcs;
 
         Stock::create([
             'resource_id'     => $this->resource_id,
             'user_id'         => Auth::id(),
-            'quantity_added'  => $this->quantity_added,
+            'quantity_added'  => $addedInPcs,
             'quantity_before' => $before,
             'quantity_after'  => $after,
             'supplier'        => $this->supplier !== '' ? $this->supplier : ($resource->resourceType->type_name ?? 'Unspecified'),
-            'unit_price'      => $this->unit_price !== '' ? $this->unit_price : null,
             'arrival_date'    => now()->format('Y-m-d'),
             'arrival_time'    => now()->format('H:i'),
             'remarks'         => $this->remarks !== '' ? $this->remarks : null,
@@ -150,38 +188,46 @@ new #[Layout('layouts.admin')] class extends Component
     public function addMaterial(): void
     {
         $this->validate([
-            'resource_name'        => 'required|string|max:255',
-            'description'          => 'required|string',
-            'type_name'            => 'required|string|max:255',
-            'initial_quantity'     => 'required|integer|min:0',
-            'material_supplier'    => 'nullable|string|max:255',
-            'material_unit_price'  => 'nullable|numeric|min:0',
+            'resource_name'     => 'required|string|max:255',
+            'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
+            'initial_quantity'  => 'required|integer|min:0',
+            'unit'              => 'required|in:Pcs,Pack',
+            'pieces_per_pack'   => 'required_if:unit,Pack|integer|min:1',
+            'material_supplier' => 'nullable|string|max:255',
         ]);
 
-        // ✅ Find or create resource type by name
         $resourceType = ResourceType::firstOrCreate(
             ['type_name' => $this->type_name]
         );
 
+        // Convert to total PCS for internal tracking (stats/low-stock stay accurate),
+        // while remembering the unit + pack size for display purposes.
+        $totalPcs = $this->unit === 'Pack'
+            ? $this->initial_quantity * $this->pieces_per_pack
+            : $this->initial_quantity;
+
         $resource = Resource::create([
             'resource_name'      => $this->resource_name,
-            'description'        => $this->description,
+            'description'        => $this->description !== '' ? $this->description : $this->resource_name,
             'resource_type_id'   => $resourceType->id,
-            'quantity_available' => $this->initial_quantity,
+            'quantity_available' => $totalPcs,
+            'unit'               => $this->unit,
+            'pieces_per_pack'    => $this->unit === 'Pack' ? $this->pieces_per_pack : null,
             'status'             => 'available',
         ]);
 
-        if ($this->initial_quantity > 0) {
+        if ($totalPcs > 0) {
             Stock::create([
                 'resource_id'     => $resource->id,
                 'user_id'         => Auth::id(),
-                'quantity_added'  => $this->initial_quantity,
+                'quantity_added'  => $totalPcs,
                 'quantity_before' => 0,
-                'quantity_after'  => $this->initial_quantity,
+                'quantity_after'  => $totalPcs,
                 'supplier'        => $this->material_supplier !== '' ? $this->material_supplier : $resourceType->type_name,
-                'unit_price'      => $this->material_unit_price !== '' ? $this->material_unit_price : null,
                 'arrival_date'    => now()->format('Y-m-d'),
-                'remarks'         => 'Initial stock',
+                'remarks'         => $this->unit === 'Pack'
+                    ? "Initial stock ({$this->initial_quantity} pack(s) x {$this->pieces_per_pack} pcs)"
+                    : 'Initial stock',
             ]);
         }
 

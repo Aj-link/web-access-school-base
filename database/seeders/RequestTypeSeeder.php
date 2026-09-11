@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\RequestType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -18,7 +19,7 @@ class RequestTypeSeeder extends Seeder
         ];
 
         foreach ($types as $type) {
-            \App\Models\RequestType::firstOrCreate(
+            RequestType::firstOrCreate(
                 ['id' => $type['id']],
                 ['type_name' => $type['type_name']]
             );

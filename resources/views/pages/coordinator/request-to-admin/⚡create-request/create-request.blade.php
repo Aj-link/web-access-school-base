@@ -6,7 +6,7 @@
         <div class="px-6 py-4 border-b">
             <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">Create Request to Admin</h2>
             <p class="text-sm text-gray-600 dark:text-neutral-400">Submit a facility reservation or material request</p>
-        </div>  
+        </div>
 
         <div class="p-6">
 
@@ -135,24 +135,38 @@
 
                     <div class="space-y-3">
                         @foreach($materials as $index => $material)
+                            @php
+                                $available = $this->getAvailableStock($material['resource_id'] ?? null);
+                                $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                                $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                            @endphp
                             <div wire:key="fac-material-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">
                                 <div class="flex-1">
-                                    <select wire:model="materials.{{ $index }}.resource_id"
+                                    <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
                                         @foreach($availableResources as $resource)
                                             <option value="{{ $resource->id }}">
-                                                {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
+                                                {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
                                             </option>
                                         @endforeach
                                     </select>
+                                    @if($available)
+                                        <p class="text-[10px] text-gray-500 mt-1">Available: {{ $available }}</p>
+                                    @endif
                                     @error('materials.' . $index . '.resource_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                                 </div>
-                                <div class="w-24">
+                                <div class="w-32">
                                     <input type="number" min="1"
-                                        wire:model="materials.{{ $index }}.quantity"
-                                        placeholder="Qty"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                        wire:model.live="materials.{{ $index }}.quantity"
+                                        placeholder="Qty (pcs)"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border {{ $warning ? 'border-red-400' : 'border-gray-300 dark:border-neutral-600' }} bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                    @if($breakdown)
+                                        <p class="text-[10px] text-blue-600 font-medium mt-1">Requesting: {{ $breakdown }}</p>
+                                    @endif
+                                    @if($warning)
+                                        <p class="text-[10px] text-red-500 mt-1 font-medium">{{ $warning }}</p>
+                                    @endif
                                     @error('materials.' . $index . '.quantity') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                                 </div>
                                 <button type="button" wire:click="removeMaterial({{ $index }})"
@@ -170,24 +184,38 @@
 
                     <div class="space-y-3">
                         @foreach($materials as $index => $material)
+                            @php
+                                $available = $this->getAvailableStock($material['resource_id'] ?? null);
+                                $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                                $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                            @endphp
                             <div wire:key="mat-material-{{ $index }}" class="flex items-start gap-2">
                                 <div class="flex-1">
-                                    <select wire:model="materials.{{ $index }}.resource_id"
+                                    <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
                                         @foreach($availableResources as $resource)
                                             <option value="{{ $resource->id }}">
-                                                {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
+                                                {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
                                             </option>
                                         @endforeach
                                     </select>
+                                    @if($available)
+                                        <p class="text-[10px] text-gray-500 mt-1">Available: {{ $available }}</p>
+                                    @endif
                                     @error('materials.' . $index . '.resource_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                                 </div>
-                                <div class="w-24">
+                                <div class="w-32">
                                     <input type="number" min="1"
-                                        wire:model="materials.{{ $index }}.quantity"
-                                        placeholder="Qty"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                        wire:model.live="materials.{{ $index }}.quantity"
+                                        placeholder="Qty (pcs)"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border {{ $warning ? 'border-red-400' : 'border-gray-300 dark:border-neutral-600' }} bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                    @if($breakdown)
+                                        <p class="text-[10px] text-blue-600 font-medium mt-1">Requesting: {{ $breakdown }}</p>
+                                    @endif
+                                    @if($warning)
+                                        <p class="text-[10px] text-red-500 mt-1 font-medium">{{ $warning }}</p>
+                                    @endif
                                     @error('materials.' . $index . '.quantity') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                                 </div>
                                 @if(count($materials) > 1)

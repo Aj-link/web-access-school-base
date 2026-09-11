@@ -1,107 +1,382 @@
 <div class="select-none">
-<div class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    <div class="mb-6 flex justify-between items-center">
-        <div>
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Resource Allocations</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Allocate resources to departments</p>
-        </div>
-        <button wire:click="openCreateModal"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
-            + New Allocation
-        </button>
+<div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+
+    {{-- Page Header --}}
+    <div class="mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Department Resources</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Materials allocated to your department from approved requests
+        </p>
     </div>
 
-    @if(session()->has('message'))
-        <div class="mb-4 p-3 rounded-lg bg-green-100 text-green-800 border border-green-200">
+    {{-- Flash messages --}}
+    @if (session('message'))
+        <div class="mb-6 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm text-green-700 dark:text-green-400">
             {{ session('message') }}
         </div>
     @endif
-
-    @if(session()->has('error'))
-        <div class="mb-4 p-3 rounded-lg bg-red-100 text-red-800 border border-red-200">
+    @if (session('error'))
+        <div class="mb-6 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
             {{ session('error') }}
         </div>
     @endif
 
-    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl border shadow-sm">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-900">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Resource</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Department</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Allocated Quantity</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-500">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                @forelse($this->allocations as $allocation)
-                <tr>
-                    <td class="px-6 py-3 text-sm text-gray-800">{{ $allocation->resource->resource_name }}</td>
-                    <td class="px-6 py-3 text-sm text-gray-600">{{ $allocation->department->department_name }}</td>
-                    <td class="px-6 py-3 text-sm text-gray-600">{{ $allocation->allocated_quantity }}</td>
-                    <td class="px-6 py-3 text-right space-x-2">
-                        <button wire:click="openEditModal({{ $allocation->id }})"
-                            class="text-blue-600 hover:text-blue-800 text-xs">Edit</button>
-                        <button wire:click="delete({{ $allocation->id }})"
-                            wire:confirm="Delete this allocation?"
-                            class="text-red-600 hover:text-red-800 text-xs">Delete</button>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="px-6 py-12 text-center text-gray-500">No allocations found.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-        <div class="px-6 py-4 border-t">
-            {{ $this->allocations->links() }}
+    {{-- Summary Cards --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
+
+        {{-- Total Units --}}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
+            <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-[#123524]/10 flex items-center justify-center">
+                <svg class="size-5 sm:size-6 text-[#123524]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Total Units Allocated
+                </p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
+                    {{ number_format($this->totalAllocated) }}
+                </p>
+            </div>
         </div>
+
+        {{-- Distinct Resource Types --}}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
+            <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-[#D4A537]/10 flex items-center justify-center">
+                <svg class="size-5 sm:size-6 text-[#B8862A]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Resource Types
+                </p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
+                    {{ $this->allocations->total() }}
+                </p>
+            </div>
+        </div>
+
     </div>
 
-    {{-- Modal --}}
-    @if($showModal)
-    <div class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 bg-black opacity-50" wire:click="closeModal"></div>
-            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-4">{{ $editId ? 'Edit' : 'New' }} Resource Allocation</h3>
-                    <form wire:submit="save" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Resource</label>
-                            <select wire:model="resource_id" class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Select Resource</option>
-                                @foreach($this->resources as $resource)
-                                    <option value="{{ $resource->id }}">{{ $resource->resource_name }} (Available: {{ $resource->quantity_available }})</option>
-                                @endforeach
-                            </select>
-                            @error('resource_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Department</label>
-                            <select wire:model="department_id" class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Select Department</option>
-                                @foreach($this->departments as $dept)
-                                    <option value="{{ $dept->id }}">{{ $dept->department_name }}</option>
-                                @endforeach
-                            </select>
-                            @error('department_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Allocated Quantity</label>
-                            <input type="number" wire:model="allocated_quantity" min="1" class="w-full px-3 py-2 border rounded-lg">
-                            @error('allocated_quantity') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div class="flex justify-end gap-3 pt-4">
-                            <button type="button" wire:click="closeModal" class="px-4 py-2 bg-gray-500 text-white rounded-lg">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ $editId ? 'Update' : 'Create' }}</button>
-                        </div>
-                    </form>
-                </div>
+    {{-- Quick Materials Summary --}}
+    @if($this->materialsSummary->isNotEmpty())
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+            <div class="shrink-0 size-8 rounded-lg bg-[#123524]/10 flex items-center justify-center">
+                <svg class="size-4 text-[#123524]" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                </svg>
             </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">My Department's Materials</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Quick view of what your department currently holds</p>
+            </div>
+        </div>
+
+        <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            @foreach($this->materialsSummary as $material)
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30 px-4 py-3 hover:border-[#123524]/30 hover:bg-[#123524]/5 dark:hover:bg-[#123524]/10 transition">
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {{ $material->resource_name }}
+                    </span>
+                    <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                        {{ $material->formatted_quantity }}
+                    </span>
+                </div>
+            @endforeach
         </div>
     </div>
     @endif
+
+    {{-- Pending Requests vs Availability --}}
+    @if($this->pendingMaterialRequests->isNotEmpty())
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Requests Awaiting Your Approval</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Approving deducts the requested amount from your department's allocated stock immediately.
+            </p>
+        </div>
+
+        {{-- Desktop / tablet table --}}
+        <div class="hidden sm:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Requested By</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Material</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Requested</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Available</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @foreach($this->pendingMaterialRequests as $item)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ $item->requester_name }}</td>
+                        <td class="px-6 py-3 text-sm font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{{ $item->item_name }}</td>
+                        <td class="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $item->requested_formatted }}</td>
+                        <td class="px-6 py-3 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $item->available_formatted }}</td>
+                        <td class="px-6 py-3 text-center whitespace-nowrap">
+                            @if($item->enough)
+                                <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                                    Enough Stock
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
+                                    Not Enough — Request Admin
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap">
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    wire:click="approveRequest({{ $item->request_id }})"
+                                    wire:confirm="Approve this request? {{ $item->requested_formatted }} of {{ $item->item_name }} will be deducted from your department's stock."
+                                    @disabled(!$item->enough)
+                                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                                >
+                                    Approve
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="openReject({{ $item->request_id }})"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                                >
+                                    Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    @if($rejectingRequestId === $item->request_id)
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 bg-gray-50 dark:bg-gray-900/40">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                        Reason for rejecting {{ $item->item_name }} (optional)
+                                    </label>
+                                    <textarea
+                                        wire:model="rejectRemarks"
+                                        rows="2"
+                                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
+                                        placeholder="e.g. Insufficient justification, wrong department, etc."
+                                    ></textarea>
+                                </div>
+                                <div class="flex flex-col gap-2 pt-5">
+                                    <button
+                                        type="button"
+                                        wire:click="confirmReject"
+                                        class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition"
+                                    >
+                                        Confirm Reject
+                                    </button>
+                                    <button
+                                        type="button"
+                                        wire:click="cancelReject"
+                                        class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Mobile stacked cards --}}
+        <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+            @foreach($this->pendingMaterialRequests as $item)
+            <div class="px-4 py-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $item->item_name }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Requested by {{ $item->requester_name }}</p>
+                    </div>
+                    @if($item->enough)
+                        <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                            Enough Stock
+                        </span>
+                    @else
+                        <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
+                            Not Enough
+                        </span>
+                    @endif
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md px-3 py-2">
+                        <p class="text-gray-400 dark:text-gray-500 uppercase tracking-wide">Requested</p>
+                        <p class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ $item->requested_formatted }}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md px-3 py-2">
+                        <p class="text-gray-400 dark:text-gray-500 uppercase tracking-wide">Available</p>
+                        <p class="text-gray-700 dark:text-gray-300 font-medium mt-0.5">{{ $item->available_formatted }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        wire:click="approveRequest({{ $item->request_id }})"
+                        wire:confirm="Approve this request? {{ $item->requested_formatted }} of {{ $item->item_name }} will be deducted from your department's stock."
+                        @disabled(!$item->enough)
+                        class="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    >
+                        Approve
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="openReject({{ $item->request_id }})"
+                        class="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
+                        Reject
+                    </button>
+                </div>
+
+                @if($rejectingRequestId === $item->request_id)
+                <div class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Reason for rejecting (optional)
+                    </label>
+                    <textarea
+                        wire:model="rejectRemarks"
+                        rows="2"
+                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
+                        placeholder="e.g. Insufficient justification, wrong department, etc."
+                    ></textarea>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            wire:click="confirmReject"
+                            class="flex-1 px-3 py-2 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition"
+                        >
+                            Confirm Reject
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="cancelReject"
+                            class="flex-1 px-3 py-2 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Table --}}
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Department Resource Allocation</h3>
+        </div>
+
+        {{-- Desktop / tablet table --}}
+        <div class="hidden sm:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            Resource
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            Allocated Quantity
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @forelse($this->allocations as $allocation)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="shrink-0 size-8 rounded-md bg-[#123524]/5 flex items-center justify-center">
+                                    <svg class="size-4 text-[#123524]/70" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                    {{ $allocation->resource_name }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                                {{ $allocation->formatted_quantity }}
+                            </span>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="2" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="size-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    No resources have been allocated to your department yet.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Mobile stacked cards --}}
+        <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+            @forelse($this->allocations as $allocation)
+            <div class="px-4 py-4 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="shrink-0 size-8 rounded-md bg-[#123524]/5 flex items-center justify-center">
+                        <svg class="size-4 text-[#123524]/70" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {{ $allocation->resource_name }}
+                    </span>
+                </div>
+                <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                    {{ $allocation->formatted_quantity }}
+                </span>
+            </div>
+            @empty
+            <div class="px-4 py-16 text-center">
+                <div class="flex flex-col items-center gap-3">
+                    <div class="size-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                        </svg>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        No resources have been allocated to your department yet.
+                    </p>
+                </div>
+            </div>
+            @endforelse
+        </div>
+
+        @if($this->allocations->hasPages())
+            <div class="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $this->allocations->links() }}
+            </div>
+        @endif
+    </div>
+
 </div>
 </div>
