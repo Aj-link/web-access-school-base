@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Inventory;
 
 use App\Models\Stock;
+use App\Models\User;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
@@ -38,6 +39,10 @@ new #[Layout('layouts.admin')] class extends Component
      * excluded). Each row carries entry_type so the view can badge it
      * as "Stock In" vs "Approved by Admin", and both branches respect
      * the same search box and date range filters.
+     *
+     * ✅ The approvals branch is restricted to requests FILED BY
+     * Program Head / Coordinator accounts only — student and faculty
+     * requests are excluded from this particular log.
      */
     #[Computed]
     public function histories()
@@ -73,7 +78,7 @@ new #[Layout('layouts.admin')] class extends Component
                 's.created_at as event_at'
             );
 
-                $approvals = DB::table('request_items as ri')
+        $approvals = DB::table('request_items as ri')
             ->join('requests as req', 'req.id', '=', 'ri.request_id')
             ->join('resources as r', 'r.id', '=', 'ri.resource_id')
             ->leftJoin('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
@@ -81,6 +86,14 @@ new #[Layout('layouts.admin')] class extends Component
             ->join('users as u', 'u.id', '=', 'req.user_id')
             ->where('req.status', 'approved')
             ->whereNotNull('ri.resource_id') // materials only — facility line items excluded
+            // ✅ FIX: only requests filed by Program Head / Coordinator accounts
+            ->whereIn('req.user_id', function ($q) {
+                $q->select('mhr.model_id')
+                    ->from('model_has_roles as mhr')
+                    ->join('roles as rl', 'rl.id', '=', 'mhr.role_id')
+                    ->where('mhr.model_type', User::class)
+                    ->whereIn('rl.name', ['coordinator', 'program head']);
+            })
             ->when($this->search, function ($q) {
                 $q->where(function ($q2) {
                     $q2->where('r.resource_name', 'like', '%' . $this->search . '%')

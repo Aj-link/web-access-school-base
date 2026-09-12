@@ -58,12 +58,13 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     protected function materialsBaseQuery()
-    {
-        return Resource::whereHas('resourceType', function ($q) {
-            $q->whereNotIn('type_name', $this->excludedTypes);
-        })
-        ->orWhereDoesntHave('resourceType');
-    }
+{
+    return Resource::where(function ($q) {
+        $q->whereHas('resourceType', function ($q2) {
+            $q2->whereNotIn('type_name', $this->excludedTypes);
+        })->orWhereDoesntHave('resourceType');
+    });
+}
 
     #[Computed]
     public function materials()
@@ -86,15 +87,16 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
-    public function allResources()
-    {
-        return Resource::whereHas('resourceType', function ($q) {
-                $q->whereNotIn('type_name', $this->excludedTypes);
-            })
-            ->orWhereDoesntHave('resourceType')
-            ->orderBy('resource_name')
-            ->get();
-    }
+public function allResources()
+{
+    return Resource::where(function ($q) {
+            $q->whereHas('resourceType', function ($q2) {
+                $q2->whereNotIn('type_name', $this->excludedTypes);
+            })->orWhereDoesntHave('resourceType');
+        })
+        ->orderBy('resource_name')
+        ->get();
+}
 
     #[Computed]
     public function totalMaterials(): int

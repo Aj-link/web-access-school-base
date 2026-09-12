@@ -19,12 +19,16 @@ new #[Layout('layouts.admin')] class extends Component
     public $search       = '';
 
     /**
-     * All requests from Student/Faculty (and anyone else) land here for
-     * Admin's review — no filtering by requester role.
+     * Requests from Student/Faculty accounts only land here for Admin's
+     * review — Program Head or Admin-authored requests (if any exist)
+     * are excluded, since this queue is strictly for reviewing
+     * requests filed by students and faculty.
      */
     protected function incomingRequestsQuery()
     {
-        return ResourceRequest::query();
+        return ResourceRequest::whereHas('user', function ($query) {
+            $query->role(['program head']);
+        });
     }
 
     #[Computed]
