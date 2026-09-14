@@ -5,6 +5,7 @@ namespace App\Livewire\Pages;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\Notification;
+use App\Notifications\NewUserPendingNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Computed;
@@ -62,7 +63,9 @@ new class extends Component
 
         $user->assignRole($this->role);
 
-        // Notify all admins – corrected status and type
+        $department = Department::find($this->department_id);
+
+        // Notify all admins – in-app bell + real email
         $admins = User::role('admin')->get();
         foreach ($admins as $admin) {
             Notification::create([
@@ -71,6 +74,14 @@ new class extends Component
                 'type'    => 'Gmail',
                 'status'  => 'pending',
             ]);
+
+            // ✅ FIX: the actual email that was missing
+            $admin->notify(new NewUserPendingNotification(
+                $this->name,
+                $this->email,
+                ucfirst($this->role),
+                $department?->department_name
+            ));
         }
 
         Auth::login($user);

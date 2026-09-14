@@ -9,6 +9,7 @@ use App\Models\Resource;
 use App\Models\ResourceType;
 use App\Models\Notification;
 use App\Models\User;
+use App\Notifications\ProgramHeadRequestNotification;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -73,12 +74,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         'materials.*.quantity.min'         => 'Quantity must be at least 1',
     ];
 
-    /**
-     * Format a raw pcs quantity according to the resource's unit.
-     * e.g. 60 pcs @ Pack(30) -> "2 Packs"
-     *      65 pcs @ Pack(30) -> "2 Packs + 5 pcs"
-     *      45 pcs @ Pcs      -> "45 Pcs"
-     */
     protected function formatQuantity(int $qtyInPcs, ?string $unit, ?int $piecesPerPack): string
     {
         if ($unit === 'Pack' && $piecesPerPack) {
@@ -97,7 +92,6 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function mount()
     {
-        // ✅ Load facilities from the resources table managed by admin
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         if ($facilityType) {
@@ -116,7 +110,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->toArray();
         }
 
-        // ✅ Materials dropdown must EXCLUDE facilities — a room is not a "material"
         $this->availableResources = Resource::where('status', 'available')
             ->where('quantity_available', '>', 0)
             ->where(function ($q) {
@@ -127,7 +120,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             })
             ->orderBy('resource_name')
             ->get()
-            // ✅ Attach a human-readable "2 Packs" / "45 Pcs" label for the dropdown
             ->map(function ($resource) {
                 $resource->available_formatted = $this->formatQuantity(
                     (int) $resource->quantity_available,
@@ -144,11 +136,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return RequestType::all();
     }
 
-    /**
-     * Look up a resource from the already-loaded $availableResources list
-     * (used in the blade to compute the real-time Pack/Pcs breakdown per row
-     * without extra queries).
-     */
     public function getMaterialResource($resourceId)
     {
         if (!$resourceId) return null;
@@ -156,10 +143,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return collect($this->availableResources)->firstWhere('id', (int) $resourceId);
     }
 
-    /**
-     * How much stock is available for the selected resource, formatted
-     * ("45 Pcs" or "3 Packs + 5 pcs"). Shown live under the quantity input.
-     */
     public function getAvailableStock($resourceId): ?string
     {
         $resource = $this->getMaterialResource($resourceId);
@@ -171,13 +154,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return $resource->available_formatted;
     }
 
-    /**
-     * Real-time "you're requesting: 1 Pack + 20 pcs" (or "50 Pcs") breakdown
-     * shown under the quantity input as the requester types. Quantity is
-     * always typed in raw Pcs — this is just a live preview, it doesn't
-     * change what gets saved. Always returns a formatted string (for BOTH
-     * Pack and Pcs resources) as long as a resource is picked and qty > 0.
-     */
     public function getQuantityBreakdown($resourceId, $quantity): ?string
     {
         $resource = $this->getMaterialResource($resourceId);
@@ -195,10 +171,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return $this->formatQuantity($qty, $resource->unit, $resource->pieces_per_pack);
     }
 
-    /**
-     * Real-time check: does the typed quantity exceed what's in stock?
-     * Returns a warning string if it does, otherwise null.
-     */
     public function getStockWarning($resourceId, $quantity): ?string
     {
         $resource = $this->getMaterialResource($resourceId);
@@ -249,8 +221,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
 
-        // Quantity is always typed in raw Pcs, matching quantity_available —
-        // no conversion needed, just validate stock directly.
         foreach ($selectedMaterials as $i => $material) {
             $resource = Resource::find($material['resource_id']);
 
@@ -291,8 +261,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ]);
         }
 
-        // Materials: applies whether it's an add-on to Facility (type 1)
-        // or the main content of a Material Request (type 2)
         foreach ($selectedMaterials as $material) {
             $resource = Resource::find($material['resource_id']);
 
@@ -310,13 +278,40 @@ new #[Layout('layouts.coordinator')] class extends Component
         $typeName = $this->request_type_id == 1 ? 'Facility Reservation' : 'Material Request';
         $admins   = User::role('admin')->get();
 
+        // ✅ Build a details string for the email body
+        if ($this->request_type_id == 1) {
+            $materialsSummary = $selectedMaterials->isNotEmpty()
+                ? ' Materials: ' . $selectedMaterials->map(function ($m) {
+                    $resource = Resource::find($m['resource_id']);
+                    return $resource->resource_name . ' (x' . $m['quantity'] . ')';
+                })->implode(', ')
+                : '';
+
+            $details = "Facility: {$this->facility_name} on {$this->request_date} ({$this->start_time} - {$this->end_time}).{$materialsSummary}";
+        } else {
+            $itemsList = $selectedMaterials->map(function ($m) {
+                $resource = Resource::find($m['resource_id']);
+                return $resource->resource_name . ' (x' . $m['quantity'] . ')';
+            })->implode(', ');
+
+            $details = "Items: {$itemsList}";
+        }
+
         foreach ($admins as $admin) {
+            // In-app bell notification (unchanged)
             Notification::create([
                 'user_id' => $admin->id,
                 'message' => $user->name . ' (Program Head) submitted a new ' . $typeName . '.',
                 'type'    => 'Gmail',
                 'status'  => 'pending',
             ]);
+
+            // ✅ FIX: the actual email that was missing
+            $admin->notify(new ProgramHeadRequestNotification(
+                $user->name,
+                $typeName,
+                $details
+            ));
         }
 
         session()->flash('success', 'Request submitted successfully!');

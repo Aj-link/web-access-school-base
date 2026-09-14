@@ -7,9 +7,16 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class StudentApprovedNotification extends Notification implements ShouldQueue
+class NewUserPendingNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public function __construct(
+        protected string $userName,
+        protected string $userEmail,
+        protected string $role,          // e.g. 'Student', 'Faculty', 'Program Head'
+        protected ?string $department = null,
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -18,7 +25,9 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $department = $notifiable->department?->department_name ?? 'your department';
+        $deptLine = $this->department
+            ? "<p style=\"margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#374151;\">Department: <strong>{$this->department}</strong></p>"
+            : '';
 
         $html = <<<HTML
         <div style="background-color:#f9fafb;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -33,34 +42,31 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
                 <tr>
                     <td style="background-color:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:36px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 
-                        <div style="width:48px;height:48px;background-color:#ecfdf5;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-                            <span style="color:#059669;font-size:22px;line-height:48px;">&#10003;</span>
+                        <div style="width:48px;height:48px;background-color:#fef3c7;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                            <span style="color:#d97706;font-size:20px;line-height:48px;">&#128100;</span>
                         </div>
 
                         <h1 style="margin:0 0 4px 0;font-size:20px;font-weight:700;color:#111827;">
-                            Account Approved
+                            New Account Pending Approval
                         </h1>
                         <p style="margin:0 0 24px 0;font-size:14px;color:#6b7280;">
-                            Hi {$notifiable->name}, your account is ready to go.
+                            Hi {$notifiable->name}, a new user just registered.
                         </p>
 
                         <div style="height:1px;background-color:#f3f4f6;margin:0 0 24px 0;"></div>
 
-                        <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#374151;">
-                            Your account has been <strong style="color:#059669;">approved</strong>. You can now log in and access your dashboard.
+                        <p style="margin:0 0 8px 0;font-size:15px;line-height:1.6;color:#374151;">
+                            <strong>{$this->userName}</strong> ({$this->userEmail}) registered as a
+                            <strong>{$this->role}</strong> and is waiting for account approval.
                         </p>
-
-                        <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#374151;">
-                            You are registered as a <strong>Student</strong> at Colegio De Sta. Ana de Victorias, under the
-                            <strong>Department of {$department}</strong>.
-                        </p>
+                        {$deptLine}
 
                         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px 0;">
                             <tr>
                                 <td style="background-color:#123524;border-radius:8px;">
-                                    <a href="{$notifiable->department ? url('/login') : url('/login')}"
+                                    <a href="{$this->buildUrl()}"
                                        style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
-                                        Log In to Your Account
+                                        Review Account
                                     </a>
                                 </td>
                             </tr>
@@ -71,7 +77,7 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
                 <tr>
                     <td style="padding-top:24px;text-align:center;">
                         <p style="margin:0;font-size:12px;color:#9ca3af;">
-                            Thank you for being part of Colegio De Sta. Ana de Victorias!
+                            Colegio de Sta. Ana de Victorias — Resource Management System
                         </p>
                     </td>
                 </tr>
@@ -80,8 +86,13 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
         HTML;
 
         return (new MailMessage)
-            ->subject('CSAV Account Approved')
+            ->subject("New {$this->role} Registration Pending Approval")
             ->view('mail.raw', ['html' => $html]);
+    }
+
+    protected function buildUrl(): string
+    {
+        return url('/admin/users');
     }
 
     public function toArray(object $notifiable): array

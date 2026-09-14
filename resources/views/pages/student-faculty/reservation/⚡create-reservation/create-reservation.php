@@ -196,7 +196,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
                 'user_id' => $programHead->id,
                 'message' => Auth::user()->name . ' submitted a facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')' . $materialsSummary,
                 'type'    => 'Gmail',
-                'status'  => 'unread',
+                'status'  => 'pending',
             ]);
         }
 

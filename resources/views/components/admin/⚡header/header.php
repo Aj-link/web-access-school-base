@@ -18,14 +18,20 @@ new class extends Component
     {
         if (! Auth::check()) return;
 
-        // ✅ Get latest 10 notifications (from ANY user – student, faculty, coordinator)
+        // ✅ FIX: only THIS logged-in user's own notifications — previously
+        // pulled every notification in the table regardless of recipient,
+        // leaking other users' (students, faculty, program heads) private
+        // notifications into whoever happened to be logged in.
         $latest = Notification::with('user')
+            ->where('user_id', Auth::id())
             ->latest()
             ->take(10)
             ->get();
 
-        // ✅ Count only 'pending' as unread
-        $this->unreadCount = Notification::where('status', 'pending')->count();
+        // ✅ FIX: unread count scoped to this user too
+        $this->unreadCount = Notification::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->count();
 
         // ✅ Map database status 'pending' → 'unread', 'sent' → 'read'
         $this->notifications = $latest->map(fn($n) => [
@@ -40,7 +46,12 @@ new class extends Component
 
     public function markAsRead(int $id): void
     {
-        $notification = Notification::find($id);
+        // ✅ FIX: scoped to the current user so nobody can mark another
+        // user's notification as read by guessing/passing an arbitrary ID.
+        $notification = Notification::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
         if ($notification && $notification->status === 'pending') {
             $notification->update(['status' => 'sent']);
         }
@@ -49,7 +60,10 @@ new class extends Component
 
     public function markAsUnread(int $id): void
     {
-        $notification = Notification::find($id);
+        $notification = Notification::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
         if ($notification && $notification->status === 'sent') {
             $notification->update(['status' => 'pending']);
         }
@@ -58,7 +72,11 @@ new class extends Component
 
     public function markAllAsRead(): void
     {
-        Notification::where('status', 'pending')->update(['status' => 'sent']);
+        // ✅ FIX: only marks THIS user's own pending notifications as read
+        Notification::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->update(['status' => 'sent']);
+
         $this->loadNotifications();
     }
 };
