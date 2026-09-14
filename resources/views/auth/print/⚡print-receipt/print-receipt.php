@@ -32,7 +32,7 @@ new class extends Component
 
         $user    = Auth::user();
         $isOwner = $request->user_id === $user->id;
-        $isStaff = $user->hasRole(['admin', 'coordinator', 'program head']);
+        $isStaff = $user->hasRole(['admin', 'student', 'faculty', 'program head']);
 
         if (!$isOwner && !$isStaff) {
             abort(403);
