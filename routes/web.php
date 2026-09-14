@@ -7,6 +7,9 @@ Route::livewire('/', 'auth::login')->name('login');
 Route::livewire('/register', 'auth::register')->name('register');
 Route::livewire('/waiting', 'auth::waiting')->name('waiting');
 
+//printable
+Route::livewire('/printable', 'auth::print.print-receipt')->name('printable.receipt');
+
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::livewire('/dashboard', 'pages::admin.dashboard')->name('admin.dashboard');

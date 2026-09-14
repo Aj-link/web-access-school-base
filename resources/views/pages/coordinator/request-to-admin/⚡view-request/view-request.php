@@ -4,6 +4,8 @@ namespace App\Livewire\Coordinator\RequestToAdmin;
 
 use App\Models\Request as ResourceRequest;
 use App\Models\RequestItem;
+use App\Models\Resource;
+use App\Models\ResourceType;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -24,11 +26,13 @@ new #[Layout('layouts.coordinator')] class extends Component
     public $facility_name = '';
     public $start_time = '';
     public $end_time = '';
+    public array $facilityOptions = [];
 
-    // Material fields
+    // Material fields — now resource_id-based, matching the create form
     public $items = [
-        ['name' => '', 'quantity' => 1],
+        ['resource_id' => '', 'quantity' => 1],
     ];
+    public $availableResources = [];
 
     protected function rules()
     {
@@ -44,9 +48,9 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         if ($this->request_type_id == 2) {
-            $rules['items']            = 'required|array|min:1';
-            $rules['items.*.name']     = 'required|string|max:255';
-            $rules['items.*.quantity'] = 'required|integer|min:1';
+            $rules['items']                   = 'required|array|min:1';
+            $rules['items.*.resource_id']     = 'required|exists:resources,id';
+            $rules['items.*.quantity']        = 'required|integer|min:1';
         }
 
         return $rules;
@@ -57,15 +61,42 @@ new #[Layout('layouts.coordinator')] class extends Component
         'purpose.min'              => 'Purpose must be at least 10 characters',
         'request_date.required'    => 'Please select a date',
         'request_date.after_or_equal' => 'Date must be today or later',
-        'facility_name.required'   => 'Please enter a facility name',
+        'facility_name.required'   => 'Please select a facility',
         'start_time.required'      => 'Please select start time',
         'end_time.required'        => 'Please select end time',
         'end_time.after'           => 'End time must be after start time',
         'items.required'           => 'Please add at least one material',
-        'items.*.name.required'    => 'Please enter the material name',
-        'items.*.quantity.required'=> 'Please enter quantity',
-        'items.*.quantity.min'     => 'Quantity must be at least 1',
+        'items.*.resource_id.required' => 'Please select a material',
+        'items.*.resource_id.exists'   => 'Selected material is invalid.',
+        'items.*.quantity.required'    => 'Please enter quantity',
+        'items.*.quantity.min'         => 'Quantity must be at least 1',
     ];
+
+    public function mount()
+    {
+        // ✅ FIX: load real facility + resource options, same source as the
+        // create form, so editing can't drift from actual inventory.
+        $facilityType = ResourceType::where('type_name', 'Facility')->first();
+
+        $this->facilityOptions = $facilityType
+            ? Resource::where('resource_type_id', $facilityType->id)
+                ->where('status', 'available')
+                ->orderBy('resource_name')
+                ->pluck('resource_name')
+                ->toArray()
+            : [];
+
+        $this->availableResources = Resource::where('status', 'available')
+            ->where('quantity_available', '>', 0)
+            ->where(function ($q) {
+                $q->whereHas('resourceType', function ($q2) {
+                    $q2->where('type_name', '!=', 'Facility')
+                       ->where('type_name', 'not like', '%facility%');
+                })->orWhereDoesntHave('resourceType');
+            })
+            ->orderBy('resource_name')
+            ->get();
+    }
 
     #[Computed]
     public function requests()
@@ -102,10 +133,16 @@ new #[Layout('layouts.coordinator')] class extends Component
             $this->end_time      = $item?->end_time ?? '';
         } else {
             $this->request_date = $request->items->first()?->request_date ?? '';
+
+            // ✅ FIX: preserve resource_id instead of discarding it
             $this->items = $request->items->map(fn($i) => [
-                'name'     => $i->item_name,
-                'quantity' => $i->quantity,
+                'resource_id' => $i->resource_id,
+                'quantity'    => $i->quantity,
             ])->toArray();
+
+            if (empty($this->items)) {
+                $this->items = [['resource_id' => '', 'quantity' => 1]];
+            }
         }
 
         $this->showEditModal = true;
@@ -117,7 +154,7 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->editingId       = null;
         $this->request_type_id = '';
         $this->reset(['purpose', 'request_date', 'facility_name', 'start_time', 'end_time']);
-        $this->items = [['name' => '', 'quantity' => 1]];
+        $this->items = [['resource_id' => '', 'quantity' => 1]];
     }
 
     public function saveEdit()
@@ -132,9 +169,31 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
+        // ✅ FIX: for facility edits, ensure it's still a real, valid facility
+        if ($this->request_type_id == 1 && !in_array($this->facility_name, $this->facilityOptions)) {
+            $this->addError('facility_name', 'Please select a valid facility.');
+            return;
+        }
+
+        // ✅ FIX: for material edits, revalidate stock exactly like the create flow
+        if ($this->request_type_id == 2) {
+            foreach ($this->items as $i => $item) {
+                $resource = Resource::find($item['resource_id']);
+
+                if (!$resource) {
+                    $this->addError("items.$i.resource_id", 'This material is no longer available.');
+                    return;
+                }
+
+                if ((int) $item['quantity'] > $resource->quantity_available) {
+                    $this->addError("items.$i.quantity", "Only {$resource->quantity_available} of {$resource->resource_name} available.");
+                    return;
+                }
+            }
+        }
+
         $request->update(['purpose' => $this->purpose]);
 
-        // Delete old items and recreate
         $request->items()->delete();
 
         if ($this->request_type_id == 1) {
@@ -149,10 +208,13 @@ new #[Layout('layouts.coordinator')] class extends Component
             ]);
         } else {
             foreach ($this->items as $item) {
+                $resource = Resource::find($item['resource_id']);
+
+                // ✅ FIX: resource_id is preserved, not wiped to null
                 RequestItem::create([
                     'request_id'   => $request->id,
-                    'resource_id'  => null,
-                    'item_name'    => $item['name'],
+                    'resource_id'  => $resource->id,
+                    'item_name'    => $resource->resource_name,
                     'quantity'     => $item['quantity'],
                     'request_date' => $this->request_date,
                     'start_time'   => null,
@@ -167,7 +229,7 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function addItem()
     {
-        $this->items[] = ['name' => '', 'quantity' => 1];
+        $this->items[] = ['resource_id' => '', 'quantity' => 1];
     }
 
     public function removeItem(int $index)

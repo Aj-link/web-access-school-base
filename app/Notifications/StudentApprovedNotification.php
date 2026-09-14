@@ -11,6 +11,10 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public function __construct(
+        protected string $role = 'Student', // ✅ default keeps old calls working
+    ) {}
+
     public function via(object $notifiable): array
     {
         return ['mail'];
@@ -51,14 +55,14 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
                         </p>
 
                         <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#374151;">
-                            You are registered as a <strong>Student</strong> at Colegio De Sta. Ana de Victorias, under the
+                            You are registered as a <strong>{$this->role}</strong> at Colegio De Sta. Ana de Victorias, under the
                             <strong>Department of {$department}</strong>.
                         </p>
 
                         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 8px 0;">
                             <tr>
                                 <td style="background-color:#123524;border-radius:8px;">
-                                    <a href="{$notifiable->department ? url('/login') : url('/login')}"
+                                    <a href="{$this->buildLoginUrl()}"
                                        style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
                                         Log In to Your Account
                                     </a>
@@ -82,6 +86,11 @@ class StudentApprovedNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('CSAV Account Approved')
             ->view('mail.raw', ['html' => $html]);
+    }
+
+    protected function buildLoginUrl(): string
+    {
+        return url('/login');
     }
 
     public function toArray(object $notifiable): array

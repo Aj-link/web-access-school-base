@@ -39,48 +39,59 @@ new #[Layout('layouts.admin')] class extends Component
                 $this->search,
                 fn($q) =>
                 $q->where(
-                    fn($q) =>
-                    $q->where('name', 'like', '%' . $this->search . '%')
+                    fn($q2) =>
+                    $q2->where('name', 'like', '%' . $this->search . '%')
                         ->orWhere('email', 'like', '%' . $this->search . '%')
                 )
             )
             ->when(
                 $this->roleFilter !== 'all',
                 fn($q) =>
-                $q->whereHas('roles', fn($q) => $q->where('name', $this->roleFilter))
+                $q->whereHas('roles', fn($q2) => $q2->where('name', $this->roleFilter))
             )
             ->when(
                 $this->statusFilter !== 'all',
                 fn($q) =>
                 $q->where('status', $this->statusFilter)
             )
-            ->whereIn('status', ['pending', 'approved', 'rejected'])
             ->latest()
             ->paginate(10);
     }
 
     public function approve(int $userId)
     {
-        $user = User::findOrFail($userId);
+        $user = User::with('roles')->findOrFail($userId);
 
-        if ($user->status === 'pending') {
-            $user->update(['status' => 'approved']);
-
-            // Send notification for all roles
-            try {
-                $user->notify(new StudentApprovedNotification());
-            } catch (\Exception $e) {
-                // Mail may not be configured in dev
-            }
+        if ($user->status !== 'pending') {
+            session()->flash('error', 'This user has already been processed.');
+            return;
         }
+
+        $user->update(['status' => 'approved']);
+
+        // ✅ FIX: pass the user's actual role so the email says the right thing
+        $roleName = ucfirst($user->roles->first()?->name ?? 'user');
+
+        try {
+            $user->notify(new StudentApprovedNotification($roleName));
+        } catch (\Exception $e) {
+            // Mail may not be configured in dev — account is still approved either way
+        }
+
+        session()->flash('success', "{$user->name} has been approved.");
     }
 
     public function reject(int $userId)
     {
         $user = User::findOrFail($userId);
 
-        if ($user->status === 'pending') {
-            $user->update(['status' => 'rejected']);
+        if ($user->status !== 'pending') {
+            session()->flash('error', 'This user has already been processed.');
+            return;
         }
+
+        $user->update(['status' => 'rejected']);
+
+        session()->flash('success', "{$user->name} has been rejected.");
     }
 };

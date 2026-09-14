@@ -1,4 +1,4 @@
-<?php
+faculty<?php
 
 namespace App\Livewire\StudentFaculty;
 
