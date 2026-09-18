@@ -508,7 +508,7 @@
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
                                 <option value="Ream">Ream</option>
                                 <option value="Set">Set</option>
-                                <option value="Pack">Pack</option>
+                                <option value="Pcs">Pcs</option>
                             </select>
                             @error('unit')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
@@ -629,7 +629,7 @@
                                     class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
                                     <option value="Ream">Ream</option>
                                     <option value="Set">Set</option>
-                                    <option value="Pack">Pack</option>
+                                    <option value="Pcs">Pcs</option>
                                 </select>
                                 @error('edit_unit')
                                     <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
