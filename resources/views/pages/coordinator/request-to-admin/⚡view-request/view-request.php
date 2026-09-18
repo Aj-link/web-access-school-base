@@ -28,10 +28,10 @@ new #[Layout('layouts.coordinator')] class extends Component
     public $end_time = '';
     public array $facilityOptions = [];
 
-    // Material fields — now resource_id-based, matching the create form
-    public $items = [
-        ['resource_id' => '', 'quantity' => 1],
-    ];
+    // Material fields — resource_id-based, matching the create form.
+    // Used for BOTH: optional add-on to a Facility Reservation (type 1),
+    // AND as the main required list for a Material Request (type 2).
+    public $items = [];
     public $availableResources = [];
 
     protected function rules()
@@ -39,6 +39,8 @@ new #[Layout('layouts.coordinator')] class extends Component
         $rules = [
             'purpose'      => 'required|string|min:10|max:500',
             'request_date' => 'required|date|after_or_equal:today',
+            'items.*.resource_id' => 'nullable|exists:resources,id',
+            'items.*.quantity'    => 'nullable|integer|min:1',
         ];
 
         if ($this->request_type_id == 1) {
@@ -48,9 +50,9 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         if ($this->request_type_id == 2) {
-            $rules['items']                   = 'required|array|min:1';
-            $rules['items.*.resource_id']     = 'required|exists:resources,id';
-            $rules['items.*.quantity']        = 'required|integer|min:1';
+            $rules['items']               = 'required|array|min:1';
+            $rules['items.*.resource_id'] = 'required|exists:resources,id';
+            $rules['items.*.quantity']    = 'required|integer|min:1';
         }
 
         return $rules;
@@ -74,8 +76,6 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function mount()
     {
-        // ✅ FIX: load real facility + resource options, same source as the
-        // create form, so editing can't drift from actual inventory.
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         $this->facilityOptions = $facilityType
@@ -107,6 +107,106 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->get();
     }
 
+    // Returns the resource list for a given row, excluding resources
+    // already picked in OTHER rows (so the same material can't appear twice)
+    public function getResourcesForRow(int $currentIndex)
+    {
+        $selectedElsewhere = collect($this->items)
+            ->except($currentIndex)
+            ->pluck('resource_id')
+            ->filter(fn ($id) => $id !== '' && $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        return collect($this->availableResources)
+            ->reject(fn ($resource) => in_array($resource->id, $selectedElsewhere, true))
+            ->values();
+    }
+
+    // Live guard — if a resource is picked that's already used in
+    // another row, reset it and show an error
+    public function updatedItems($value, $key)
+    {
+        if (! str_ends_with($key, '.resource_id') || $value === '' || $value === null) {
+            return;
+        }
+
+        $index = (int) explode('.', $key)[0];
+
+        $duplicateExists = collect($this->items)
+            ->except($index)
+            ->pluck('resource_id')
+            ->filter(fn ($id) => $id !== '' && $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->contains((int) $value);
+
+        if ($duplicateExists) {
+            $this->items[$index]['resource_id'] = '';
+            $this->addError("items.$index.resource_id", 'This material is already added in another row.');
+        }
+    }
+
+    // Live re-check every time facility/date/time changes, same as Create
+    public function updatedFacilityName()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedStartTime()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedEndTime()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedRequestDate()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    protected function validateFacilityConflictLive(): void
+    {
+        $this->resetErrorBag('facility_name');
+
+        if ($this->request_type_id == 1 && $conflictMessage = $this->facilityConflict()) {
+            $this->addError('facility_name', $conflictMessage);
+        }
+    }
+
+    // Checks whether the chosen facility/date/time overlaps an
+    // ALREADY APPROVED reservation for the same facility — excluding
+    // this request's own current facility item, since editing your
+    // own booking shouldn't conflict with itself.
+    protected function facilityConflict(): ?string
+    {
+        if (!$this->facility_name || !$this->request_date || !$this->start_time || !$this->end_time) {
+            return null;
+        }
+
+        $conflict = RequestItem::whereNull('resource_id')
+            ->where('item_name', $this->facility_name)
+            ->where('request_date', $this->request_date)
+            ->where('request_id', '!=', $this->editingId)
+            ->whereHas('request', fn ($q) => $q->where('status', 'approved'))
+            ->where('start_time', '<', $this->end_time)
+            ->where('end_time', '>', $this->start_time)
+            ->first();
+
+        if ($conflict) {
+            $from = \Carbon\Carbon::parse($conflict->start_time)->format('h:i A');
+            $to   = \Carbon\Carbon::parse($conflict->end_time)->format('h:i A');
+
+            return "Sorry, {$this->facility_name} is already booked on "
+                . \Carbon\Carbon::parse($this->request_date)->format('M d, Y')
+                . " from {$from} to {$to}. Please choose a different time or date.";
+        }
+
+        return null;
+    }
+
     public function openEdit(int $id)
     {
         $request = ResourceRequest::with('items')->findOrFail($id);
@@ -126,15 +226,25 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->purpose         = $request->purpose;
 
         if ($request->request_type_id == 1) {
-            $item                = $request->items->first();
-            $this->facility_name = $item?->item_name ?? '';
-            $this->request_date  = $item?->request_date ?? '';
-            $this->start_time    = $item?->start_time ?? '';
-            $this->end_time      = $item?->end_time ?? '';
+            $facilityItem = $request->items->whereNull('resource_id')->first();
+
+            $this->facility_name = $facilityItem?->item_name ?? '';
+            $this->request_date  = $facilityItem?->request_date ?? '';
+            $this->start_time    = $facilityItem?->start_time ?? '';
+            $this->end_time      = $facilityItem?->end_time ?? '';
+
+            // NEW: load any materials already attached to this facility reservation
+            $this->items = $request->items
+                ->whereNotNull('resource_id')
+                ->map(fn ($i) => [
+                    'resource_id' => $i->resource_id,
+                    'quantity'    => $i->quantity,
+                ])
+                ->values()
+                ->toArray();
         } else {
             $this->request_date = $request->items->first()?->request_date ?? '';
 
-            // ✅ FIX: preserve resource_id instead of discarding it
             $this->items = $request->items->map(fn($i) => [
                 'resource_id' => $i->resource_id,
                 'quantity'    => $i->quantity,
@@ -153,8 +263,9 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->showEditModal   = false;
         $this->editingId       = null;
         $this->request_type_id = '';
+        $this->resetErrorBag();
         $this->reset(['purpose', 'request_date', 'facility_name', 'start_time', 'end_time']);
-        $this->items = [['resource_id' => '', 'quantity' => 1]];
+        $this->items = [];
     }
 
     public function saveEdit()
@@ -169,26 +280,50 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        // ✅ FIX: for facility edits, ensure it's still a real, valid facility
         if ($this->request_type_id == 1 && !in_array($this->facility_name, $this->facilityOptions)) {
             $this->addError('facility_name', 'Please select a valid facility.');
             return;
         }
 
-        // ✅ FIX: for material edits, revalidate stock exactly like the create flow
-        if ($this->request_type_id == 2) {
-            foreach ($this->items as $i => $item) {
-                $resource = Resource::find($item['resource_id']);
+        if ($this->request_type_id == 1) {
+            if ($conflictMessage = $this->facilityConflict()) {
+                $this->addError('facility_name', $conflictMessage);
+                return;
+            }
+        }
 
-                if (!$resource) {
-                    $this->addError("items.$i.resource_id", 'This material is no longer available.');
-                    return;
-                }
+        // Materials to actually save — applies to BOTH facility (optional)
+        // and material-request (required) rows, mirroring the Create form
+        $selectedItems = collect($this->items)
+            ->filter(fn ($i) => !empty($i['resource_id']))
+            ->values();
 
-                if ((int) $item['quantity'] > $resource->quantity_available) {
-                    $this->addError("items.$i.quantity", "Only {$resource->quantity_available} of {$resource->resource_name} available.");
-                    return;
+        // Duplicate guard — applies whenever more than one material row is picked
+        $duplicateIds = $selectedItems
+            ->pluck('resource_id')
+            ->map(fn ($id) => (int) $id)
+            ->duplicates();
+
+        if ($duplicateIds->isNotEmpty()) {
+            foreach ($selectedItems as $i => $item) {
+                if ($duplicateIds->contains((int) $item['resource_id'])) {
+                    $this->addError("items.$i.resource_id", 'This material is selected more than once. Please combine the quantity into a single row instead.');
                 }
+            }
+            return;
+        }
+
+        foreach ($selectedItems as $i => $item) {
+            $resource = Resource::find($item['resource_id']);
+
+            if (!$resource) {
+                $this->addError("items.$i.resource_id", 'This material is no longer available.');
+                return;
+            }
+
+            if ((int) $item['quantity'] > $resource->quantity_available) {
+                $this->addError("items.$i.quantity", "Only {$resource->quantity_available} of {$resource->resource_name} available.");
+                return;
             }
         }
 
@@ -206,21 +341,20 @@ new #[Layout('layouts.coordinator')] class extends Component
                 'start_time'   => $this->start_time,
                 'end_time'     => $this->end_time,
             ]);
-        } else {
-            foreach ($this->items as $item) {
-                $resource = Resource::find($item['resource_id']);
+        }
 
-                // ✅ FIX: resource_id is preserved, not wiped to null
-                RequestItem::create([
-                    'request_id'   => $request->id,
-                    'resource_id'  => $resource->id,
-                    'item_name'    => $resource->resource_name,
-                    'quantity'     => $item['quantity'],
-                    'request_date' => $this->request_date,
-                    'start_time'   => null,
-                    'end_time'     => null,
-                ]);
-            }
+        foreach ($selectedItems as $item) {
+            $resource = Resource::find($item['resource_id']);
+
+            RequestItem::create([
+                'request_id'   => $request->id,
+                'resource_id'  => $resource->id,
+                'item_name'    => $resource->resource_name,
+                'quantity'     => $item['quantity'],
+                'request_date' => $this->request_date,
+                'start_time'   => null,
+                'end_time'     => null,
+            ]);
         }
 
         $this->closeEdit();

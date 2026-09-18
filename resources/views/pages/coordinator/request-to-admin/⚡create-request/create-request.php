@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Livewire\ProgramHead\RequestToAdmin;
-
 use App\Models\Request as ResourceRequest;
 use App\Models\RequestItem;
 use App\Models\RequestType;
@@ -87,7 +85,7 @@ new #[Layout('layouts.coordinator')] class extends Component
             return "{$packs} Pack" . ($packs === 1 ? '' : 's') . " + {$remainder} pcs";
         }
 
-        return "{$qtyInPcs} Pcs";
+        return "{$qtyInPcs} ". ($unit ?: 'Ream');
     }
 
     public function mount()
@@ -188,6 +186,22 @@ new #[Layout('layouts.coordinator')] class extends Component
         return null;
     }
 
+    // Returns the resource list for a given row, excluding resources
+    // already picked in OTHER rows (so the same material can't appear twice)
+    public function getResourcesForRow(int $currentIndex)
+    {
+        $selectedElsewhere = collect($this->materials)
+            ->except($currentIndex)
+            ->pluck('resource_id')
+            ->filter(fn ($id) => $id !== '' && $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->toArray();
+
+        return collect($this->availableResources)
+            ->reject(fn ($resource) => in_array($resource->id, $selectedElsewhere, true))
+            ->values();
+    }
+
     public function addMaterial()
     {
         $this->materials[] = ['resource_id' => '', 'quantity' => 1];
@@ -199,11 +213,105 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->materials = array_values($this->materials);
     }
 
+    // If the user somehow ends up picking a duplicate (e.g. two dropdowns
+    // still open on stale state), block it immediately and reset that field
+    public function updatedMaterials($value, $key)
+    {
+        if (! str_ends_with($key, '.resource_id') || $value === '' || $value === null) {
+            return;
+        }
+
+        $index = (int) explode('.', $key)[0];
+
+        $duplicateExists = collect($this->materials)
+            ->except($index)
+            ->pluck('resource_id')
+            ->filter(fn ($id) => $id !== '' && $id !== null)
+            ->map(fn ($id) => (int) $id)
+            ->contains((int) $value);
+
+        if ($duplicateExists) {
+            $this->materials[$index]['resource_id'] = '';
+            $this->addError("materials.$index.resource_id", 'This material is already added in another row.');
+        }
+    }
+
     public function updatedRequestTypeId()
     {
         $this->reset(['facility_name', 'start_time', 'end_time', 'materials']);
         $this->start_time = '09:00';
         $this->end_time   = '10:00';
+    }
+
+    // ✅ NEW: live re-check every time facility/date/time changes
+    public function updatedFacilityName()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedStartTime()
+    {
+        $this->validateTimeRangeLive();
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedEndTime()
+    {
+        $this->validateTimeRangeLive();
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedRequestDate()
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    protected function validateTimeRangeLive(): void
+{
+    $this->resetErrorBag('end_time');
+
+    if ($this->request_type_id == 1 && $this->start_time && $this->end_time) {
+        if ($this->end_time <= $this->start_time) {
+            $this->addError('end_time', 'End time must be after start time.');
+        }
+    }
+}
+
+    protected function validateFacilityConflictLive(): void
+    {
+        $this->resetErrorBag('facility_name');
+
+        if ($this->request_type_id == 1 && $conflictMessage = $this->facilityConflict()) {
+            $this->addError('facility_name', $conflictMessage);
+        }
+    }
+
+    // ✅ NEW: checks whether the chosen facility/date/time overlaps an
+    // ALREADY APPROVED reservation for the same facility.
+    protected function facilityConflict(): ?string
+    {
+        if (!$this->facility_name || !$this->request_date || !$this->start_time || !$this->end_time) {
+            return null;
+        }
+
+        $conflict = RequestItem::whereNull('resource_id')
+            ->where('item_name', $this->facility_name)
+            ->where('request_date', $this->request_date)
+            ->whereHas('request', fn ($q) => $q->where('status', 'approved'))
+            ->where('start_time', '<', $this->end_time)
+            ->where('end_time', '>', $this->start_time)
+            ->first();
+
+        if ($conflict) {
+            $from = \Carbon\Carbon::parse($conflict->start_time)->format('h:i A');
+            $to   = \Carbon\Carbon::parse($conflict->end_time)->format('h:i A');
+
+            return "Sorry, {$this->facility_name} is already booked on "
+                . \Carbon\Carbon::parse($this->request_date)->format('M d, Y')
+                . " from {$from} to {$to}. Please choose a different time or date.";
+        }
+
+        return null;
     }
 
     public function submit()
@@ -217,9 +325,32 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
+        // ✅ NEW: server-side block — can't rely on live check alone
+        if ($this->request_type_id == 1) {
+            if ($conflictMessage = $this->facilityConflict()) {
+                $this->addError('facility_name', $conflictMessage);
+                return;
+            }
+        }
+
         $selectedMaterials = collect($this->materials)
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
+
+        // Server-side duplicate guard (in case of stale/tampered state)
+        $duplicateIds = $selectedMaterials
+            ->pluck('resource_id')
+            ->map(fn ($id) => (int) $id)
+            ->duplicates();
+
+        if ($duplicateIds->isNotEmpty()) {
+            foreach ($selectedMaterials as $i => $material) {
+                if ($duplicateIds->contains((int) $material['resource_id'])) {
+                    $this->addError("materials.$i.resource_id", 'This material is selected more than once. Please combine the quantity into a single row instead.');
+                }
+            }
+            return;
+        }
 
         foreach ($selectedMaterials as $i => $material) {
             $resource = Resource::find($material['resource_id']);
@@ -278,7 +409,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         $typeName = $this->request_type_id == 1 ? 'Facility Reservation' : 'Material Request';
         $admins   = User::role('admin')->get();
 
-        // ✅ Build a details string for the email body
         if ($this->request_type_id == 1) {
             $materialsSummary = $selectedMaterials->isNotEmpty()
                 ? ' Materials: ' . $selectedMaterials->map(function ($m) {
@@ -298,7 +428,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         foreach ($admins as $admin) {
-            // In-app bell notification (unchanged)
             Notification::create([
                 'user_id' => $admin->id,
                 'message' => $user->name . ' (Program Head) submitted a new ' . $typeName . '.',
@@ -306,7 +435,6 @@ new #[Layout('layouts.coordinator')] class extends Component
                 'status'  => 'pending',
             ]);
 
-            // ✅ FIX: the actual email that was missing
             $admin->notify(new ProgramHeadRequestNotification(
                 $user->name,
                 $typeName,

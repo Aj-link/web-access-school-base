@@ -12,8 +12,11 @@
                             <p class="text-sm text-gray-600 dark:text-neutral-400">Track the status of your own requests sent to admin</p>
                         </div>
                         <a href="{{ route('coordinator.request-to-admin.create-request') }}"
-                            class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                            + New Request
+                            class="inline-flex items-center gap-x-1.5 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            <svg class="size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                            </svg>
+                            New Request
                         </a>
                     </div>
 
@@ -35,18 +38,13 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">#</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Items</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Purpose</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Admin Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">Status</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                             @forelse($this->requests as $index => $request)
-                                @php
-                                    $isMaterial = $request->request_type_id == 2;
-                                @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition align-top">
 
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $index + 1 }}</td>
@@ -60,49 +58,17 @@
                                         </span>
                                     </td>
 
-                                    {{-- Items --}}
-                                    <td class="px-6 py-4">
-                                        <ul class="text-xs space-y-1.5 {{ $isMaterial ? 'text-red-600' : 'text-gray-600 dark:text-neutral-400' }}">
-                                            @foreach($request->items as $item)
-                                                <li class="flex items-center gap-1.5 flex-wrap">
-                                                    @if($isMaterial)
-                                                        <span class="w-1 h-1 rounded-full bg-red-500 inline-block"></span>
-                                                    @else
-                                                        <span>•</span>
-                                                    @endif
-                                                    <span class="font-medium">{{ $item->item_name ?? 'N/A' }}</span>
-                                                    @if($isMaterial)
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold text-[11px]">
-                                                            Qty: {{ $item->quantity }}
-                                                        </span>
-                                                    @endif
-                                                    @if($item->request_date)
-                                                        <span class="text-gray-400">({{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }})</span>
-                                                    @endif
-                                                    @if($item->start_time && $item->end_time)
-                                                        <span class="text-gray-400">{{ \Carbon\Carbon::parse($item->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($item->end_time)->format('h:i A') }}</span>
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </td>
-
-                                    {{-- Purpose --}}
-                                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-neutral-400">
-                                        {{ Str::limit($request->purpose, 40) }}
-                                    </td>
-
                                     {{-- Date --}}
                                     <td class="px-6 py-4 text-sm text-gray-400">
                                         {{ $request->created_at->format('M d, Y') }}
                                     </td>
 
-                                    {{-- Admin Status --}}
+                                    {{-- Status --}}
                                     <td class="px-6 py-4">
                                         @if($request->status === 'pending')
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700"> Pending</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Pending</span>
                                         @elseif($request->status === 'admin_review')
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700"> Admin Reviewing</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">Admin Reviewing</span>
                                         @elseif($request->status === 'coordinator_review')
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">Admin Accepted</span>
                                         @elseif($request->status === 'approved')
@@ -113,34 +79,49 @@
                                     </td>
 
                                     {{-- Actions --}}
-<td class="px-6 py-4 text-right space-x-2">
-    @if($request->status === 'pending')
-        <button wire:click="openEdit({{ $request->id }})"
-            class="px-3 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            Edit
-        </button>
-        <button wire:click="delete({{ $request->id }})"
-            wire:confirm="Are you sure you want to delete this request?"
-            class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-            Delete
-        </button>
-    @elseif($request->status === 'approved')
-        <a href="{{ route('printable.receipt', ['request_id' => $request->id]) }}" target="_blank"
-            class="inline-flex items-center gap-x-1.5 px-3 py-1 text-xs bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition">
-            <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
-            </svg>
-            Print
-        </a>
-    @else
-        <span class="text-xs text-gray-400">No actions</span>
-    @endif
-</td>
+                                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-1.5">
+                                            <a href="{{ route('coordinator.request-to-admin.view-admin', $request->id) }}"
+                                                class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-transparent bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600 transition">
+                                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                </svg>
+                                                View
+                                            </a>
+
+                                            @if($request->status === 'pending')
+                                                <button wire:click="openEdit({{ $request->id }})"
+                                                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800 transition">
+                                                    <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                                    </svg>
+                                                    Edit
+                                                </button>
+                                                <button wire:click="delete({{ $request->id }})"
+                                                    wire:confirm="Are you sure you want to delete this request?"
+                                                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-transparent bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-400 dark:hover:bg-red-800 transition">
+                                                    <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            @elseif($request->status === 'approved')
+                                                <a href="{{ route('printable.receipt', ['request_id' => $request->id]) }}" target="_blank"
+                                                    class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-transparent bg-gray-700 text-white hover:bg-gray-800 transition">
+                                                    <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
+                                                    </svg>
+                                                    Print
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
 
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                    <td colspan="5" class="px-6 py-10 text-center text-gray-500">
                                         You have not submitted any requests to admin yet.
                                     </td>
                                 </tr>
@@ -191,7 +172,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                     Date <span class="text-red-500">*</span>
                 </label>
-                <input type="date" wire:model="request_date"
+                <input type="date" wire:model.live="request_date"
                     min="{{ date('Y-m-d') }}"
                     class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
                 @error('request_date')
@@ -199,95 +180,147 @@
                 @enderror
             </div>
 
-           {{-- Facility Fields --}}
-@if($request_type_id == 1)
-<div class="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
-    <p class="text-sm font-semibold text-green-700 dark:text-green-300">Facility Details</p>
+            {{-- Facility Fields + optional attached Materials --}}
+            @if($request_type_id == 1)
+            <div class="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                <p class="text-sm font-semibold text-green-700 dark:text-green-300">Facility Details</p>
 
-    <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-            Facility Name <span class="text-red-500">*</span>
-        </label>
-        <select wire:model="facility_name"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
-            <option value="">Select a facility</option>
-            @foreach($facilityOptions as $facility)
-                <option value="{{ $facility }}">{{ $facility }}</option>
-            @endforeach
-        </select>
-        @error('facility_name')
-            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-        @enderror
-    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                        Facility Name <span class="text-red-500">*</span>
+                    </label>
+                    <select wire:model.live="facility_name"
+                        class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
+                        <option value="">Select a facility</option>
+                        @foreach($facilityOptions as $facility)
+                            <option value="{{ $facility }}">{{ $facility }}</option>
+                        @endforeach
+                    </select>
+                    @error('facility_name')
+                        <p class="text-xs text-red-500 mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
 
-    <div class="grid grid-cols-2 gap-4">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                Start Time <span class="text-red-500">*</span>
-            </label>
-            <input type="time" wire:model="start_time"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
-            @error('start_time')
-                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                End Time <span class="text-red-500">*</span>
-            </label>
-            <input type="time" wire:model="end_time"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
-            @error('end_time')
-                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-    </div>
-</div>
-@endif
-
-{{-- Material Fields --}}
-@if($request_type_id == 2)
-<div class="space-y-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700">
-    <p class="text-sm font-semibold text-red-700 dark:text-red-300">Materials Needed</p>
-
-    <div class="space-y-3">
-        @foreach($items as $index => $item)
-            <div class="flex gap-3 items-center">
-                <select wire:model="items.{{ $index }}.resource_id"
-                    class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
-                    <option value="">Select material</option>
-                    @foreach($availableResources as $resource)
-                        <option value="{{ $resource->id }}">
-                            {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
-                        </option>
-                    @endforeach
-                </select>
-                <input type="number"
-                    wire:model="items.{{ $index }}.quantity"
-                    placeholder="Qty" min="1"
-                    class="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
-                @if(count($items) > 1)
-                    <button type="button" wire:click="removeItem({{ $index }})"
-                        class="text-red-500 hover:text-red-700 font-bold text-lg px-2">
-                        &times;
-                    </button>
-                @endif
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                            Start Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="time" wire:model.live="start_time"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
+                        @error('start_time')
+                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                            End Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="time" wire:model.live="end_time"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
+                        @error('end_time')
+                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
             </div>
-            @error("items.{$index}.resource_id")
-                <p class="text-xs text-red-500">{{ $message }}</p>
-            @enderror
-            @error("items.{$index}.quantity")
-                <p class="text-xs text-red-500">{{ $message }}</p>
-            @enderror
-        @endforeach
-    </div>
 
-    <button type="button" wire:click="addItem"
-        class="mt-2 px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-        + Add Item
-    </button>
-</div>
-@endif
+            {{-- Materials — OPTIONAL add-on to a facility reservation, same as Create --}}
+            <div class="border-t pt-5">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300">
+                        Materials Needed <span class="text-xs font-normal text-gray-400">(optional — e.g. bench for court)</span>
+                    </label>
+                    <button type="button"
+                        wire:click="addItem"
+                        class="text-xs px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition font-medium">
+                        + Add Material
+                    </button>
+                </div>
+
+                @if(empty($items))
+                    <p class="text-xs text-gray-400 italic">No materials added.</p>
+                @endif
+
+                <div class="space-y-3">
+                    @foreach($items as $index => $item)
+                        @php
+                            $rowOptions = $this->getResourcesForRow($index);
+                        @endphp
+                        <div wire:key="fac-item-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">
+                            <div class="flex-1">
+                                <select wire:model.live="items.{{ $index }}.resource_id"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                    <option value="">Select material</option>
+                                    @foreach($rowOptions as $resource)
+                                        <option value="{{ $resource->id }}">
+                                            {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('items.' . $index . '.resource_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="w-24">
+                                <input type="number" min="1"
+                                    wire:model="items.{{ $index }}.quantity"
+                                    placeholder="Qty"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
+                                @error('items.' . $index . '.quantity') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <button type="button" wire:click="removeItem({{ $index }})"
+                                class="mt-2 text-gray-400 hover:text-red-600 transition" title="Remove">✕</button>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Material Request (standalone type) --}}
+            @if($request_type_id == 2)
+            <div class="space-y-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700">
+                <p class="text-sm font-semibold text-red-700 dark:text-red-300">Materials Needed</p>
+
+                <div class="space-y-3">
+                    @foreach($items as $index => $item)
+                        @php
+                            $rowOptions = $this->getResourcesForRow($index);
+                        @endphp
+                        <div wire:key="mat-item-{{ $index }}" class="flex gap-3 items-center">
+                            <select wire:model.live="items.{{ $index }}.resource_id"
+                                class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
+                                <option value="">Select material</option>
+                                @foreach($rowOptions as $resource)
+                                    <option value="{{ $resource->id }}">
+                                        {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <input type="number"
+                                wire:model="items.{{ $index }}.quantity"
+                                placeholder="Qty" min="1"
+                                class="w-20 px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 text-sm">
+                            @if(count($items) > 1)
+                                <button type="button" wire:click="removeItem({{ $index }})"
+                                    class="text-red-500 hover:text-red-700 font-bold text-lg px-2">
+                                    &times;
+                                </button>
+                            @endif
+                        </div>
+                        @error("items.{$index}.resource_id")
+                            <p class="text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                        @error("items.{$index}.quantity")
+                            <p class="text-xs text-red-500">{{ $message }}</p>
+                        @enderror
+                    @endforeach
+                </div>
+
+                <button type="button" wire:click="addItem"
+                    class="mt-2 px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    + Add Item
+                </button>
+            </div>
+            @endif
 
         </div>
 
@@ -298,8 +331,11 @@
                 Cancel
             </button>
             <button wire:click="saveEdit"
+                wire:loading.attr="disabled"
+                wire:loading.class="opacity-50 cursor-not-allowed"
                 class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
-                Save Changes
+                <span wire:loading.remove wire:target="saveEdit">Save Changes</span>
+                <span wire:loading wire:target="saveEdit">Saving...</span>
             </button>
         </div>
 

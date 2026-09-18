@@ -99,6 +99,26 @@ new #[Layout('layouts.student-faculty')] class extends Component
             : collect();
     }
 
+    /**
+ * Materials available for a given row's dropdown: everything minus
+ * whatever's already picked in OTHER material rows (prevents the same
+ * resource being requested twice in one reservation). The row's own
+ * current selection is always kept.
+ */
+public function getMaterialOptionsForRow(int $currentIndex)
+{
+    $selectedElsewhere = collect($this->materials)
+        ->except($currentIndex)
+        ->pluck('resource_id')
+        ->filter()
+        ->map(fn ($id) => (int) $id)
+        ->all();
+
+    return collect($this->availableResources)
+        ->reject(fn ($resource) => in_array((int) $resource->id, $selectedElsewhere))
+        ->values();
+}
+
     public function addMaterial(): void
     {
         $this->materials[] = ['resource_id' => '', 'quantity' => 1];

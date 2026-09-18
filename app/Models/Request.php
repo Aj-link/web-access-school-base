@@ -46,4 +46,10 @@ class Request extends Model
 {
     return $this->belongsToMany(Schedule::class, 'request_schedule');
 }
+
+public function approvals(): HasMany
+{
+    return $this->hasMany(RequestApproval::class);
+}
+
 }

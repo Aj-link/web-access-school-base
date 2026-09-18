@@ -210,8 +210,6 @@
                                class="mt-1 rounded border-[#D8D4C8] text-[#1C6B45] focus:ring-[#1C6B45]">
                         <label class="text-sm text-gray-600 dark:text-neutral-300">
                             I agree to the
-                            <a href="/terms" class="text-[#B8862A] hover:text-[#966E22] font-medium">Terms of Service</a>
-                            and
                             <a href="/privacy" class="text-[#B8862A] hover:text-[#966E22] font-medium">Privacy Policy</a>
                         </label>
                     </div>

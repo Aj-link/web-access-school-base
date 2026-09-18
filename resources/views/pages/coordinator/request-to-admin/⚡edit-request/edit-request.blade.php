@@ -136,13 +136,14 @@
                                 $available = $this->getAvailableStock($material['resource_id'] ?? null, $material['id'] ?? null);
                                 $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
                                 $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null, $material['id'] ?? null);
+                                $rowOptions = $this->getResourcesForRow($index);
                             @endphp
                             <div wire:key="fac-material-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">
                                 <div class="flex-1">
                                     <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
+                                        @foreach($rowOptions as $resource)
                                             <option value="{{ $resource->id }}">
                                                 {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
                                             </option>
@@ -189,13 +190,14 @@
                                 $available = $this->getAvailableStock($material['resource_id'] ?? null, $material['id'] ?? null);
                                 $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
                                 $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null, $material['id'] ?? null);
+                                $rowOptions = $this->getResourcesForRow($index);
                             @endphp
                             <div wire:key="mat-material-{{ $index }}" class="flex items-start gap-2">
                                 <div class="flex-1">
                                     <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
+                                        @foreach($rowOptions as $resource)
                                             <option value="{{ $resource->id }}">
                                                 {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
                                             </option>

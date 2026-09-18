@@ -9,6 +9,13 @@
             </div>
         @endif
 
+        @if (session()->has('error'))
+            <div
+                class="p-4 bg-red-100 border border-red-200 text-red-800 rounded-xl text-sm font-medium dark:bg-red-800/30 dark:border-red-900 dark:text-red-500">
+                {{ session('error') }}
+            </div>
+        @endif
+
         {{-- Header --}}
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -227,10 +234,7 @@
                                                     {{ number_format($material->quantity_available) }}
                                                 </span>
                                                 <span class="text-xs text-gray-400 dark:text-neutral-500">
-                                                    {{ $material->unit ?? 'Pcs' }}
-                                                    @if (($material->unit ?? 'Pcs') === 'Pack' && $material->pieces_per_pack)
-                                                        ({{ $material->pieces_per_pack }}/pack)
-                                                    @endif
+                                                    {{ $material->unit ?? 'Ream' }}
                                                 </span>
                                                 @if ($material->quantity_available == 0)
                                                     <span
@@ -260,7 +264,7 @@
                                             @endif
                                         </td>
 
-                                        {{-- Status: now shows the REAL status, no supplier override --}}
+                                        {{-- Status --}}
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 class="py-1 px-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-full
@@ -289,6 +293,18 @@
                                                     </svg>
                                                     Add Stock
                                                 </button>
+
+                                                <button wire:click="openEditModal({{ $material->id }})"
+                                                    class="py-1.5 px-3 inline-flex items-center gap-x-1.5 text-xs font-medium rounded-lg border border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800">
+                                                    <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg"
+                                                        fill="none" stroke="currentColor" stroke-width="2"
+                                                        viewBox="0 0 24 24">
+                                                        <path d="M12 20h9" />
+                                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                                    </svg>
+                                                    Edit
+                                                </button>
+
                                                 <button wire:click="delete({{ $material->id }})"
                                                     wire:confirm="Delete this material? This cannot be undone."
                                                     class="py-1.5 px-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-lg border border-transparent text-red-500 hover:bg-red-100 dark:hover:bg-red-900 dark:text-red-400">
@@ -371,7 +387,7 @@
                                 @foreach ($this->allResources as $res)
                                     <option value="{{ $res->id }}"
                                         {{ $resource_id == $res->id ? 'selected' : '' }}>
-                                        {{ $res->resource_name }} ({{ $res->quantity_available }} {{ $res->unit ?? 'Pcs' }})
+                                        {{ $res->resource_name }} ({{ $res->quantity_available }} {{ $res->unit ?? 'Ream' }})
                                     </option>
                                 @endforeach
                             </select>
@@ -383,16 +399,7 @@
                         {{-- Quantity --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                @php
-                                    $selectedResource = $resource_id
-                                        ? $this->allResources->firstWhere('id', (int) $resource_id)
-                                        : null;
-                                @endphp
-                                Quantity to Add
-                                @if ($selectedResource && ($selectedResource->unit ?? 'Pcs') === 'Pack')
-                                    (in Packs, {{ $selectedResource->pieces_per_pack }} pcs each)
-                                @endif
-                                <span class="text-red-500">*</span>
+                                Quantity to Add <span class="text-red-500">*</span>
                             </label>
                             <input type="number" wire:model="quantity_added" min="1" autofocus
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
@@ -497,9 +504,10 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                                 Unit <span class="text-red-500">*</span>
                             </label>
-                            <select wire:model.live="unit"
+                            <select wire:model="unit"
                                 class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                <option value="Pcs">Pcs</option>
+                                <option value="Ream">Ream</option>
+                                <option value="Set">Set</option>
                                 <option value="Pack">Pack</option>
                             </select>
                             @error('unit')
@@ -507,42 +515,17 @@
                             @enderror
                         </div>
 
-                        {{-- Initial Quantity + (conditionally) Pcs per Pack --}}
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                    {{ $unit === 'Pack' ? 'Number of Packs' : 'Initial Quantity' }}
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <input type="number" wire:model="initial_quantity" min="0" placeholder="0"
-                                    class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                @error('initial_quantity')
-                                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            @if ($unit === 'Pack')
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                        Pcs per Pack <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="number" wire:model="pieces_per_pack" min="1" placeholder="e.g. 30"
-                                        class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                    @error('pieces_per_pack')
-                                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            @endif
+                        {{-- Initial Quantity --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                Initial Quantity <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" wire:model="initial_quantity" min="0" placeholder="0"
+                                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            @error('initial_quantity')
+                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
-
-                        @if ($unit === 'Pack' && $initial_quantity > 0 && $pieces_per_pack > 0)
-                            <p class="text-xs text-gray-500 dark:text-neutral-400 -mt-2">
-                                = {{ $initial_quantity }} pack(s) × {{ $pieces_per_pack }} pcs =
-                                <span class="font-semibold text-gray-700 dark:text-neutral-300">
-                                    {{ $initial_quantity * $pieces_per_pack }} total pcs
-                                </span>
-                            </p>
-                        @endif
 
                         {{-- Supplier --}}
                         <div>
@@ -569,6 +552,122 @@
                             class="py-2 px-4 text-sm font-medium rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700">
                             <span wire:loading.remove wire:target="addMaterial">Save Material</span>
                             <span wire:loading wire:target="addMaterial">Saving...</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Edit Material Modal --}}
+    @if ($showEditModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="fixed inset-0 bg-gray-900/50 dark:bg-neutral-900/80" wire:click="closeModal"></div>
+                <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg dark:bg-neutral-800 p-6">
+
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-neutral-200">Edit Material</h3>
+                        <button wire:click="closeModal"
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300">
+                            <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+
+                        {{-- Material Name --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                Material Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" wire:model="edit_resource_name"
+                                placeholder="e.g. Bond Paper A4"
+                                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            @error('edit_resource_name')
+                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Description --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                Description
+                            </label>
+                            <textarea wire:model="edit_description" rows="2"
+                                placeholder="Optional description..."
+                                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400"></textarea>
+                            @error('edit_description')
+                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Type --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                Type <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" wire:model="edit_type_name"
+                                placeholder="e.g. Paper Supplies"
+                                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            @error('edit_type_name')
+                                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Unit + Status --}}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                    Unit <span class="text-red-500">*</span>
+                                </label>
+                                <select wire:model="edit_unit"
+                                    class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                    <option value="Ream">Ream</option>
+                                    <option value="Set">Set</option>
+                                    <option value="Pack">Pack</option>
+                                </select>
+                                @error('edit_unit')
+                                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                    Status <span class="text-red-500">*</span>
+                                </label>
+                                <select wire:model="edit_status"
+                                    class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                    <option value="available">Available</option>
+                                    <option value="unavailable">Unavailable</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </select>
+                                @error('edit_status')
+                                    <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-gray-500 dark:text-neutral-400">
+                            Note: Quantity isn't edited here. Use <strong>Add Stock</strong> to adjust quantity.
+                        </p>
+
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button wire:click="closeModal"
+                            class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700">
+                            Cancel
+                        </button>
+                        <button wire:click="updateMaterial" wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="py-2 px-4 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700">
+                            <span wire:loading.remove wire:target="updateMaterial">Save Changes</span>
+                            <span wire:loading wire:target="updateMaterial">Saving...</span>
                         </button>
                     </div>
 

@@ -7,6 +7,9 @@ Route::livewire('/', 'auth::login')->name('login');
 Route::livewire('/register', 'auth::register')->name('register');
 Route::livewire('/waiting', 'auth::waiting')->name('waiting');
 
+//Privacy
+Route::livewire('/privacy', 'pages::privacy')->name('privacy');
+
 //printable
 Route::livewire('/printable', 'auth::print.print-receipt')->name('printable.receipt');
 
@@ -35,6 +38,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     //manage coordinator
     Route::livewire('/manage-coordinator', 'pages::admin.manage-coordinator')->name('admin.manage-coordinator');
+    Route::livewire('/view-coordinator-request/{id}', 'pages::admin.view-coordinator-request')->name('admin.view-request');
 
     //schedule
     Route::livewire('/schedule', 'pages::admin.schedule.view-schedule')->name('admin.schedule');
@@ -67,6 +71,7 @@ Route::middleware(['auth', 'program head', 'department'])->prefix('programHead')
     Route::livewire('/request-to-admin/view-request', 'pages::coordinator.request-to-admin.view-request')->name('coordinator.request-to-admin.view-request');
     Route::livewire('/request-to-admin/create', 'pages::coordinator.request-to-admin.create-request')->name('coordinator.request-to-admin.create-request');
     Route::livewire('/request-to-admin/{id}/edit', 'pages::coordinator.request-to-admin.edit-request')->name('coordinator.request-to-admin.edit-request');
+    Route::livewire('/request-to-admin/view-page/{id}', 'pages::coordinator.request-to-admin.view-single-button')->name('coordinator.request-to-admin.view-admin');
 
     //audit
     Route::livewire('/audit', 'pages::coordinator.audit.audit-log')->name('coordinator.audit');
