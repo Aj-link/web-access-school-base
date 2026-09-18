@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Livewire\Coordinator;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -28,24 +26,12 @@ new #[Layout('layouts.coordinator')] class extends Component
     /**
      * Format a raw pcs quantity according to the resource's unit.
      */
-    protected function formatQuantity(int $qtyInPcs, ?string $unit, ?int $piecesPerPack): string
+    protected function formatQuantity(int $qtyInPcs, ?string $unit): string
     {
-        if ($unit === 'Pack' && $piecesPerPack) {
-            $packs     = intdiv($qtyInPcs, $piecesPerPack);
-            $remainder = $qtyInPcs % $piecesPerPack;
 
-            if ($packs === 0) {
-                return "{$remainder} pcs";
-            }
+        $unit = trim($unit ?? '') ?: 'Ream';
 
-            if ($remainder === 0) {
-                return "{$packs} Pack" . ($packs === 1 ? '' : 's');
-            }
-
-            return "{$packs} Pack" . ($packs === 1 ? '' : 's') . " + {$remainder} pcs";
-        }
-
-        return "{$qtyInPcs} Pcs";
+        return "{$qtyInPcs} {$unit}";
     }
 
     /**
@@ -74,48 +60,53 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         return DB::table('resource_all_locations as ral')
             ->join('resources as r', 'r.id', '=', 'ral.resource_id')
+            ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
             ->where('ral.department_id', $departmentId)
             ->where('ral.allocated_quantity', '>', 0)
-            ->select('r.resource_name', 'ral.allocated_quantity', 'r.unit', 'r.pieces_per_pack')
+            ->where('rt.type_name', '!=', 'Facility')
+            ->select('r.resource_name', 'ral.allocated_quantity', 'r.unit')
             ->orderByDesc('ral.allocated_quantity')
             ->limit(6)
             ->get()
             ->map(function ($row) {
                 $row->formatted_quantity = $this->formatQuantity(
                     (int) $row->allocated_quantity,
-                    $row->unit,
-                    $row->pieces_per_pack
+                    $row->unit
                 );
                 return $row;
             });
     }
 
     #[Computed]
-    public function allocations()
-    {
-        $paginator = DB::table('resource_all_locations as ral')
-            ->join('resources as r', 'r.id', '=', 'ral.resource_id')
-            ->where('ral.department_id', Auth::user()->department_id)
-            ->select('ral.id', 'ral.resource_id', 'ral.allocated_quantity', 'r.resource_name', 'r.unit', 'r.pieces_per_pack')
-            ->orderByDesc('ral.updated_at')
-            ->paginate(10);
+public function allocations()
+{
+    $paginator = DB::table('resource_all_locations as ral')
+        ->join('resources as r', 'r.id', '=', 'ral.resource_id')
+        ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
+        ->where('ral.department_id', Auth::user()->department_id)
+        ->where('rt.type_name', '!=', 'Facility')
+        ->select('ral.id', 'ral.resource_id', 'ral.allocated_quantity', 'r.resource_name', 'r.unit')
+        ->orderByDesc('ral.updated_at')
+        ->paginate(10);
 
-        return $paginator->through(function ($row) {
-            $row->formatted_quantity = $this->formatQuantity(
-                (int) $row->allocated_quantity,
-                $row->unit,
-                $row->pieces_per_pack
-            );
-            return $row;
-        });
-    }
+    return $paginator->through(function ($row) {
+        $row->formatted_quantity = $this->formatQuantity(
+            (int) $row->allocated_quantity,
+            $row->unit
+        );
+        return $row;
+    });
+}
 
     #[Computed]
     public function totalAllocated()
     {
-        return DB::table('resource_all_locations')
-            ->where('department_id', Auth::user()->department_id)
-            ->sum('allocated_quantity');
+        return DB::table('resource_all_locations as ral')
+        ->join('resources as r', 'r.id', '=', 'ral.resource_id')
+        ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
+        ->where('ral.department_id', Auth::user()->department_id)
+        ->where('rt.type_name', '!=', 'Facility')
+        ->sum('ral.allocated_quantity');
     }
 
     // Pending MATERIAL line items (resource_id set) from this department.
@@ -142,7 +133,6 @@ new #[Layout('layouts.coordinator')] class extends Component
                 'ri.quantity as requested_quantity',
                 'u.name as requester_name',
                 'r.unit',
-                'r.pieces_per_pack'
             )
             ->get()
             ->map(function ($item) use ($allocatedByResource) {
@@ -152,12 +142,10 @@ new #[Layout('layouts.coordinator')] class extends Component
                 $item->requested_formatted = $this->formatQuantity(
                     (int) $item->requested_quantity,
                     $item->unit,
-                    $item->pieces_per_pack
                 );
                 $item->available_formatted = $this->formatQuantity(
                     (int) $item->available,
-                    $item->unit,
-                    $item->pieces_per_pack
+                    $item->unit
                 );
 
                 return $item;

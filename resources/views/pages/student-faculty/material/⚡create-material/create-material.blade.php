@@ -56,16 +56,18 @@
                                 $available = $this->getAvailableStock($item['resource_id'] ?? null);
                                 $breakdown = $this->getQuantityBreakdown($item['resource_id'] ?? null, $item['quantity'] ?? null);
                                 $warning   = $this->getStockWarning($item['resource_id'] ?? null, $item['quantity'] ?? null);
+                                $rowOptions = $this->getOptionsForRow($index);
                             @endphp
                             <div wire:key="item-{{ $index }}" class="p-3 sm:p-0 bg-gray-50 sm:bg-transparent dark:bg-neutral-700/40 sm:dark:bg-transparent rounded-lg sm:rounded-none border sm:border-0 border-gray-200 dark:border-neutral-700 flex flex-col sm:flex-row gap-3 sm:items-start relative">
                                 <div class="flex-1">
                                     <label class="block sm:hidden text-xs text-gray-500 dark:text-neutral-400 mb-1">Material</label>
                                     <select wire:model.live="items.{{ $index }}.resource_id"
+                                        wire:key="select-{{$index}}-{{count($rowOptions)}}"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
-                                            <option value="{{ $resource->resource_id }}">
-                                                {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
+                                        @foreach($rowOptions as $resource)
+                                            <option value="{{ $resource['resource_id'] }}">
+                                                {{ $resource['resource_name'] }} ({{ $resource['allocated_quantity']}} {{$resource['unit'] ?: 'Ream'}} available)
                                             </option>
                                         @endforeach
                                     </select>

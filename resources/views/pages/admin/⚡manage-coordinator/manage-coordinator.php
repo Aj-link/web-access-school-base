@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Livewire\Admin;
-
 use App\Models\Request as ResourceRequest;
 use App\Models\Resource;
 use App\Models\Notification;

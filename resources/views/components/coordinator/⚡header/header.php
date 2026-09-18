@@ -15,33 +15,43 @@ new class extends Component
     }
 
     public function loadNotifications(): void
-    {
-        if (! Auth::check()) return;
+{
+    if (! Auth::check()) return;
 
-        // ✅ Get latest 10 notifications FOR THIS COORDINATOR (from notifications table)
-        $latest = Notification::with('user')
-            ->where('user_id', Auth::id())      // 👈 notifications sent to this coordinator
-            ->latest()
-            ->take(10)
-            ->get();
+    $latest = Notification::with('user')
+        ->where('user_id', Auth::id())
+        ->latest()
+        ->take(10)
+        ->get();
 
-        // ✅ Count unread (pending) notifications
-        $this->unreadCount = Notification::where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->count();
+    $this->unreadCount = Notification::where('user_id', Auth::id())
+        ->where('status', 'pending')
+        ->count();
 
-        // ✅ Map to dropdown format
-        $this->notifications = $latest->map(fn($n) => [
-            'id'          => $n->id,
-            'type'        => $n->type === 'Gmail' ? 'System' : $n->type,
-            'is_facility' => str_contains($n->message, 'facility'), // simple heuristic
-            'requester'   => 'Admin',
-            'department'  => '—',
-            'purpose'     => $n->message,
-            'status'      => $n->status,
-            'time_ago'    => $n->created_at->diffForHumans(),
-        ])->toArray();
-    }
+    $this->notifications = $latest->map(function ($n) {
+        $message = strtolower($n->message);
+
+        // Derive the actual outcome from the message text,
+        // since `status` only tracks read/unread, not approve/reject.
+        $actionStatus = match (true) {
+            str_contains($message, 'rejected') => 'rejected',
+            str_contains($message, 'approved')  => 'approved',
+            default                              => 'info',
+        };
+
+        return [
+            'id'            => $n->id,
+            'type'          => $n->type === 'Gmail' ? 'System' : $n->type,
+            'is_facility'   => str_contains($message, 'facility'),
+            'requester'     => 'Admin',
+            'department'    => '—',
+            'purpose'       => $n->message,
+            'status'        => $n->status,        // pending (unread) / sent (read)
+            'action_status' => $actionStatus,      // approved / rejected / info
+            'time_ago'      => $n->created_at->diffForHumans(),
+        ];
+    })->toArray();
+}
 
     public function markAsRead(int $id): void
     {

@@ -21,6 +21,7 @@ new #[Layout('layouts.admin')] class extends Component
     public string $statusFilter = '';
     public bool $showModal      = false;
     public bool $showAddModal   = false;
+    public bool $showEditModal  = false;
 
     // Add Stock Form
     public int    $resource_id    = 0;
@@ -31,13 +32,20 @@ new #[Layout('layouts.admin')] class extends Component
     public string $remarks        = '';
 
     // Add Material Form
-    public string $resource_name        = '';
-    public string $description          = '';
-    public string $type_name            = '';
-    public int    $initial_quantity     = 0;
-    public string $unit                 = 'Pcs'; // Pcs | Pack
-    public int    $pieces_per_pack      = 0;      // only used when unit = Pack
-    public string $material_supplier    = '';
+    public string $resource_name     = '';
+    public string $description       = '';
+    public string $type_name         = '';
+    public int    $initial_quantity  = 0;
+    public string $unit              = 'Ream'; // Ream, Ream, Box, Bottle, Set...
+    public string $material_supplier = '';
+
+    // Edit Material Form
+    public int    $edit_id            = 0;
+    public string $edit_resource_name = '';
+    public string $edit_description   = '';
+    public string $edit_type_name     = '';
+    public string $edit_unit          = 'Ream';
+    public string $edit_status        = 'available';
 
     public function mount(): void
     {
@@ -49,22 +57,14 @@ new #[Layout('layouts.admin')] class extends Component
         $this->resetPage();
     }
 
-    // Reset pcs-per-pack when switching back to Pcs so stale data doesn't linger
-    public function updatedUnit(): void
-    {
-        if ($this->unit === 'Pcs') {
-            $this->pieces_per_pack = 0;
-        }
-    }
-
     protected function materialsBaseQuery()
-{
-    return Resource::where(function ($q) {
-        $q->whereHas('resourceType', function ($q2) {
-            $q2->whereNotIn('type_name', $this->excludedTypes);
-        })->orWhereDoesntHave('resourceType');
-    });
-}
+    {
+        return Resource::where(function ($q) {
+            $q->whereHas('resourceType', function ($q2) {
+                $q2->whereNotIn('type_name', $this->excludedTypes);
+            })->orWhereDoesntHave('resourceType');
+        });
+    }
 
     #[Computed]
     public function materials()
@@ -87,16 +87,16 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
-public function allResources()
-{
-    return Resource::where(function ($q) {
-            $q->whereHas('resourceType', function ($q2) {
-                $q2->whereNotIn('type_name', $this->excludedTypes);
-            })->orWhereDoesntHave('resourceType');
-        })
-        ->orderBy('resource_name')
-        ->get();
-}
+    public function allResources()
+    {
+        return Resource::where(function ($q) {
+                $q->whereHas('resourceType', function ($q2) {
+                    $q2->whereNotIn('type_name', $this->excludedTypes);
+                })->orWhereDoesntHave('resourceType');
+            })
+            ->orderBy('resource_name')
+            ->get();
+    }
 
     #[Computed]
     public function totalMaterials(): int
@@ -135,18 +135,38 @@ public function allResources()
         $this->showModal    = true;
     }
 
+    // Opens the Edit modal and pre-fills the form with the material's current data
+    public function openEditModal(int $id): void
+    {
+        $resource = Resource::with('resourceType')->findOrFail($id);
+
+        $this->edit_id            = $resource->id;
+        $this->edit_resource_name = $resource->resource_name;
+        $this->edit_description   = $resource->description;
+        $this->edit_type_name     = $resource->resourceType->type_name ?? '';
+        $this->edit_unit          = $resource->unit ?? 'Ream';
+        $this->edit_status        = $resource->status ?? 'available';
+
+        $this->showEditModal = true;
+    }
+
     public function closeModal(): void
     {
-        $this->showModal    = false;
-        $this->showAddModal = false;
+        $this->showModal      = false;
+        $this->showAddModal   = false;
+        $this->showEditModal  = false;
         $this->reset([
             'resource_id', 'quantity_added', 'supplier',
             'arrival_date', 'arrival_time', 'remarks',
             'resource_name', 'description', 'type_name', 'initial_quantity',
-            'unit', 'pieces_per_pack', 'material_supplier',
+            'unit', 'material_supplier',
+            'edit_id', 'edit_resource_name', 'edit_description', 'edit_type_name',
+            'edit_unit', 'edit_status',
         ]);
         $this->arrival_date = now()->format('Y-m-d');
-        $this->unit         = 'Pcs';
+        $this->unit         = 'Ream';
+        $this->edit_unit    = 'Ream';
+        $this->edit_status  = 'available';
     }
 
     public function addStock(): void
@@ -158,21 +178,13 @@ public function allResources()
         ]);
 
         $resource = Resource::with('resourceType')->findOrFail($this->resource_id);
-
-        // If the resource is tracked in Packs, treat quantity_added as PACKS added,
-        // and convert to pcs using its stored pieces_per_pack.
-        $addedInPcs = $this->quantity_added;
-        if ($resource->unit === 'Pack' && $resource->pieces_per_pack) {
-            $addedInPcs = $this->quantity_added * $resource->pieces_per_pack;
-        }
-
-        $before = $resource->quantity_available;
-        $after  = $before + $addedInPcs;
+        $before   = $resource->quantity_available;
+        $after    = $before + $this->quantity_added;
 
         Stock::create([
             'resource_id'     => $this->resource_id,
             'user_id'         => Auth::id(),
-            'quantity_added'  => $addedInPcs,
+            'quantity_added'  => $this->quantity_added,
             'quantity_before' => $before,
             'quantity_after'  => $after,
             'supplier'        => $this->supplier !== '' ? $this->supplier : ($resource->resourceType->type_name ?? 'Unspecified'),
@@ -182,64 +194,86 @@ public function allResources()
         ]);
 
         $resource->update(['quantity_available' => $after]);
-
         $this->closeModal();
         session()->flash('success', 'Stock added successfully.');
     }
 
     public function addMaterial(): void
-{
-    $this->validate([
-        'resource_name'     => 'required|string|max:255',
-        'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
-        'initial_quantity'  => 'required|integer|min:0',
-        'unit'              => 'required|in:Pcs,Pack',
-        'pieces_per_pack'   => 'exclude_unless:unit,Pack|required|integer|min:1',
-        'material_supplier' => 'nullable|string|max:255',
-    ]);
-
-    try {
-        $resourceType = ResourceType::firstOrCreate(
-            ['type_name' => $this->type_name]
-        );
-
-        $totalPcs = $this->unit === 'Pack'
-            ? $this->initial_quantity * $this->pieces_per_pack
-            : $this->initial_quantity;
-
-        $resource = Resource::create([
-            'resource_name'      => $this->resource_name,
-            'description'        => $this->description !== '' ? $this->description : $this->resource_name,
-            'resource_type_id'   => $resourceType->id,
-            'quantity_available' => $totalPcs,
-            'unit'               => $this->unit,
-            'pieces_per_pack'    => $this->unit === 'Pack' ? $this->pieces_per_pack : null,
-            'status'             => 'available',
+    {
+        $this->validate([
+            'resource_name'     => 'required|string|max:255',
+            'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
+            'initial_quantity'  => 'required|integer|min:0',
+            'unit'              => 'required|string|max:50',
+            'material_supplier' => 'nullable|string|max:255',
         ]);
 
-        if ($totalPcs > 0) {
-            Stock::create([
-                'resource_id'     => $resource->id,
-                'user_id'         => Auth::id(),
-                'quantity_added'  => $totalPcs,
-                'quantity_before' => 0,
-                'quantity_after'  => $totalPcs,
-                'supplier'        => $this->material_supplier !== '' ? $this->material_supplier : $resourceType->type_name,
-                'arrival_date'    => now()->format('Y-m-d'),
-                'remarks'         => $this->unit === 'Pack'
-                    ? "Initial stock ({$this->initial_quantity} pack(s) x {$this->pieces_per_pack} pcs)"
-                    : 'Initial stock',
+        try {
+            $resourceType = ResourceType::firstOrCreate(['type_name' => $this->type_name]);
+
+            $resource = Resource::create([
+                'resource_name'      => $this->resource_name,
+                'description'        => $this->description !== '' ? $this->description : $this->resource_name,
+                'resource_type_id'   => $resourceType->id,
+                'quantity_available' => $this->initial_quantity,
+                'unit'                => $this->unit,
+                'status'              => 'available',
             ]);
+
+            if ($this->initial_quantity > 0) {
+                Stock::create([
+                    'resource_id'     => $resource->id,
+                    'user_id'         => Auth::id(),
+                    'quantity_added'  => $this->initial_quantity,
+                    'quantity_before' => 0,
+                    'quantity_after'  => $this->initial_quantity,
+                    'supplier'        => $this->material_supplier !== '' ? $this->material_supplier : $resourceType->type_name,
+                    'arrival_date'    => now()->format('Y-m-d'),
+                    'remarks'         => 'Initial stock',
+                ]);
+            }
+
+            $this->closeModal();
+            session()->flash('success', 'Material added successfully.');
+
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', 'Could not add material: ' . $e->getMessage());
         }
-
-        $this->closeModal();
-        session()->flash('success', 'Material added successfully.');
-
-    } catch (\Throwable $e) {
-        report($e); // logs to storage/logs/laravel.log
-        session()->flash('error', 'Could not add material: ' . $e->getMessage());
     }
-}
+
+    // Updates the material's details (name, description, type, unit, status)
+    // Does NOT touch quantity_available — use "Add Stock" for that.
+    public function updateMaterial(): void
+    {
+        $this->validate([
+            'edit_resource_name' => 'required|string|max:255',
+            'edit_description'   => 'nullable|string',
+            'edit_type_name'     => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
+            'edit_unit'          => 'required|string|max:50',
+            'edit_status'        => 'required|in:available,unavailable,maintenance',
+        ]);
+
+        try {
+            $resource     = Resource::findOrFail($this->edit_id);
+            $resourceType = ResourceType::firstOrCreate(['type_name' => $this->edit_type_name]);
+
+            $resource->update([
+                'resource_name'    => $this->edit_resource_name,
+                'description'      => $this->edit_description !== '' ? $this->edit_description : $this->edit_resource_name,
+                'resource_type_id' => $resourceType->id,
+                'unit'             => $this->edit_unit,
+                'status'           => $this->edit_status,
+            ]);
+
+            $this->closeModal();
+            session()->flash('success', 'Material updated successfully.');
+
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', 'Could not update material: ' . $e->getMessage());
+        }
+    }
 
     public function delete(int $id): void
     {

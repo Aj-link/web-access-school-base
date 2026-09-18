@@ -19,6 +19,12 @@
                     </div>
                 @endif
 
+                @if(empty($availableResources))
+                    <div class="mb-4 p-3 sm:p-4 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800 text-xs sm:text-sm">
+                        No materials are currently allocated to your department. Please contact your Program Head or Admin.
+                    </div>
+                @endif
+
                 <form wire:submit="update" class="space-y-6">
                     {{-- Purpose --}}
                     <div>
@@ -39,29 +45,54 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300">
                                 Materials <span class="text-red-500">*</span>
                             </label>
-                            <button type="button" wire:click="addItem"
-                                class="px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                            <button type="button" wire:click="addItem" @if(empty($availableResources)) disabled @endif
+                                class="px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                                 + Add Item
                             </button>
                         </div>
 
                         @foreach($items as $index => $item)
-                            <div class="p-3 sm:p-0 bg-gray-50 sm:bg-transparent dark:bg-neutral-700/40 sm:dark:bg-transparent rounded-lg sm:rounded-none border sm:border-0 border-gray-200 dark:border-neutral-700 flex flex-col sm:flex-row gap-3 sm:items-start relative">
+                            @php
+                                $available = $this->getAvailableStock($item['resource_id'] ?? null);
+                                $breakdown = $this->getQuantityBreakdown($item['resource_id'] ?? null, $item['quantity'] ?? null);
+                                $warning   = $this->getStockWarning($item['resource_id'] ?? null, $item['quantity'] ?? null);
+                                $rowOptions = $this->getOptionsForRow($index);
+                            @endphp
+                            <div wire:key="item-{{ $index }}" class="p-3 sm:p-0 bg-gray-50 sm:bg-transparent dark:bg-neutral-700/40 sm:dark:bg-transparent rounded-lg sm:rounded-none border sm:border-0 border-gray-200 dark:border-neutral-700 flex flex-col sm:flex-row gap-3 sm:items-start relative">
                                 <div class="flex-1">
-                                    <label class="block sm:hidden text-xs text-gray-500 dark:text-neutral-400 mb-1">Item Name</label>
-                                    <input type="text" wire:model="items.{{ $index }}.name"
-                                        placeholder="Material name"
+                                    <label class="block sm:hidden text-xs text-gray-500 dark:text-neutral-400 mb-1">Material</label>
+                                    <select wire:model.live="items.{{ $index }}.resource_id"
+                                        wire:key="select-{{ $index }}-{{ count($rowOptions) }}"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                    @error("items.{$index}.name")
+                                        <option value="">Select material</option>
+                                        @foreach($rowOptions as $resource)
+                                            <option wire:key="opt-{{ $index }}-{{ $resource['resource_id'] }}" value="{{ $resource['resource_id'] }}">
+                                                {{ $resource['resource_name'] }} ({{ $resource['allocated_quantity'] }} {{ $resource['unit'] ?: 'Ream' }} available)
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @if($available)
+                                        <p class="text-[10px] text-gray-500 mt-1">Available: {{ $available }}</p>
+                                    @endif
+                                    @error("items.{$index}.resource_id")
                                         <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div class="flex items-center gap-3 sm:w-28">
+                                <div class="flex items-center gap-3 sm:w-36">
                                     <div class="w-full">
                                         <label class="block sm:hidden text-xs text-gray-500 dark:text-neutral-400 mb-1">Quantity</label>
-                                        <input type="number" wire:model="items.{{ $index }}.quantity"
+                                        <input type="number" wire:model.live="items.{{ $index }}.quantity"
                                             placeholder="Qty" min="1"
-                                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                            class="w-full px-3 py-2 text-sm rounded-lg border {{ $warning ? 'border-red-400' : 'border-gray-300 dark:border-neutral-600' }} bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        @if($breakdown)
+                                            <p class="text-[10px] text-blue-600 font-medium mt-1">Requesting: {{ $breakdown }}</p>
+                                        @endif
+                                        @if($warning)
+                                            <p class="text-[10px] text-red-500 mt-1 font-medium">{{ $warning }}</p>
+                                        @endif
+                                        @error("items.{$index}.quantity")
+                                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                                        @enderror
                                     </div>
                                     @if(count($items) > 1)
                                         <button type="button" wire:click="removeItem({{ $index }})"
@@ -90,8 +121,8 @@
                             class="w-full sm:w-auto px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition text-center">
                             Cancel
                         </button>
-                        <button type="submit"
-                            class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition text-center">
+                        <button type="submit" @if(empty($availableResources)) disabled @endif
+                            class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition text-center disabled:opacity-50 disabled:cursor-not-allowed">
                             Update Request
                         </button>
                     </div>

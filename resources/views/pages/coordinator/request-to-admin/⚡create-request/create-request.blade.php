@@ -62,7 +62,7 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                         Date <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" wire:model="request_date"
+                    <input type="date" wire:model.live="request_date"
                         min="{{ date('Y-m-d') }}"
                         class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                     @error('request_date')
@@ -80,7 +80,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                             Facility Name <span class="text-red-500">*</span>
                         </label>
-                        <select wire:model="facility_name"
+                        <select wire:model.live="facility_name"
                             class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                             <option value="">Select a facility</option>
                             @foreach($facilityOptions as $facility)
@@ -88,7 +88,7 @@
                             @endforeach
                         </select>
                         @error('facility_name')
-                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                            <p class="text-xs text-red-500 mt-1 font-medium">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -97,7 +97,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                                 Start Time <span class="text-red-500">*</span>
                             </label>
-                            <input type="time" wire:model="start_time"
+                            <input type="time" wire:model.live="start_time"
                                 class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                             @error('start_time')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
@@ -107,7 +107,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                                 End Time <span class="text-red-500">*</span>
                             </label>
-                            <input type="time" wire:model="end_time"
+                            <input type="time" wire:model.live="end_time"
                                 class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                             @error('end_time')
                                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
@@ -139,15 +139,16 @@
                                 $available = $this->getAvailableStock($material['resource_id'] ?? null);
                                 $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
                                 $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                                $rowOptions = $this->getResourcesForRow($index);
                             @endphp
                             <div wire:key="fac-material-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">
                                 <div class="flex-1">
                                     <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
-                                            <option value="{{ $resource->id }}">
-                                                {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
+                                        @foreach($rowOptions as $resource)
+                                            <option wire:key="row-{{ $index }}--resource--{{$resource->id}}" value="{{$resource->id}}">
+                                                {{ $resource->resource_name }} ({{ $resource->quantity_available }} {{ $resource->unit ?: 'Ream'}} available)
                                             </option>
                                         @endforeach
                                     </select>
@@ -159,7 +160,7 @@
                                 <div class="w-32">
                                     <input type="number" min="1"
                                         wire:model.live="materials.{{ $index }}.quantity"
-                                        placeholder="Qty (pcs)"
+                                        placeholder="Qty {{$this->getMaterialResource($material['resource_id'] ?? null)->unit ?? 'ream'}}"
                                         class="w-full px-3 py-2 text-sm rounded-lg border {{ $warning ? 'border-red-400' : 'border-gray-300 dark:border-neutral-600' }} bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                     @if($breakdown)
                                         <p class="text-[10px] text-blue-600 font-medium mt-1">Requesting: {{ $breakdown }}</p>
@@ -188,15 +189,16 @@
                                 $available = $this->getAvailableStock($material['resource_id'] ?? null);
                                 $breakdown = $this->getQuantityBreakdown($material['resource_id'] ?? null, $material['quantity'] ?? null);
                                 $warning   = $this->getStockWarning($material['resource_id'] ?? null, $material['quantity'] ?? null);
+                                $rowOptions = $this->getResourcesForRow($index);
                             @endphp
                             <div wire:key="mat-material-{{ $index }}" class="flex items-start gap-2">
                                 <div class="flex-1">
                                     <select wire:model.live="materials.{{ $index }}.resource_id"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
-                                            <option value="{{ $resource->id }}">
-                                                {{ $resource->resource_name }} ({{ $resource->available_formatted }} available)
+                                        @foreach($rowOptions as $resource)
+                                            <option wire:key="row-{{ $index }}--resource--{{$resource->id}}" value="{{$resource->id}}">
+                                                {{ $resource->resource_name }} ({{ $resource->quantity_available }} {{ $resource->unit ?: 'Ream'}} available)
                                             </option>
                                         @endforeach
                                     </select>
@@ -208,7 +210,7 @@
                                 <div class="w-32">
                                     <input type="number" min="1"
                                         wire:model.live="materials.{{ $index }}.quantity"
-                                        placeholder="Qty (pcs)"
+                                        placeholder="Qty {{$this->getMaterialResource($material['resource_id'] ?? null)->unit ?? 'ream'}}"
                                         class="w-full px-3 py-2 text-sm rounded-lg border {{ $warning ? 'border-red-400' : 'border-gray-300 dark:border-neutral-600' }} bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                     @if($breakdown)
                                         <p class="text-[10px] text-blue-600 font-medium mt-1">Requesting: {{ $breakdown }}</p>

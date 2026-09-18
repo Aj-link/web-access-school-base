@@ -86,19 +86,26 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
-    public function monthlyData()
-    {
-        return $this->adminVisibleRequests()
-            ->selectRaw('MONTH(created_at) as month, COUNT(*) as total')
-            ->whereYear('created_at', now()->year)
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get()
-            ->map(fn($r) => [
-                'month' => now()->month($r->month)->format('M'),
-                'total' => $r->total,
-            ]);
+public function monthlyData()
+{
+    $rows = $this->adminVisibleRequests()
+        ->whereYear('created_at', now()->year)
+        ->get(['created_at']);
+
+    $counts = array_fill(1, 12, 0);
+
+    foreach ($rows as $row) {
+        $month = (int) $row->created_at->format('n');
+        $counts[$month]++;
     }
+
+    return collect($counts)->map(function ($total, $month) {
+        return [
+            'month' => now()->month($month)->format('M'),
+            'total' => $total,
+        ];
+    })->values();
+}
 
     #[Computed]
     public function recentRequests()

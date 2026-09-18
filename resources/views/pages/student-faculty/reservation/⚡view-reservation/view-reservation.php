@@ -19,6 +19,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
     {
         return ResourceRequest::with(['items', 'department'])
             ->where('user_id', Auth::id())
+            ->where('request_type_id', 1)
             ->latest()
             ->paginate(10);
     }

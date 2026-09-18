@@ -111,12 +111,14 @@
 
                     <div class="space-y-3">
                         @foreach($materials as $index => $material)
+                        @php $rowOptions = $this->getMaterialOptionsForRow($index); @endphp
                             <div wire:key="material-{{ $index }}" class="flex items-start gap-2 bg-red-50/50 border border-red-100 rounded-lg p-3">
                                 <div class="flex-1">
-                                    <select wire:model="materials.{{ $index }}.resource_id"
+                                    <select wire:model.live="materials.{{ $index }}.resource_id"
+                                        wire:key="material-select-{{$index}}--{{$rowOptions->count()}}"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                         <option value="">Select material</option>
-                                        @foreach($availableResources as $resource)
+                                        @foreach($rowOptions as $resource)
                                             <option value="{{ $resource->id }}">
                                                 {{ $resource->resource_name }} ({{ $resource->quantity_available }} available)
                                             </option>
@@ -128,7 +130,7 @@
                                 <div class="w-24">
                                     <input type="number"
                                         min="1"
-                                        wire:model="materials.{{ $index }}.quantity"
+                                        wire:model.live="materials.{{ $index }}.quantity"
                                         placeholder="Qty"
                                         class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200">
                                     @error('materials.' . $index . '.quantity') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
