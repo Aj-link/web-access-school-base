@@ -107,12 +107,19 @@ new #[Layout('layouts.admin')] class extends Component
             return;
         }
 
+        $facilityTypeId = DB::table('resource_types')
+        ->where('type_name', 'Facilty')
+        ->value('id');
+
         // Deduct stock for ANY item tied to a material — this covers both
         // standalone Material Requests AND materials attached to a
         // Facility Reservation. Facility items themselves (resource_id
         // null, e.g. "LISC", "ROOM 301") are never touched.
-        $materialItems = $request->items->filter(function ($item) {
-            return $item->resource_id || Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->exists();
+        $materialItems = $request->items->filter(function ($item) use ($facilityTypeId) {
+            $resource = $item->resource_id
+            ? Resource::find($item->resource_id)
+            : Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->first();
+            return $resource && $resource->resouce_type_id !== $facilityTypeId;
         });
 
         // Step 1 — resolve each material item to its resource
