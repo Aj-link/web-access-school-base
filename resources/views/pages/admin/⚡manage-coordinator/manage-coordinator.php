@@ -108,78 +108,94 @@ new #[Layout('layouts.admin')] class extends Component
         }
 
         $facilityTypeId = DB::table('resource_types')
-        ->where('type_name', 'Facilty')
-        ->value('id');
+            ->where('type_name', 'Facility')
+            ->value('id');
 
-        // Deduct stock for ANY item tied to a material — this covers both
-        // standalone Material Requests AND materials attached to a
-        // Facility Reservation. Facility items themselves (resource_id
-        // null, e.g. "LISC", "ROOM 301") are never touched.
-        $materialItems = $request->items->filter(function ($item) use ($facilityTypeId) {
-            $resource = $item->resource_id
-            ? Resource::find($item->resource_id)
-            : Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->first();
-            return $resource && $resource->resouce_type_id !== $facilityTypeId;
-        });
-
-        // Step 1 — resolve each material item to its resource
-        $resolved = [];
-        foreach ($materialItems as $item) {
+        // Step 1 — resolve every MATERIAL item to its resource.
+        // Facility items (resource_id null, e.g. "LISC", "ROOM 301", or
+        // a resource whose type is Facility) are never touched.
+        // If the same material appears on more than one line of the
+        // request, the quantities are combined so the stock check is
+        // done on the total.
+        $needed = [];
+        foreach ($request->items as $item) {
             $resource = $item->resource_id
                 ? Resource::find($item->resource_id)
                 : Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->first();
 
             if (!$resource) {
-                session()->flash('error', "Cannot approve: \"{$item->item_name}\" was not found in inventory. Add it to stock first.");
-                return;
+                continue; // facility / non-inventory line item
             }
 
-            if ($resource->quantity_available < $item->quantity) {
-                session()->flash('error', "Cannot approve: only {$resource->quantity_available} unit(s) of \"{$resource->resource_name}\" available, but {$item->quantity} requested.");
-                return;
+            if ($facilityTypeId && $resource->resource_type_id == $facilityTypeId) {
+                continue; // facility resource
             }
 
-            $resolved[] = ['resource' => $resource, 'qty' => $item->quantity];
+            if (!isset($needed[$resource->id])) {
+                $needed[$resource->id] = 0;
+            }
+            $needed[$resource->id] += (int) $item->quantity;
         }
 
-        // Step 2 — all checks passed, safely deduct from central stock
-        // AND credit the requester's department with that quantity so
-        // the program head can see/track what materials their
-        // department currently holds (resource_all_locations table).
-        foreach ($resolved as $pair) {
-            $pair['resource']->decrement('quantity_available', $pair['qty']);
+        // Step 2 — inside ONE transaction: lock the rows, re-check against
+        // the CURRENT stock, deduct from central stock, and credit the
+        // requester's department (resource_all_locations).
+        try {
+            DB::transaction(function () use ($request, $needed) {
+                // Re-check status under lock so a double-click can't approve twice
+                $fresh = ResourceRequest::lockForUpdate()->find($request->id);
+                if (!$fresh || $fresh->status !== 'pending') {
+                    throw new \RuntimeException('This request has already been processed.');
+                }
 
-            $existing = DB::table('resource_all_locations')
-                ->where('resource_id', $pair['resource']->id)
-                ->where('department_id', $request->department_id)
-                ->first();
+                foreach ($needed as $resourceId => $qty) {
+                    // Lock + read the latest quantity (not a stale value)
+                    $resource = Resource::lockForUpdate()->find($resourceId);
 
-            if ($existing) {
-                DB::table('resource_all_locations')
-                    ->where('id', $existing->id)
-                    ->update([
-                        'allocated_quantity' => $existing->allocated_quantity + $pair['qty'],
-                        'updated_at'         => now(),
-                    ]);
-            } else {
-                DB::table('resource_all_locations')->insert([
-                    'resource_id'         => $pair['resource']->id,
-                    'department_id'       => $request->department_id,
-                    'allocated_quantity'  => $pair['qty'],
-                    'created_at'          => now(),
-                    'updated_at'          => now(),
+                    if ($resource->quantity_available < $qty) {
+                        throw new \RuntimeException(
+                            "Cannot approve: only {$resource->quantity_available} unit(s) of \"{$resource->resource_name}\" available, but {$qty} requested."
+                        );
+                    }
+
+                    $resource->decrement('quantity_available', $qty);
+
+                    $existing = DB::table('resource_all_locations')
+                        ->where('resource_id', $resource->id)
+                        ->where('department_id', $fresh->department_id)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('resource_all_locations')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'allocated_quantity' => $existing->allocated_quantity + $qty,
+                                'updated_at'         => now(),
+                            ]);
+                    } else {
+                        DB::table('resource_all_locations')->insert([
+                            'resource_id'        => $resource->id,
+                            'department_id'      => $fresh->department_id,
+                            'allocated_quantity' => $qty,
+                            'created_at'         => now(),
+                            'updated_at'         => now(),
+                        ]);
+                    }
+                }
+
+                $fresh->update(['status' => 'approved']);
+
+                Notification::create([
+                    'user_id' => $fresh->user_id,
+                    'message' => 'Your request has been approved by the admin.',
+                    'type'    => 'Gmail',
+                    'status'  => 'pending',
                 ]);
-            }
+            });
+        } catch (\RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
+            return;
         }
-
-        $request->update(['status' => 'approved']);
-
-        Notification::create([
-            'user_id' => $request->user_id,
-            'message' => 'Your request has been approved by the admin.',
-            'type'    => 'Gmail',
-            'status'  => 'pending',
-        ]);
 
         session()->flash('message', 'Request approved. Inventory updated.');
     }

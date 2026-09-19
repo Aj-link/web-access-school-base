@@ -59,23 +59,22 @@
 
     {{-- Items / Facility --}}
     <div class="bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm overflow-hidden mb-6">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-neutral-700">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-neutral-200">Items / Facility</h3>
-        </div>
         <table class="min-w-full divide-y divide-gray-100 dark:divide-neutral-700">
             <thead class="bg-gray-50 dark:bg-neutral-900/30">
                 <tr>
-                    <th class="px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">Item</th>
+                    <th class="px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">Item/Facility</th>
                     <th class="px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">Quantity</th>
                     <th class="px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">Schedule</th>
-                    <th class="px-6 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">Stock</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-neutral-700">
                 @foreach($this->itemsWithStock as $row)
                     <tr>
                         <td class="px-6 py-3 text-sm text-gray-700 dark:text-neutral-300">{{ $row['item']->item_name }}</td>
-                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-neutral-300">{{ $row['item']->quantity }}</td>
+                        @php
+                            $isFacility = !$row['resource'] || optional($row['resource']->resourceType)->type_name === 'Facility';
+                        @endphp
+                        <td class="px-6 py-3 text-sm text-gray-700 dark:text-neutral-300">{{ $isFacility ? '' : $row['item']->quantity }}</td>
                         <td class="px-6 py-3 text-sm text-gray-500 dark:text-neutral-400 whitespace-nowrap">
                             @if($row['item']->request_date)
                                 {{ \Carbon\Carbon::parse($row['item']->request_date)->format('M d, Y') }}
@@ -88,16 +87,7 @@
                             @else
                                 —
                             @endif
-                        </td>
-                        <td class="px-6 py-3 text-sm">
-                            @if($row['resource'])
-                                <span class="{{ $row['hasStock'] ? 'text-gray-500' : 'text-red-500 font-medium' }}">
-                                    {{ $row['resource']->quantity_available }} available
-                                </span>
-                            @else
-                                <span class="text-gray-400 italic">Facility / not tracked</span>
-                            @endif
-                        </td>
+                                </td>
                     </tr>
                 @endforeach
             </tbody>
