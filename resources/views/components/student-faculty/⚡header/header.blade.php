@@ -1,7 +1,7 @@
 <div class="select-none">
 <!-- ========== HEADER ========== -->
-<header class="fixed top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-48 lg:z-61 w-full bg-navbar-2 text-sm">
-    <nav class="px-3 sm:px-5 flex basis-full items-center w-full mx-auto py-2.5">
+<header class="fixed top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-48 lg:z-61 w-full bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-700 text-sm py-2.5">
+    <nav class="px-4 sm:px-5.5 flex basis-full items-center w-full mx-auto">
         <div class="w-full flex items-center gap-x-1.5">
 
             {{-- Left: Logo + Sidebar Toggle + Dept Badge --}}
@@ -20,8 +20,9 @@
                     <div class="hidden sm:flex flex-col leading-tight ms-0.5 min-w-0">
                         <span class="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[140px] md:max-w-none"
                             style="font-family: 'Fraunces', serif;">
-                            <span class="hidden md:inline">Colegio de Sta. Ana de Victorias</span>
-                            <span class="md:hidden">CSAV</span>
+                        <span class="hidden sm:block text-sm font-semibold text-gray-900 dark:text-white ms-1">
+                            Colegio de Sta. Ana de Victorias
+                        </span>
                         </span>
                         <span class="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-[#D4A537] font-medium">
                             Campus Portal
@@ -30,7 +31,7 @@
 
                     {{-- Sidebar Toggle --}}
                     <button type="button"
-                        class="p-1.5 size-7 sm:size-7.5 inline-flex items-center gap-x-1 text-xs rounded-md border border-transparent text-foreground hover:bg-surface-hover disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-surface-focus ms-0.5 sm:ms-1"
+                        class="p-1.5 size-7.5 inline-flex items-center gap-x-1 text-xs rounded-md border border-transparent text-gray-600 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                         aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pro-sidebar"
                         data-hs-overlay="#hs-pro-sidebar">
                         <svg class="shrink-0 size-3 sm:size-3.5" xmlns="http://www.w3.org/2000/svg" width="24"
@@ -47,11 +48,11 @@
 
                 {{-- Department Badge — hidden on mobile, shown on md+ --}}
                 @if(Auth::user()->department)
-                    <li class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#123524]/5 border border-[#123524]/10 rounded-full">
-                        <svg class="size-3 sm:size-3.5 text-[#123524]/60 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
-                        </svg>
-                        <span class="text-xs font-medium text-[#123524] truncate max-w-[120px] lg:max-w-none">
+                        <li class="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 bg-[#123524]/5 dark:bg-white/10 border border-[#123524]/10 dark:border-white/20 rounded-full shrink-0">
+                            <svg class="size-3 sm:size-3.5 text-[#123524]/60 dark:text-emerald-300/70 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
+                            </svg>
+                        <span class="text-xs font-medium text-[#123524] dark:text-white/100 whitespace-nowrap">
                             {{ Auth::user()->department->department_name }}
                         </span>
                     </li>
@@ -65,7 +66,7 @@
                 <li class="inline-flex items-center">
                     <a href="/admin/notifications"
                         class="relative flex justify-center items-center size-8 sm:size-9 text-sm text-navbar-2-nav-foreground rounded-full hover:bg-navbar-2-nav-hover focus:outline-hidden focus:bg-navbar-2-nav-focus transition">
-                        <svg class="shrink-0 size-4 sm:size-4.5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        <svg class="shrink-0 size-5 dark:text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                             stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -91,18 +92,16 @@
                             aria-haspopup="menu" aria-expanded="false" aria-label="User Dropdown">
 
                             {{-- Avatar circle --}}
-                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123524] text-white flex items-center justify-center text-xs sm:text-sm font-bold ring-2 ring-[#D4A537]/50 shrink-0">
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123524] dark:bg-green-700 text-white flex items-center justify-center text-xs sm:text-sm font-bold ring-3 ring-[#D4A537]/50 dark:ring-[#D4A537]/50 shrink-0">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                             </div>
 
                             {{-- Name — hidden on mobile --}}
                             <div class="hidden sm:block text-left">
-                                <span class="text-xs font-medium text-foreground truncate max-w-[100px] lg:max-w-[160px] block">
-                                    {{ Auth::user()->name }}
-                                </span>
+                                <span class="text-xs font-medium text-gray-900 dark:text-white">{{ Auth::user()->name }}</span>
                             </div>
 
-                            <svg class="shrink-0 size-3 text-muted-foreground-1 hidden sm:block"
+                            <svg class="shrink-0 size-3 text-gray-600 dark:text-neutral-400 hidden sm:block"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
                                 stroke-width="2" viewBox="0 0 24 24">
                                 <path d="m6 9 6 6 6-6" />
@@ -110,19 +109,19 @@
                         </button>
 
                         {{-- Dropdown Menu --}}
-                        <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 sm:w-64 transition-[opacity,margin] duration opacity-0 hidden z-20 bg-gray-50 border border-dropdown-line rounded-xl shadow-xl overflow-hidden"
+                        <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 transition-[opacity,margin] duration opacity-0 hidden z-20 bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 rounded-xl shadow-xl"
                             role="menu" aria-orientation="vertical" aria-labelledby="hs-admin-user-dropdown">
 
                             {{-- User Info --}}
-                            <div class="py-3 px-3.5 border-b border-dropdown-divider bg-gradient-to-br from-[#123524]/[0.04] to-[#D4A537]/[0.04]">
+                            <div class="py-3 px-3.5 border-b border-gray-200 dark:border-neutral-700">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold ring-2 ring-[#D4A537]/50 shrink-0">
+                                    <div class="w-9 h-9 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold">
                                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm font-semibold text-foreground truncate">{{ Auth::user()->name }}</p>
-                                        <p class="text-xs text-muted-foreground-1 truncate">{{ Auth::user()->email }}</p>
-                                        <p class="text-[10px] uppercase tracking-wide text-[#B8862A] font-semibold mt-0.5">
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ Auth::user()->name }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-neutral-400">{{ Auth::user()->email }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-neutral-400 capitalize">
                                             {{ Auth::user()->roles->first()->name ?? 'No Role' }}
                                         </p>
                                         {{-- Show dept in dropdown on mobile since badge is hidden --}}
@@ -136,12 +135,12 @@
                             </div>
 
                             {{-- Theme Toggle --}}
-                            <div class="px-4 py-2 border-b border-dropdown-divider">
+                            <div class="px-4 py-2 border-b border-gray-200 dark:border-neutral-700">
                                 <div class="flex flex-wrap justify-between items-center gap-2">
-                                    <span class="text-sm text-foreground">Theme</span>
-                                    <div class="p-0.5 inline-flex cursor-pointer bg-surface rounded-full">
+                                    <span class="text-sm text-gray-900 dark:text-white">Theme</span>
+                                    <div class="p-0.5 inline-flex cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-full">
                                         <button type="button"
-                                            class="size-7 flex justify-center items-center bg-layer shadow-sm text-layer-foreground rounded-full hs-auto-mode-active:bg-transparent hs-auto-mode-active:shadow-none hs-dark-mode-active:bg-transparent hs-dark-mode-active:shadow-none"
+                                            class="size-7 flex justify-center items-center bg-white dark:bg-neutral-700 shadow-sm text-gray-700 dark:text-white rounded-full hs-auto-mode-active:bg-transparent hs-auto-mode-active:shadow-none hs-dark-mode-active:bg-transparent hs-dark-mode-active:shadow-none"
                                             data-hs-theme-click-value="default">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                                 <circle cx="12" cy="12" r="4" />
@@ -150,7 +149,7 @@
                                             <span class="sr-only">Light</span>
                                         </button>
                                         <button type="button"
-                                            class="size-7 flex justify-center items-center text-layer-foreground rounded-full hs-dark-mode-active:bg-secondary-active hs-dark-mode-active:text-secondary-foreground hs-dark-mode-active:shadow-sm"
+                                            class="size-7 flex justify-center items-center text-gray-700 dark:text-neutral-300 rounded-full hs-dark-mode-active:bg-neutral-700 hs-dark-mode-active:text-white hs-dark-mode-active:shadow-sm"
                                             data-hs-theme-click-value="dark">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
@@ -158,7 +157,7 @@
                                             <span class="sr-only">Dark</span>
                                         </button>
                                         <button type="button"
-                                            class="size-7 flex justify-center items-center text-layer-foreground rounded-full hs-auto-light-mode-active:bg-layer hs-auto-mode-active:shadow-sm"
+                                            class="size-7 flex justify-center items-center text-gray-700 dark:text-neutral-300 rounded-full hs-auto-light-mode-active:bg-white hs-auto-mode-active:shadow-sm"
                                             data-hs-theme-click-value="auto">
                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                                 <rect width="20" height="14" x="2" y="3" rx="2" />
@@ -173,25 +172,25 @@
 
                             {{-- Menu Items --}}
                             <div class="p-1">
-                                <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-dropdown-item-foreground hover:bg-dropdown-item-hover focus:outline-hidden focus:bg-dropdown-item-focus"
-                                    href="/admin/profile">
+                                 <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
+                                    href="/portal/profile">
                                     <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                                         <circle cx="12" cy="7" r="4" />
                                     </svg>
                                     Profile
                                 </a>
-                                <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-dropdown-item-foreground hover:bg-dropdown-item-hover focus:outline-hidden focus:bg-dropdown-item-focus"
-                                    href="/admin/settings">
+                                 <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
+                                    href="/student/settings">
                                     <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                                        <circle cx="12" cy="12" r="3" />
+                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                                        <circle cx="12" cy="12" r="3"/>
                                     </svg>
                                     Settings
                                 </a>
 
                                 {{-- Logout --}}
-                                <div class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-red-600 hover:bg-dropdown-item-hover focus:outline-hidden focus:bg-dropdown-item-focus cursor-pointer">
+                                <div class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800 cursor-pointer">
                                     <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                                         <polyline points="16 17 21 12 16 7" />

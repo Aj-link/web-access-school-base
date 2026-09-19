@@ -21,15 +21,16 @@
         <div class="relative overflow-hidden flex flex-col bg-white border border-[#E4E1D8] shadow-sm rounded-2xl p-4 sm:p-6 dark:bg-[#16281F] dark:border-[#2A4B3A]">
             <div class="flex items-center justify-between mb-2 sm:mb-4">
                 <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400">Total Requests</p>
-                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#123524]/8 dark:bg-[#123524]/25 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-[#1C6B45] dark:text-[#7FBF8E]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-mortarboard size-5 text-blue-400 dark:text-blue-400" viewBox="0 0 16 16">
+                    <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855a.75.75 0 0 0-.124 1.329l4.995 3.178 1.531 2.406a.5.5 0 0 0 .844-.536L6.637 10.07l7.494-7.494-1.895 4.738a.5.5 0 1 0 .928.372zm-2.54 1.183L5.93 9.363 1.591 6.602z"/>
+                    <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1.5a.5.5 0 0 1-1 0V11a.5.5 0 0 1 1 0m0 3a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
                     </svg>
                 </div>
             </div>
-            <h3 class="text-2xl sm:text-4xl font-bold text-[#123524] dark:text-neutral-200">{{ $this->totalRequests }}</h3>
+            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">{{ $this->totalRequests }}</h3>
             <p class="text-xs text-gray-400 mt-1">All time</p>
-            <div class="absolute bottom-0 left-0 right-0 h-1 bg-[#123524] rounded-b-2xl"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-b-2xl"></div>
         </div>
 
         {{-- Pending --}}
@@ -67,8 +68,9 @@
             <div class="flex items-center justify-between mb-2 sm:mb-4">
                 <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-neutral-400">Total Students</p>
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#B8352A]/8 dark:bg-[#B8352A]/20 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-[#B8352A]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-mortarboard size-5.5 text-red-400 dark:text-red-400" viewBox="0 0 16 16">
+                    <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917zM8 8.46 1.758 5.965 8 3.052l6.242 2.913z"/>
+                    <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"/>
                     </svg>
                 </div>
             </div>
