@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Department;
 use App\Models\Request as ResourceRequest;
 use App\Models\User;
 use Livewire\Attributes\Computed;
@@ -56,14 +57,6 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
-    public function approvalRate()
-    {
-        $total = $this->totalRequests;
-        if ($total === 0) return 0;
-        return round(($this->approvedRequests / $total) * 100);
-    }
-
-    #[Computed]
     public function totalStudents()
     {
         return User::role('student')->count();
@@ -86,28 +79,6 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
-public function monthlyData()
-{
-    $rows = $this->adminVisibleRequests()
-        ->whereYear('created_at', now()->year)
-        ->get(['created_at']);
-
-    $counts = array_fill(1, 12, 0);
-
-    foreach ($rows as $row) {
-        $month = (int) $row->created_at->format('n');
-        $counts[$month]++;
-    }
-
-    return collect($counts)->map(function ($total, $month) {
-        return [
-            'month' => now()->month($month)->format('M'),
-            'total' => $total,
-        ];
-    })->values();
-}
-
-    #[Computed]
     public function recentRequests()
     {
         return $this->adminVisibleRequests()
@@ -118,18 +89,61 @@ public function monthlyData()
     }
 
     #[Computed]
-public function coordinatorReviewRequests()
-{
-    return $this->adminVisibleRequests()
-        ->where('status', 'coordinator_review')
-        ->count();
-}
+    public function coordinatorReviewRequests()
+    {
+        return $this->adminVisibleRequests()
+            ->where('status', 'coordinator_review')
+            ->count();
+    }
 
-#[Computed]
-public function adminReviewRequests()
-{
-    return $this->adminVisibleRequests()
-        ->where('status', 'admin_review')
-        ->count();
-}
+    #[Computed]
+    public function adminReviewRequests()
+    {
+        return $this->adminVisibleRequests()
+            ->where('status', 'admin_review')
+            ->count();
+    }
+
+    /**
+     * ✅ Updated: monthly totals broken down PER DEPARTMENT,
+     * so "Monthly Requests" shows which department leads each month.
+     * Shape: [
+     *   'labels' => ['Jan', 'Feb', ...],
+     *   'departments' => [
+     *       ['name' => 'Computer Studies', 'data' => [3, 5, 0, ...]],
+     *       ['name' => 'Engineering', 'data' => [1, 2, 4, ...]],
+     *       ...
+     *   ]
+     * ]
+     */
+    #[Computed]
+    public function monthlyData()
+    {
+        $rows = $this->adminVisibleRequests()
+            ->whereYear('created_at', now()->year)
+            ->get(['created_at', 'department_id']);
+
+        $labels = collect(range(1, 12))->map(fn ($m) => now()->month($m)->format('M'))->values();
+
+        $departments = Department::all();
+
+        $series = $departments->map(function ($dept) use ($rows) {
+            $monthly = array_fill(1, 12, 0);
+
+            $rows->where('department_id', $dept->id)->each(function ($row) use (&$monthly) {
+                $month = (int) $row->created_at->format('n');
+                $monthly[$month]++;
+            });
+
+            return [
+                'name' => $dept->department_name,
+                'data' => array_values($monthly),
+            ];
+        })->values();
+
+        return [
+            'labels' => $labels,
+            'departments' => $series,
+        ];
+    }
 };

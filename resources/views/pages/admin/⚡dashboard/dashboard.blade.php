@@ -2,7 +2,7 @@
 <div class="space-y-8 max-w-7xl mx-auto px-6 py-8">
 
     {{-- Stats Cards --}}
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {{-- Total Requests --}}
         <div class="relative overflow-hidden flex flex-col bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
@@ -17,21 +17,6 @@
             <h3 class="text-4xl font-bold text-gray-800 dark:text-white">{{ $this->totalRequests }}</h3>
             <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">Reached coordinator & above</p>
             <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-b-2xl"></div>
-        </div>
-
-        {{-- Approval Rate --}}
-        <div class="relative overflow-hidden flex flex-col bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-neutral-400">Approval Rate</p>
-                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M5 13l4 4L19 7"/>
-                    </svg>
-                </div>
-            </div>
-            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">{{ $this->approvalRate }}%</h3>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">Of all requests</p>
-            <div class="absolute bottom-0 left-0 right-0 h-1 bg-green-500 rounded-b-2xl"></div>
         </div>
 
         {{-- Total Students --}}
@@ -70,17 +55,17 @@
     {{-- Charts Row --}}
     <div class="grid lg:grid-cols-3 gap-6">
 
-        {{-- Monthly Line Graph --}}
+        {{-- Monthly Requests by Department --}}
         <div class="lg:col-span-2 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
             <div class="flex items-center justify-between mb-1">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Monthly Requests</h2>
-                    <p class="text-sm text-gray-400 dark:text-neutral-500">Requests trend for {{ now()->year }}</p>
+                    <p class="text-sm text-gray-400 dark:text-neutral-500">By department, for {{ now()->year }}</p>
                 </div>
                 <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-medium">This Year</span>
             </div>
             <div class="mt-4">
-                <canvas id="monthlyChart" height="120"></canvas>
+                <canvas id="monthlyChart" height="130"></canvas>
             </div>
         </div>
 
@@ -223,34 +208,47 @@
     const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
     const tickColor = isDark ? 'rgba(229,229,229,0.8)' : 'rgba(75,85,99,0.8)';
 
-    // ✅ Fix: monthlyData is a collection of arrays, use array key access
-    const monthlyLabels = @json(collect($this->monthlyData)->pluck('month')->values());
-    const monthlyTotals = @json(collect($this->monthlyData)->pluck('total')->values());
+    // ✅ Monthly Requests, one line per department
+    const monthlyLabels = @json($this->monthlyData['labels']);
+    const departmentSeries = @json($this->monthlyData['departments']);
+
+    const lineColors = [
+        'rgba(34, 197, 94, 1)',   // green
+        'rgba(59, 130, 246, 1)',  // blue
+        'rgba(168, 85, 247, 1)',  // purple
+        'rgba(234, 179, 8, 1)',   // yellow
+        'rgba(239, 68, 68, 1)',   // red
+        'rgba(20, 184, 166, 1)',  // teal
+        'rgba(249, 115, 22, 1)',  // orange
+    ];
 
     new Chart(document.getElementById('monthlyChart'), {
         type: 'line',
         data: {
             labels: monthlyLabels,
-            datasets: [{
-                label: 'Requests',
-                data: monthlyTotals,
-                borderColor: 'rgba(34, 197, 94, 1)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                borderWidth: 3,
-                pointBackgroundColor: 'rgba(34, 197, 94, 1)',
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                fill: true,
-                tension: 0.4,
-            }]
+            datasets: departmentSeries.map((dept, i) => ({
+                label: dept.name,
+                data: dept.data,
+                borderColor: lineColors[i % lineColors.length],
+                backgroundColor: lineColors[i % lineColors.length].replace('1)', '0.1)'),
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: false,
+                tension: 0.35,
+            }))
         },
         options: {
             responsive: true,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: { color: tickColor, boxWidth: 10, padding: 12 }
+                },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ' ' + ctx.parsed.y + ' requests'
+                        label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} requests`
                     }
                 }
             },
