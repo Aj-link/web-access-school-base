@@ -67,6 +67,7 @@
             <div class="mt-4">
                 <canvas id="monthlyChart" height="130"></canvas>
             </div>
+            <div id="monthlyLegend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4"></div>
         </div>
 
         {{-- Status Doughnut --}}
@@ -222,7 +223,7 @@
         'rgba(249, 115, 22, 1)',  // orange
     ];
 
-    new Chart(document.getElementById('monthlyChart'), {
+    const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
         type: 'line',
         data: {
             labels: monthlyLabels,
@@ -241,11 +242,7 @@
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: { color: tickColor, boxWidth: 10, padding: 12 }
-                },
+                legend: { display: false }, // ✅ using our own legend below instead
                 tooltip: {
                     callbacks: {
                         label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} requests`
@@ -263,62 +260,45 @@
         }
     });
 
-    // ✅ Updated: 4 segments matching admin-visible statuses
-    new Chart(document.getElementById('statusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Coordinator Review', 'Admin Review', 'Approved', 'Rejected'],
-            datasets: [{
-                data: [
-                    {{ $this->coordinatorReviewRequests }},
-                    {{ $this->adminReviewRequests }},
-                    {{ $this->approvedRequests }},
-                    {{ $this->rejectedRequests }}
-                ],
-                backgroundColor: [
-                    'rgba(96, 165, 250, 0.85)',   // blue-400  — coordinator
-                    'rgba(168, 85, 247, 0.85)',   // purple-500 — admin
-                    'rgba(34, 197, 94, 0.85)',    // green-500 — approved
-                    'rgba(239, 68, 68, 0.85)',    // red-500   — rejected
-                ],
-                borderWidth: 0,
-                hoverOffset: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '70%',
-            plugins: { legend: { display: false } }
-        }
-    });
+    // ✅ Build the custom legend with a real X drawn over the box when hidden
+    function renderMonthlyLegend() {
+        const legendEl = document.getElementById('monthlyLegend');
+        legendEl.innerHTML = '';
 
-    new Chart(document.getElementById('typeChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Facility Reservation', 'Material Request'],
-            datasets: [{
-                label: 'Total',
-                data: [{{ $this->facilityRequests }}, {{ $this->materialRequests }}],
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(168, 85, 247, 0.8)',
-                ],
-                borderRadius: 8,
-                barThickness: 50,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, color: tickColor },
-                    grid: { color: gridColor }
-                },
-                x: { ticks: { color: tickColor }, grid: { display: false } }
-            }
-        }
-    });
+        monthlyChart.data.datasets.forEach((dataset, index) => {
+            const meta = monthlyChart.getDatasetMeta(index);
+            const hidden = meta.hidden === true; // Chart.js sets this on toggle
+
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'flex items-center gap-1.5 text-sm select-none';
+            item.style.opacity = hidden ? '0.5' : '1';
+
+            item.innerHTML = `
+                <span class="relative inline-flex items-center justify-center w-3.5 h-3.5 rounded-sm"
+                      style="background-color:${dataset.borderColor}">
+                    ${hidden ? `
+                        <svg class="absolute inset-0 w-full h-full text-white" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="3" y1="3" x2="11" y2="11"/>
+                            <line x1="11" y1="3" x2="3" y2="11"/>
+                        </svg>
+                    ` : ''}
+                </span>
+                <span class="${hidden ? 'line-through text-gray-400 dark:text-neutral-500' : 'text-gray-600 dark:text-neutral-400'}">
+                    ${dataset.label}
+                </span>
+            `;
+
+            item.addEventListener('click', () => {
+                meta.hidden = !hidden;
+                monthlyChart.update();
+                renderMonthlyLegend();
+            });
+
+            legendEl.appendChild(item);
+        });
+    }
+
+    renderMonthlyLegend();
 </script>
 </div>
