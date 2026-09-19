@@ -9,10 +9,10 @@ fixed inset-y-0 z-60 start-0
 bg-sidebar-2
 lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
     role="dialog" tabindex="-1" aria-label="Sidebar">
-    <div class="lg:pt-13 relative flex flex-col h-full max-h-full">
+    <div class="lg:pt-13 relative flex flex-col h-full max-h-full border-e border-gray-800 dark:border-neutral-700 bg-white dark:bg-neutral-800 border border-dropdown-line rounded-xl shadow-xl">
         <nav class="p-3 size-full flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-track]:bg-scrollbar-track [&::-webkit-scrollbar-thumb]:bg-scrollbar-thumb">
 
-            <div class="lg:hidden mb-2 flex items-center justify-between">
+        <div class="lg:hidden mb-2 flex items-center justify-between">
                 <button type="button"
                     class="p-1.5 size-7.5 inline-flex items-center gap-x-1 text-xs rounded-md text-muted-foreground-1 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden hover:bg-sidebar-2-nav-hover"
                     aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pro-sidebar"
