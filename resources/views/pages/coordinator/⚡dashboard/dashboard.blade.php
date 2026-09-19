@@ -79,97 +79,25 @@
 
     </div>
 
-    {{-- Chart Composition: Bar + Pie + Radial --}}
-    <div class="grid lg:grid-cols-3 gap-4 sm:gap-6">
+    <div class="grid lg:grid-cols-1 gap-4 sm:gap-6">
 
         {{-- Bar Chart - Request Types --}}
         <div class="bg-white border border-[#E4E1D8] shadow-sm rounded-2xl p-4 sm:p-6 dark:bg-[#16281F] dark:border-[#2A4B3A]">
             <div class="mb-4">
                 <h2 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-neutral-200" style="font-family: 'Fraunces', serif;">Request Types</h2>
-                <p class="text-xs sm:text-sm text-gray-400">Facility vs Material breakdown</p>
+                <p class="text-xs sm:text-sm text-gray-400">Facility vs Material Requests</p>
             </div>
             <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
-                <div class="flex items-center gap-1.5 text-xs">
-                    <span class="w-3 h-3 rounded-sm bg-[#123524] inline-block shrink-0"></span>
-                    <span class="text-gray-500 dark:text-neutral-400">Facility — {{ $this->facilityRequests }}</span>
-                </div>
-                <div class="flex items-center gap-1.5 text-xs">
-                    <span class="w-3 h-3 rounded-sm bg-[#D4A537] inline-block shrink-0"></span>
-                    <span class="text-gray-500 dark:text-neutral-400">Material — {{ $this->materialRequests }}</span>
+            <div class="inline-flex rounded-full border border-[#E4E1D8] dark:border-[#2A4B3A] p-0.5 text-xs font-medium" id="lineFilters">
+                <button type="button" data-filter="all" class="px-3 py-1 rounded-full bg-[#123524] text-white">All</button>
+                <button type="button" data-filter="student" class="px-3 py-1 rounded-full text-gray-500 dark:text-neutral-400">Students</button>
+                <button type="button" data-filter="faculty" class="px-3 py-1 rounded-full text-gray-500 dark:text-neutral-400">Faculty</button>
                 </div>
             </div>
             <div class="relative w-full h-[200px]">
                 <canvas id="barChart"></canvas>
             </div>
         </div>
-
-        {{-- Pie Chart - Status Breakdown --}}
-        <div class="bg-white border border-[#E4E1D8] shadow-sm rounded-2xl p-4 sm:p-6 dark:bg-[#16281F] dark:border-[#2A4B3A]">
-            <div class="mb-4">
-                <h2 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-neutral-200" style="font-family: 'Fraunces', serif;">Status Breakdown</h2>
-                <p class="text-xs sm:text-sm text-gray-400">Distribution of all request statuses</p>
-            </div>
-            <div class="relative w-full h-[200px]">
-                <canvas id="pieChart"></canvas>
-            </div>
-            <div class="mt-4 space-y-2">
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-[#D4A537] inline-block shrink-0"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Pending</span>
-                    </div>
-                    <span class="font-semibold text-[#123524] dark:text-neutral-200">{{ $this->pendingRequests }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-[#1C6B45] inline-block shrink-0"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Approved</span>
-                    </div>
-                    <span class="font-semibold text-[#123524] dark:text-neutral-200">{{ $this->approvedRequests }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-[#B8352A] inline-block shrink-0"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Rejected</span>
-                    </div>
-                    <span class="font-semibold text-[#123524] dark:text-neutral-200">{{ $this->rejectedRequests }}</span>
-                </div>
-            </div>
-        </div>
-
-        {{-- Radial/Doughnut Chart - Approval Rate --}}
-        <div class="bg-white border border-[#E4E1D8] shadow-sm rounded-2xl p-4 sm:p-6 dark:bg-[#16281F] dark:border-[#2A4B3A]">
-            <div class="mb-4">
-                <h2 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-neutral-200" style="font-family: 'Fraunces', serif;">Approval Rate</h2>
-                <p class="text-xs sm:text-sm text-gray-400">Overall approval percentage</p>
-            </div>
-            <div class="relative flex items-center justify-center mb-4 w-full h-[200px]">
-                <canvas id="radialChart"></canvas>
-                <div class="absolute text-center">
-                    @php
-                        $total = $this->totalRequests;
-                        $rate = $total > 0 ? round(($this->approvedRequests / $total) * 100) : 0;
-                    @endphp
-                    <p class="text-2xl sm:text-3xl font-bold text-[#123524] dark:text-neutral-200">{{ $rate }}%</p>
-                    <p class="text-xs text-gray-400">Approved</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-3 gap-2 mt-2">
-                <div class="text-center p-2 bg-[#1C6B45]/8 dark:bg-[#1C6B45]/15 rounded-xl">
-                    <p class="text-sm sm:text-base font-bold text-[#1C6B45] dark:text-[#7FBF8E]">{{ $this->approvedRequests }}</p>
-                    <p class="text-[10px] sm:text-xs text-gray-500 dark:text-neutral-400">Approved</p>
-                </div>
-                <div class="text-center p-2 bg-[#D4A537]/12 dark:bg-[#D4A537]/15 rounded-xl">
-                    <p class="text-sm sm:text-base font-bold text-[#B8862A]">{{ $this->pendingRequests }}</p>
-                    <p class="text-[10px] sm:text-xs text-gray-500 dark:text-neutral-400">Pending</p>
-                </div>
-                <div class="text-center p-2 bg-[#B8352A]/8 dark:bg-[#B8352A]/15 rounded-xl">
-                    <p class="text-sm sm:text-base font-bold text-[#B8352A]">{{ $this->rejectedRequests }}</p>
-                    <p class="text-[10px] sm:text-xs text-gray-500 dark:text-neutral-400">Rejected</p>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     {{-- Recent Pending Requests Table --}}
