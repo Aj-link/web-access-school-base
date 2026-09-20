@@ -98,10 +98,10 @@
                                     {{ $role === 'student'
                                         ? 'bg-[#123524] text-white border-[#123524] shadow-md'
                                         : 'bg-white dark:bg-[#0E1A14] text-[#123524] dark:text-green-100 border-[#D8D4C8] dark:border-[#2A4B3A] hover:border-[#1C6B45] hover:bg-[#F5F2E9] dark:hover:bg-[#16281F]' }}">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-                                    <path d="M12 14l6.16-3.422A12.083 12.083 0 0 1 21 12c0 4-4 8-9 8s-9-4-9-8c0-.857.212-1.668.84-2.578L12 14z"/>
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-mortarboard size-7" viewBox="0 0 16 16">
+                    <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917zM8 8.46 1.758 5.965 8 3.052l6.242 2.913z"/>
+                    <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"/>
+                    </svg>
                                 Student
                             </button>
 
@@ -111,7 +111,7 @@
                                     {{ $role === 'faculty'
                                         ? 'bg-[#123524] text-white border-[#123524] shadow-md'
                                         : 'bg-white dark:bg-[#0E1A14] text-[#123524] dark:text-green-100 border-[#D8D4C8] dark:border-[#2A4B3A] hover:border-[#1C6B45] hover:bg-[#F5F2E9] dark:hover:bg-[#16281F]' }}">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M17 20h5v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2h5"/>
                                     <circle cx="12" cy="7" r="4"/>
                                 </svg>
@@ -124,7 +124,7 @@
                                     {{ $role === 'program head'
                                         ? 'bg-[#123524] text-white border-[#123524] shadow-md'
                                         : 'bg-white dark:bg-[#0E1A14] text-[#123524] dark:text-green-100 border-[#D8D4C8] dark:border-[#2A4B3A] hover:border-[#1C6B45] hover:bg-[#F5F2E9] dark:hover:bg-[#16281F]' }}">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
                                     <rect x="9" y="3" width="6" height="4" rx="1"/>
                                     <path d="M9 12h6M9 16h4"/>
