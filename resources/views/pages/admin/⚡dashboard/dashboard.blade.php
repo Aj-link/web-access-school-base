@@ -52,61 +52,19 @@
 
     </div>
 
-    {{-- Charts Row --}}
-    <div class="grid lg:grid-cols-3 gap-6">
-
-        {{-- Monthly Requests by Department --}}
-        <div class="lg:col-span-2 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-1">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Monthly Requests</h2>
-                    <p class="text-sm text-gray-400 dark:text-neutral-500">By department, for {{ now()->year }}</p>
-                </div>
-                <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-medium">This Year</span>
+    {{-- Monthly Requests by Department --}}
+    <div class="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-1">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Monthly Requests</h2>
+                <p class="text-sm text-gray-400 dark:text-neutral-500">By department, for {{ now()->year }}</p>
             </div>
-            <div class="mt-4">
-                <canvas id="monthlyChart" height="130"></canvas>
-            </div>
-            <div id="monthlyLegend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4"></div>
+            <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-medium">This Year</span>
         </div>
-
-        {{-- Status Doughnut --}}
-        <div class="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
-            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-1">Request Status</h2>
-            <p class="text-sm text-gray-400 dark:text-neutral-500 mb-4">Overall breakdown</p>
-            <canvas id="statusChart" height="200"></canvas>
-            <div class="mt-4 space-y-2">
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-blue-400 inline-block"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Coordinator Review</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 dark:text-white">{{ $this->coordinatorReviewRequests }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Admin Review</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 dark:text-white">{{ $this->adminReviewRequests }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Approved</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 dark:text-white">{{ $this->approvedRequests }}</span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
-                        <span class="text-gray-600 dark:text-neutral-400">Rejected</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 dark:text-white">{{ $this->rejectedRequests }}</span>
-                </div>
-            </div>
+        <div class="mt-4">
+            <canvas id="monthlyChart" height="130"></canvas>
         </div>
-
+        <div id="monthlyLegend" class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4"></div>
     </div>
 
     {{-- Request Type Chart --}}
@@ -300,5 +258,34 @@
     }
 
     renderMonthlyLegend();
+
+    new Chart(document.getElementById('typeChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Facility Reservation', 'Material Request'],
+            datasets: [{
+                label: 'Total',
+                data: [{{ $this->facilityRequests }}, {{ $this->materialRequests }}],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(168, 85, 247, 0.8)',
+                ],
+                borderRadius: 8,
+                barThickness: 50,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: tickColor },
+                    grid: { color: gridColor }
+                },
+                x: { ticks: { color: tickColor }, grid: { display: false } }
+            }
+        }
+    });
 </script>
 </div>

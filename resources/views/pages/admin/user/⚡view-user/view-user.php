@@ -19,7 +19,7 @@ new #[Layout('layouts::admin')] class extends Component
         // the student one. Previously, orWhereHas(...) escaped the
         // nested closure entirely and matched ANY admin/program
         // head/faculty user regardless of approval status.
-        return User::with('roles')
+        return User::with(['roles', 'department'])
             ->where(function ($query) {
                 $query->where(function ($q) {
                     $q->whereHas('roles', fn($r) => $r->where('name', 'student'))
@@ -30,7 +30,7 @@ new #[Layout('layouts::admin')] class extends Component
                       ->where('status', 'approved');
                 });
             })
-            ->select('id', 'name', 'email', 'created_at')
+            ->select('id', 'name', 'email', 'department_id', 'created_at')
             ->paginate(5);
     }
 };

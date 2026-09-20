@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Department;
 use App\Models\Request as ResourceRequest;
+use App\Models\Resource;
 use App\Models\User;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -88,20 +89,32 @@ new #[Layout('layouts.admin')] class extends Component
             ->get();
     }
 
+    /**
+     * ✅ New: Stock analytics — Available / Low Stock / Out of Stock,
+     * based on quantity_available on the resources table.
+     */
     #[Computed]
-    public function coordinatorReviewRequests()
+    public function availableStockCount()
     {
-        return $this->adminVisibleRequests()
-            ->where('status', 'coordinator_review')
-            ->count();
+        return Resource::where('quantity_available', '>', 10)->count();
     }
 
     #[Computed]
-    public function adminReviewRequests()
+    public function lowStockCount()
     {
-        return $this->adminVisibleRequests()
-            ->where('status', 'admin_review')
-            ->count();
+        return Resource::whereBetween('quantity_available', [1, 10])->count();
+    }
+
+    #[Computed]
+    public function outOfStockCount()
+    {
+        return Resource::where('quantity_available', '<=', 0)->count();
+    }
+
+    #[Computed]
+    public function totalStockItems()
+    {
+        return Resource::count();
     }
 
     /**

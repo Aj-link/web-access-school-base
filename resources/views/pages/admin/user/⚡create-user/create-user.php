@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -11,7 +13,13 @@ new #[Layout('layouts::admin')] class extends Component
     public $email;
     public $password;
     public $password_confirmation;
-    public $selectedRole; // single role only
+    public $department_id;
+
+    #[Computed()]
+    public function departments()
+    {
+        return Department::orderBy('department_name')->get(['id', 'department_name']);
+    }
 
     protected function rules()
     {
@@ -19,7 +27,7 @@ new #[Layout('layouts::admin')] class extends Component
             'name' => 'required|string|min:3',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
-            'selectedRole' => 'required|string'
+            'department_id' => 'required|exists:departments,id',
         ];
     }
 
@@ -31,13 +39,15 @@ new #[Layout('layouts::admin')] class extends Component
             'name' => $this->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),
+            'department_id' => $this->department_id,
+            'status' => 'approved',
         ]);
 
-        // Assign only one role
-        $user->assignRole($this->selectedRole);
+        // Program head only
+        $user->assignRole('program head');
 
-        $this->reset(['name', 'email', 'password', 'password_confirmation', 'selectedRole']);
+        $this->reset(['name', 'email', 'password', 'password_confirmation', 'department_id']);
 
-        session()->flash('success', 'User created successfully with role assigned!');
+        session()->flash('success', 'Program head created successfully!');
     }
 };

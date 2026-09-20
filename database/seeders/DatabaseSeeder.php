@@ -4,6 +4,7 @@ namespace Database\Seeders;
 use Database\Seeders\DepartmentSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RequestTypeSeeder;
+use Database\Seeders\ResourceSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,6 +23,7 @@ class DatabaseSeeder extends Seeder
         PermissionSeeder::class,
         DepartmentSeeder::class,
         RequestTypeSeeder::class,
+        ResourceSeeder::class,
     ]);
     }
 }
