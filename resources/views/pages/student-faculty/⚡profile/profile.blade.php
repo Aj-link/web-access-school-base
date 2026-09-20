@@ -39,7 +39,7 @@
                         </label>
                         <div class="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center justify-between">
                             <span class="truncate pr-2">{{ $name }}</span>
-                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <rect x="3" y="11" width="18" height="10" rx="2"/>
                                 <path d="M7 11V7a5 5 0 0110 0v4"/>
                             </svg>
@@ -53,7 +53,7 @@
                         </label>
                         <div class="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center justify-between">
                             <span class="truncate pr-2">{{ $email }}</span>
-                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <rect x="3" y="11" width="18" height="10" rx="2"/>
                                 <path d="M7 11V7a5 5 0 0110 0v4"/>
                             </svg>
@@ -68,7 +68,7 @@
                             </label>
                             <div class="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center justify-between">
                                 <span class="truncate pr-2">{{ $department }}</span>
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <rect x="3" y="11" width="18" height="10" rx="2"/>
                                     <path d="M7 11V7a5 5 0 0110 0v4"/>
                                 </svg>
@@ -80,7 +80,7 @@
                             </label>
                             <div class="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-xs sm:text-sm flex items-center justify-between">
                                 <span class="truncate pr-2">{{ ucfirst($role) }}</span>
-                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <rect x="3" y="11" width="18" height="10" rx="2"/>
                                     <path d="M7 11V7a5 5 0 0110 0v4"/>
                                 </svg>
@@ -103,9 +103,9 @@
                             Current password
                         </label>
                         <input type="password" wire:model="current_password"
-                            class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 transition">
+                            class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 dark:focus:ring-green-500 dark:focus:border-green-500 transition">
                         @error('current_password')
-                            <p class="text-xs text-red-500 mt-1.5">{{ $message }}</p>
+                            <p class="text-xs text-red-500 dark:text-red-400 mt-1.5">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -115,9 +115,9 @@
                                 New password
                             </label>
                             <input type="password" wire:model="new_password"
-                                class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 transition">
+                                class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 dark:focus:ring-green-500 dark:focus:border-green-500 transition">
                             @error('new_password')
-                                <p class="text-xs text-red-500 mt-1.5">{{ $message }}</p>
+                                <p class="text-xs text-red-500 dark:text-red-400 mt-1.5">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -126,7 +126,7 @@
                                 Confirm new password
                             </label>
                             <input type="password" wire:model="new_password_confirmation"
-                                class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 transition">
+                                class="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 dark:focus:ring-green-500 dark:focus:border-green-500 transition">
                         </div>
                     </div>
                 </div>

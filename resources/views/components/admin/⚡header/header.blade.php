@@ -9,9 +9,10 @@
                 <li class="inline-flex items-center gap-1 relative pe-1.5 last:pe-0 last:after:hidden after:absolute after:top-1/2 after:end-0 after:inline-block after:w-px after:h-3.5 after:bg-gray-200 dark:after:bg-neutral-700 after:rounded-full after:-translate-y-1/2 after:rotate-12">
 
                     <a href="/admin/dashboard"
-                        class="shrink-0 inline-flex justify-center items-center focus:outline-hidden focus:opacity-80">
+                        class="shrink-0 inline-flex justify-center items-center rounded-full bg-white ring-2 ring-[#D4A537]/60 p-1 shadow-sm hover:ring-[#D4A537] transition focus:outline-hidden focus:opacity-80"
+                        aria-label="CSAV">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
-                            alt="CSAV Logo" class="h-8 w-8 rounded-md" />
+                            alt="CSAV Logo" class="h-5 w-5 sm:h-6 sm:w-6 object-contain" />
                     </a>
 
                     <span class="hidden sm:block text-sm font-semibold text-gray-900 dark:text-white ms-1">
@@ -53,7 +54,7 @@
                     <button @click="open = !open"
                         class="relative flex justify-center items-center size-9 text-sm text-gray-600 dark:text-neutral-300 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800 transition"
                         aria-label="Notifications">
-                        <svg class="shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        <svg class="shrink-0 size-5 dark:text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                             stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -189,23 +190,29 @@
                 <li class="inline-flex items-center">
                     <div class="hs-dropdown inline-flex [--strategy:absolute] [--auto-close:inside] [--placement:bottom-right] relative text-start">
 
+                         {{-- Avatar Button --}}
                         <button id="hs-admin-user-dropdown" type="button"
-                            class="p-0.5 inline-flex shrink-0 items-center gap-x-2 text-start rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
+                            class="p-0.5 inline-flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 text-start rounded-full hover:bg-navbar-nav-hover focus:outline-hidden focus:bg-navbar-nav-focus"
                             aria-haspopup="menu" aria-expanded="false" aria-label="User Dropdown">
-                            <div class="w-7 h-7 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold">
+
+                            {{-- Avatar Circle --}}
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123524] dark:bg-green-700 text-white flex items-center justify-center text-xs sm:text-sm font-bold ring-3 ring-[#D4A537]/50 dark:ring-[#D4A537]/50 shrink-0">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                             </div>
+
+                            {{-- Name - Hidden on Mobile --}}
                             <div class="hidden sm:block text-left">
                                 <span class="text-xs font-medium text-gray-900 dark:text-white">{{ Auth::user()->name }}</span>
                             </div>
-                            <svg class="shrink-0 size-3 text-gray-400 dark:text-neutral-500 hidden sm:block"
+
+                            <svg class="shrink-0 size-3 text-gray-600 dark:text-neutral-400 hidden sm:block"
                                 xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
                                 stroke-width="2" viewBox="0 0 24 24">
                                 <path d="m6 9 6 6 6-6" />
                             </svg>
                         </button>
 
-                        <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 transition-[opacity,margin] duration opacity-0 hidden z-20 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl"
+                        <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 transition-[opacity,margin] duration opacity-0 hidden z-20 bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 rounded-xl shadow-xl"
                             role="menu" aria-orientation="vertical" aria-labelledby="hs-admin-user-dropdown">
 
                             <div class="py-3 px-3.5 border-b border-gray-200 dark:border-neutral-700">

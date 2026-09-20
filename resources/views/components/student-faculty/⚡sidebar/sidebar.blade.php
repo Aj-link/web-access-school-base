@@ -1,18 +1,17 @@
 <div class="select-none">
 <!-- ========== MAIN SIDEBAR ========== -->
-<div id="hs-pro-sidebar"
-    class="hs-overlay [--body-scroll:true] lg:[--overlay-backdrop:false] [--is-layout-affect:true] [--opened:lg] [--auto-close:lg]
-    hs-overlay-open:translate-x-0 lg:hs-overlay-layout-open:translate-x-0
-    -translate-x-full transition-all duration-300 transform
-    w-[260px] sm:w-60
-    hidden
-    fixed inset-y-0 z-60 start-0
-    bg-sidebar-2
-    lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
+<div id="hs-pro-sidebar" class="hs-overlay [--body-scroll:true] lg:[--overlay-backdrop:false] [--is-layout-affect:true] [--opened:lg] [--auto-close:lg]
+hs-overlay-open:translate-x-0 lg:hs-overlay-layout-open:translate-x-0
+-translate-x-full transition-all duration-300 transform
+w-60
+hidden
+fixed inset-y-0 z-60 start-0
+bg-white dark:bg-neutral-900
+lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
     role="dialog" tabindex="-1" aria-label="Sidebar">
 
-    <div class="lg:pt-13 relative flex flex-col h-full max-h-full border-e border-gray-800 dark:border-neutral-700 bg-white dark:bg-neutral-800 border border-dropdown-line rounded-xl shadow-xl">
-        <nav class="p-3 size-full flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-track]:bg-scrollbar-track [&::-webkit-scrollbar-thumb]:bg-scrollbar-thumb">
+    <div class="lg:pt-13 relative flex flex-col h-full max-h-full border-e border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl">
+        <nav class="p-3 size-full flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-track]:bg-gray-100 dark:[&::-webkit-scrollbar-track]:bg-neutral-800 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600">
 
       {{-- Mobile: close button + user info strip --}}
       <div class="lg:hidden mb-3">
@@ -59,14 +58,14 @@
 
       {{-- Search --}}
       <button type="button"
-        class="p-1.5 ps-2.5 w-full inline-flex items-center gap-x-2 text-sm rounded-lg bg-layer border border-layer-line text-muted-foreground-2 shadow-xs focus:outline-hidden disabled:opacity-50 disabled:pointer-events-none hover:border-[#D4A537]/40 transition"
+        class="p-1.5 ps-2.5 w-full inline-flex items-center gap-x-2 text-sm rounded-lg bg-layer dark:bg-white/5 border border-layer-line dark:border-white/15 text-muted-foreground-2 dark:text-neutral-300 shadow-xs focus:outline-hidden disabled:opacity-50 disabled:pointer-events-none hover:border-[#D4A537]/40 dark:hover:border-[#D4A537]/60 transition"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="hs-pro-cmsssm"
         data-hs-overlay="#hs-pro-cmsssm">
-        <svg class="shrink-0 size-3.5 text-muted-foreground-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg class="shrink-0 size-3.5 text-muted-foreground-1 dark:text-neutral-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
         </svg>
         <span class="text-sm">Search</span>
-        <span class="ms-auto flex items-center gap-x-1 py-px px-1.5 border border-line-2 rounded-md">
+        <span class="ms-auto flex items-center gap-x-1 py-px px-1.5 border border-line-2 dark:border-white/20 rounded-md dark:text-neutral-400">
           <svg class="shrink-0 size-2.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -77,18 +76,16 @@
       </button>
 
       {{-- Home --}}
-      <div class="pt-3 mt-3 flex flex-col border-t border-sidebar-2-divider first:border-t-0 first:pt-0 first:mt-0">
-        <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">
-          Home
-        </span>
-        <ul class="flex flex-col gap-y-1">
-          <li>
+      <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
+                <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">Home</span>
+                <ul class="flex flex-col gap-y-1">
+                    <li>
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
                 {{ request()->routeIs('portal.dashboard')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus"
-                href="/portal/dashboard">
+                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
+                            focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
+                            href="/portal/dashboard">
               <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="7" height="7"/>
                 <rect x="14" y="3" width="7" height="7"/>
@@ -102,7 +99,7 @@
       </div>
 
       {{-- Requests --}}
-      <div class="pt-3 mt-3 flex flex-col border-t border-sidebar-2-divider first:border-t-0 first:pt-0 first:mt-0">
+      <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
         <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">
           Requests
         </span>
@@ -111,8 +108,8 @@
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
                 {{ request()->routeIs('portal.reservation') || request()->routeIs('portal.create-reservation')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus"
+                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
+                focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                 href="{{ route('portal.reservation') }}">
               <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -129,8 +126,8 @@
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
                 {{ request()->routeIs('portal.material')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus"
+                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
+                focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                 href="{{ route('portal.material') }}">
               <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -145,7 +142,7 @@
       </div>
 
       {{-- Notifications --}}
-      <div class="pt-3 mt-3 flex flex-col border-t border-sidebar-2-divider first:border-t-0 first:pt-0 first:mt-0">
+      <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
         <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">
           Notifications
         </span>
@@ -154,8 +151,8 @@
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
                 {{ request()->routeIs('portal.notification')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus"
+                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
+                focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                 href="#!">
               <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -175,7 +172,7 @@
       </div>
 
       {{-- Account --}}
-      <div class="pt-3 mt-3 flex flex-col border-t border-sidebar-2-divider first:border-t-0 first:pt-0 first:mt-0">
+      <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
         <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">
           Account
         </span>
@@ -184,8 +181,8 @@
             <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
                 {{ request()->routeIs('portal.profile')
                     ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-sidebar-2-nav-foreground hover:bg-sidebar-2-nav-hover' }}
-                focus:outline-hidden focus:bg-sidebar-2-nav-focus"
+                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
+                focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                 href="/portal/profile">
               <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
@@ -212,18 +209,18 @@
     </nav>
 
     {{-- Footer: CSAV mini badge --}}
-    <footer class="mt-auto p-3 border-t border-sidebar-2-divider">
-      <div class="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-gradient-to-r from-[#123524]/5 to-[#D4A537]/5">
+    <footer class="mt-auto p-3 border-t border-gray-200 dark:border-neutral-700">
+      <a href="{{ route('coordinator.profile') }}" class="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-gradient-to-r from-[#123524]/5 to-[#D4A537]/5 dark:from-white/5 dark:to-[#D4A537]/10 min-w-0 hover:from-[#123524]/10 hover:to-[#D4A537]/10 dark:hover:from-white/10 dark:hover:to-[#D4A537]/20 transition">
         <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png"
             alt="CSAV"
             class="w-6 h-6 rounded-full bg-white p-0.5 ring-1 ring-[#D4A537]/40 object-contain shrink-0">
         <div class="leading-tight min-w-0">
-          <p class="text-[11px] font-semibold text-sidebar-2-nav-foreground">CSAV Portal</p>
-          <p class="text-[10px] text-muted-foreground-1 truncate">
+          <p class="text-[11px] font-semibold text-gray-700 dark:text-white truncate">CSAV Portal</p>
+          <p class="text-[10px] text-muted-foreground-1 dark:text-gray-100/60 truncate">
             {{ Auth::user()->department?->department_name ?? 'Student & Faculty' }}
           </p>
         </div>
-      </div>
+      </a>
     </footer>
 
   </div>
