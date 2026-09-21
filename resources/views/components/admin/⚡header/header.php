@@ -74,7 +74,7 @@ new class extends Component
             $notification->update(['status' => 'sent']);
         }
 
-        $this->redirect($this->resolveUrl((string) $notification->message), navigate: true);
+        $this->redirect($this->resolveUrl((string) $notification->message));
     }
 
     public function markAllAsRead(): void

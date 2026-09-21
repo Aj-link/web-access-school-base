@@ -1,4 +1,4 @@
-<div class="select-none" style="color-shema: ligh;>
+<div class="select-none" style="color-shema: ligh;">
     <div class="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FAF7EF] dark:bg-[#0E1A14] px-6 py-10" style="font-family: 'Inter', sans-serif;">
 
         <svg class="absolute inset-0 w-full h-full opacity-[0.04] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
