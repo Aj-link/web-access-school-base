@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('request_id')->nullable()->constrained('requests')->cascadeOnDelete();
             $table->text('message');
             $table->string('type')->default('Gmail');
             $table->enum('status', ['pending', 'sent', 'failed'])->default('pending');

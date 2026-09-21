@@ -12,6 +12,25 @@ use Livewire\Component;
 
 new #[Layout('layouts.admin')] class extends Component
 {
+    public ?int $historyUserId = null;
+
+    public function showHistory($userId)
+    {
+        // Only program heads can have their history opened
+        $isProgramHead = User::role('program head')->whereKey($userId)->exists();
+
+        if (! $isProgramHead) {
+            return;
+        }
+
+        $this->historyUserId = (int) $userId;
+    }
+
+    public function closeHistory()
+    {
+        $this->historyUserId = null;
+    }
+
     /**
      * Only count requests that have reached the admin's visibility scope.
      * Requests still at 'pending' (with student/faculty) are excluded.
@@ -64,6 +83,12 @@ new #[Layout('layouts.admin')] class extends Component
     }
 
     #[Computed]
+    public function totalProgramHeads()
+    {
+        return User::role('program head')->count();
+    }
+
+    #[Computed]
     public function facilityRequests()
     {
         return $this->adminVisibleRequests()
@@ -82,10 +107,41 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function recentRequests()
     {
-        return $this->adminVisibleRequests()
+        // One row per requester: their latest request only
+        $latestIds = $this->adminVisibleRequests()
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('user_id')
+            ->pluck('id');
+
+        return ResourceRequest::whereIn('id', $latestIds)
             ->with(['user', 'requestType'])
             ->latest()
             ->take(5)
+            ->get();
+    }
+
+    #[Computed]
+    public function programHeadIds()
+    {
+        return User::role('program head')->pluck('id')->all();
+    }
+
+    #[Computed]
+    public function historyUser()
+    {
+        return $this->historyUserId ? User::find($this->historyUserId) : null;
+    }
+
+    #[Computed]
+    public function historyRequests()
+    {
+        if (! $this->historyUserId) {
+            return collect();
+        }
+
+        return ResourceRequest::where('user_id', $this->historyUserId)
+            ->with(['requestType', 'department', 'items'])
+            ->latest()
             ->get();
     }
 

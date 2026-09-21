@@ -8,8 +8,6 @@
 
         <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png">
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
          @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
             @vite(['resources/css/app.css', 'resources/js/app.js'])
         @else

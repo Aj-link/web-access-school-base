@@ -61,8 +61,12 @@
                 <li x-data="{
                         open: false,
                         get unreadCount() { return $wire.unreadCount; },
+                        get totalCount() { return $wire.totalCount; },
+                        get showAll() { return $wire.showAll; },
                         get notifications() { return $wire.notifications; },
-                        markAllAsRead() { $wire.markAllAsRead(); }
+                        markAllAsRead() { $wire.markAllAsRead(); },
+                        openNotification(id) { $wire.openNotification(id); },
+                        toggleAll() { $wire.toggleShowAll(); }
                     }"
                     class="inline-flex items-center relative">
 
@@ -119,7 +123,9 @@
                             <div class="max-h-[60vh] sm:max-h-80 overflow-y-auto divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
 
                                 <template x-for="notification in notifications" :key="notification.id">
-                                    <div class="px-4 py-3 flex items-start gap-3 transition-colors"
+                                    {{-- Whole row is the click target (no buttons inside) --}}
+                                    <div @click="openNotification(notification.id)"
+                                        class="px-4 py-3 flex items-start gap-3 transition-colors cursor-pointer"
                                         :class="notification.status === 'pending'
                                             ? 'bg-[#D4A537]/[0.06] hover:bg-[#D4A537]/[0.1]'
                                             : 'hover:bg-[#FAF7EF] dark:hover:bg-[#0E1A14]/50'">
@@ -147,14 +153,14 @@
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2 mb-0.5 flex-wrap">
                                                 <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
-    :class="notification.action_status === 'approved'
-        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
-        : (notification.action_status === 'rejected'
-            ? 'bg-[#B8352A]/15 text-[#B8352A]'
-            : 'bg-[#D4A537]/15 text-[#B8862A]')"
-    x-text="notification.action_status === 'approved' ? 'Approved'
-        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
-</span>
+                                                    :class="notification.action_status === 'approved'
+                                                        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
+                                                        : (notification.action_status === 'rejected'
+                                                            ? 'bg-[#B8352A]/15 text-[#B8352A]'
+                                                            : 'bg-[#D4A537]/15 text-[#B8862A]')"
+                                                    x-text="notification.action_status === 'approved' ? 'Approved'
+                                                        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
+                                                </span>
                                             </div>
                                             <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate"
                                                 x-text="notification.requester"></p>
@@ -180,7 +186,16 @@
 
                             </div>
 
-                            {{-- Footer --}}
+                            {{-- Footer: View all / Show less (only when there are more than 10) --}}
+                            <div x-show="totalCount > 10"
+                                class="px-4 py-2.5 bg-[#FAF7EF] dark:bg-[#0E1A14] border-t border-[#E4E1D8] dark:border-[#2A4B3A] text-center">
+                                <button type="button" @click="toggleAll()"
+                                    class="text-xs font-medium text-[#1C6B45] hover:text-[#123524] dark:text-[#7FBF8E] hover:underline transition"
+                                    x-text="showAll ? 'Show less ↑' : 'View all notifications →'">
+                                </button>
+                            </div>
+
+                            {{-- Footer: quick links --}}
                             <div x-show="notifications.length > 0"
                                 class="px-4 py-3 bg-[#FAF7EF] dark:bg-[#0E1A14] border-t border-[#E4E1D8] dark:border-[#2A4B3A] flex flex-wrap gap-3 justify-center">
                                 <a href="/coordinator/facility"

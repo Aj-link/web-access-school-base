@@ -36,17 +36,29 @@
                 </li>
             </ul>
 
-            {{-- Right: Notifications + User Dropdown --}}
+            {{-- Right: Coordinator Requests + Notifications + User Dropdown --}}
             <ul class="flex flex-row items-center gap-x-2 ms-auto">
+
+                {{-- Coordinator Requests Button --}}
+                <li class="inline-flex items-center">
+                        @if ($pendingCoordinatorRequests > 0)
+                            <span class="absolute -top-1 -end-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-neutral-900">
+                                {{ $pendingCoordinatorRequests > 9 ? '9+' : $pendingCoordinatorRequests }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
 
                 {{-- Notification Bell --}}
                 <li x-data="{
                         open: false,
                         get unreadCount() { return $wire.unreadCount },
+                        get totalCount() { return $wire.totalCount },
+                        get showAll() { return $wire.showAll },
                         get notifications() { return $wire.notifications },
-                        markAsRead(id) { $wire.markAsRead(id) },
-                        markAsUnread(id) { $wire.markAsUnread(id) },
-                        markAllAsRead() { $wire.markAllAsRead() }
+                        markAllAsRead() { $wire.markAllAsRead() },
+                        openNotification(id) { $wire.openNotification(id) },
+                        toggleAll() { $wire.toggleShowAll() }
                     }"
                     class="inline-flex items-center relative">
 
@@ -59,7 +71,7 @@
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                         </svg>
-                        {{-- ✅ Unread badge --}}
+                        {{-- Unread badge --}}
                         <span x-show="unreadCount > 0" x-cloak
                             class="absolute -top-0.5 -end-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-neutral-900">
                             <span x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
@@ -100,7 +112,9 @@
                         <div class="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-neutral-800">
 
                             <template x-for="notification in notifications" :key="notification.id">
-                                <div class="px-4 py-3 flex items-start gap-3 transition-colors"
+                                {{-- Whole row is the click target (no buttons inside) --}}
+                                <div @click="openNotification(notification.id)"
+                                    class="px-4 py-3 flex items-start gap-3 transition-colors cursor-pointer"
                                     :class="notification.status === 'unread'
                                         ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30'
                                         : 'hover:bg-gray-50 dark:hover:bg-neutral-800/50'">
@@ -118,7 +132,6 @@
                                     {{-- Content --}}
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-0.5">
-                                            {{-- ✅ unread/read badge --}}
                                             <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
                                                 :class="notification.status === 'unread'
                                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
@@ -132,30 +145,6 @@
                                             x-text="notification.message"></p>
                                         <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1"
                                             x-text="notification.time_ago"></p>
-                                    </div>
-
-                                    {{-- Action Buttons --}}
-                                    <div class="shrink-0">
-                                        {{-- ✅ Mark as read --}}
-                                        <template x-if="notification.status === 'unread'">
-                                            <button @click="markAsRead(notification.id)"
-                                                class="p-1.5 rounded-lg text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 transition"
-                                                title="Mark as read">
-                                                <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                                </svg>
-                                            </button>
-                                        </template>
-                                        {{-- ✅ Mark as unread --}}
-                                        <template x-if="notification.status === 'read'">
-                                            <button @click="markAsUnread(notification.id)"
-                                                class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800 transition"
-                                                title="Mark as unread">
-                                                <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                                </svg>
-                                            </button>
-                                        </template>
                                     </div>
 
                                 </div>
@@ -174,13 +163,13 @@
 
                         </div>
 
-                        {{-- Footer --}}
-                        <div x-show="notifications.length > 0"
+                        {{-- Footer: View all / Show less (only when there are more than 10) --}}
+                        <div x-show="totalCount > 10"
                             class="px-4 py-3 bg-gray-50 dark:bg-neutral-800 border-t border-gray-200 dark:border-neutral-700 text-center">
-                            <a href="/admin/notifications"
-                                class="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline transition">
-                                View all notifications →
-                            </a>
+                            <button type="button" @click="toggleAll()"
+                                class="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline transition"
+                                x-text="showAll ? 'Show less ↑' : 'View all notifications →'">
+                            </button>
                         </div>
 
                     </div>

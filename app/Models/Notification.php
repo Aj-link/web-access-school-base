@@ -13,6 +13,7 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
+        'request_id',
         'message',
         'type',
         'status',
@@ -20,6 +21,11 @@ class Notification extends Model
 
 public function user(): BelongsTo {
     return $this->belongsTo(User::class);
+}
+
+public function request(): BelongsTo
+{
+    return $this->belongsTo(Request::class);
 }
 
 }

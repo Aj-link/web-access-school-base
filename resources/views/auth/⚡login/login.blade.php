@@ -1,4 +1,4 @@
-<div class="select-none">
+<div class="select-none" style="color-shema: ligh;">
     <div class="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FAF7EF] dark:bg-[#0E1A14] px-6 py-10" style="font-family: 'Inter', sans-serif;">
 
         <!-- Subtle grille pattern, echoes the building's iron railings -->

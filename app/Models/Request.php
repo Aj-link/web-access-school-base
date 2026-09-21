@@ -52,4 +52,9 @@ public function approvals(): HasMany
     return $this->hasMany(RequestApproval::class);
 }
 
+public function notifications(): HasMany
+{
+    return $this->hasMany(Notification::class);
+}
+
 }

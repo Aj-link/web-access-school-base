@@ -3,12 +3,15 @@
 namespace App\Livewire\ProgramHead;
 
 use App\Models\User;
+use App\Notifications\NewUserPendingNotification;
+use App\Models\Notification as InAppNotification;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 new #[Layout('layouts.coordinator')] class extends Component
 {
@@ -73,46 +76,33 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->paginate(10);
     }
 
+    // ── Single-query stats (replaces 5 separate #[Computed] counts) ──
     #[Computed]
-    public function totalCount(): int
+    public function counts(): array
     {
-        return User::where('department_id', $this->departmentId)
-            ->whereHas('roles', fn($q) => $q->whereIn('name', ['student', 'faculty']))
-            ->count();
-    }
+        $row = User::where('users.department_id', $this->departmentId)
+            ->join('model_has_roles', function ($j) {
+                $j->on('model_has_roles.model_id', '=', 'users.id')
+                  ->where('model_has_roles.model_type', User::class);
+            })
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->whereIn('roles.name', ['student', 'faculty'])
+            ->selectRaw("
+                COUNT(DISTINCT users.id) as total,
+                COUNT(DISTINCT CASE WHEN roles.name = 'student' THEN users.id END) as student,
+                COUNT(DISTINCT CASE WHEN roles.name = 'faculty' THEN users.id END) as faculty,
+                COUNT(DISTINCT CASE WHEN users.status = 'approved' THEN users.id END) as approved,
+                COUNT(DISTINCT CASE WHEN users.status = 'pending' THEN users.id END) as pending
+            ")
+            ->first();
 
-    #[Computed]
-    public function studentCount(): int
-    {
-        return User::where('department_id', $this->departmentId)
-            ->whereHas('roles', fn($q) => $q->where('name', 'student'))
-            ->count();
-    }
-
-    #[Computed]
-    public function facultyCount(): int
-    {
-        return User::where('department_id', $this->departmentId)
-            ->whereHas('roles', fn($q) => $q->where('name', 'faculty'))
-            ->count();
-    }
-
-    #[Computed]
-    public function approvedCount(): int
-    {
-        return User::where('department_id', $this->departmentId)
-            ->whereHas('roles', fn($q) => $q->whereIn('name', ['student', 'faculty']))
-            ->where('status', 'approved')
-            ->count();
-    }
-
-    #[Computed]
-    public function pendingCount(): int
-    {
-        return User::where('department_id', $this->departmentId)
-            ->whereHas('roles', fn($q) => $q->whereIn('name', ['student', 'faculty']))
-            ->where('status', 'pending')
-            ->count();
+        return [
+            'total'    => (int) $row->total,
+            'student'  => (int) $row->student,
+            'faculty'  => (int) $row->faculty,
+            'approved' => (int) $row->approved,
+            'pending'  => (int) $row->pending,
+        ];
     }
 
     // ── Create ──────────────────────────────────────────────
@@ -142,8 +132,30 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         $user->assignRole($this->createRole);
 
+        // ✅ Notify every admin: email + bell notification
+        $roleLabel = ucfirst($this->createRole);
+
+        User::role('admin')->get()->each(function ($admin) use ($user, $roleLabel) {
+            // Email (queued)
+            $admin->notify(new NewUserPendingNotification(
+                userName:   $user->name,
+                userEmail:  $user->email,
+                role:       $roleLabel,
+                department: $this->departmentName,
+            ));
+
+            // Bell in the admin header (message contains "registration",
+            // so clicking it goes to /admin/students)
+            InAppNotification::create([
+                'user_id' => $admin->id,
+                'message' => "New {$roleLabel} registration: {$user->name} is waiting for account approval.",
+            ]);
+        });
+
         $this->showCreateModal = false;
-        session()->flash('success', ucfirst($this->createRole) . ' created successfully. Waiting for admin approval.');
+        session()->flash('success', $roleLabel . ' created successfully. Waiting for admin approval.');
+
+        unset($this->counts, $this->students);
     }
 
     // ── Edit ────────────────────────────────────────────────
@@ -184,6 +196,8 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         $this->showEditModal = false;
         session()->flash('success', 'User updated successfully.');
+
+        unset($this->counts, $this->students);
     }
 
     public function closeModals(): void
@@ -202,5 +216,7 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         $user->delete();
         session()->flash('success', 'User deleted successfully.');
+
+        unset($this->counts, $this->students);
     }
 };

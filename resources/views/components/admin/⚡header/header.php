@@ -2,11 +2,15 @@
 
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 new class extends Component
 {
     public int $unreadCount = 0;
+    public int $totalCount = 0;
+    public int $pendingCoordinatorRequests = 0;
+    public bool $showAll = false;
     public array $notifications = [];
 
     public function mount(): void
@@ -18,23 +22,26 @@ new class extends Component
     {
         if (! Auth::check()) return;
 
-        // ✅ FIX: only THIS logged-in user's own notifications — previously
-        // pulled every notification in the table regardless of recipient,
-        // leaking other users' (students, faculty, program heads) private
-        // notifications into whoever happened to be logged in.
+        // Only THIS logged-in user's own notifications (10 by default, up to 50 when "View all")
         $latest = Notification::with('user')
             ->where('user_id', Auth::id())
             ->latest()
-            ->take(10)
+            ->take($this->showAll ? 50 : 10)
             ->get();
 
-        // ✅ FIX: unread count scoped to this user too
+        $this->totalCount = Notification::where('user_id', Auth::id())->count();
+
         $this->unreadCount = Notification::where('user_id', Auth::id())
             ->where('status', 'pending')
             ->count();
 
-        // ✅ Map database status 'pending' → 'unread', 'sent' → 'read'
-        $this->notifications = $latest->map(fn($n) => [
+        // Pending facility reservations / material requests from program heads
+        $this->pendingCoordinatorRequests = \App\Models\Request::where('status', 'pending')
+            ->whereHas('user', fn ($q) => $q->role('program head'))
+            ->count();
+
+        // Map database status 'pending' → 'unread', 'sent' → 'read'
+        $this->notifications = $latest->map(fn ($n) => [
             'id'       => $n->id,
             'message'  => $n->message,
             'type'     => $n->type,
@@ -44,39 +51,54 @@ new class extends Component
         ])->toArray();
     }
 
-    public function markAsRead(int $id): void
+    // "View all notifications" / "Show less"
+    public function toggleShowAll(): void
     {
-        // ✅ FIX: scoped to the current user so nobody can mark another
-        // user's notification as read by guessing/passing an arbitrary ID.
-        $notification = Notification::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if ($notification && $notification->status === 'pending') {
-            $notification->update(['status' => 'sent']);
-        }
+        $this->showAll = ! $this->showAll;
         $this->loadNotifications();
     }
 
-    public function markAsUnread(int $id): void
+    // Click a notification: mark as read, then go to the right page
+    public function openNotification(int $id): void
     {
         $notification = Notification::where('id', $id)
             ->where('user_id', Auth::id())
             ->first();
 
-        if ($notification && $notification->status === 'sent') {
-            $notification->update(['status' => 'pending']);
+        if (! $notification) {
+            $this->loadNotifications();
+            return;
         }
-        $this->loadNotifications();
+
+        if ($notification->status === 'pending') {
+            $notification->update(['status' => 'sent']);
+        }
+
+        $this->redirect($this->resolveUrl((string) $notification->message), navigate: true);
     }
 
     public function markAllAsRead(): void
     {
-        // ✅ FIX: only marks THIS user's own pending notifications as read
         Notification::where('user_id', Auth::id())
             ->where('status', 'pending')
             ->update(['status' => 'sent']);
 
         $this->loadNotifications();
+    }
+
+    /**
+     * Decide where a notification should go based on its message.
+     * Registration (student/faculty account) → /admin/students
+     * Everything else (material / reservation requests) → /admin/manage-coordinator
+     */
+    private function resolveUrl(string $message): string
+    {
+        $registrationKeywords = ['regist', 'sign up', 'signed up', 'new account', 'account'];
+
+        if (Str::contains(Str::lower($message), $registrationKeywords)) {
+            return '/admin/students';
+        }
+
+        return '/admin/manage-coordinator';
     }
 };

@@ -21,35 +21,49 @@
     @endif
 
     {{-- Stats: simple text row instead of 4 cards --}}
-    <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-200 dark:border-neutral-700 pb-4">
-        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->totalCount }}</strong> total</span>
-        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->studentCount }}</strong> students</span>
-        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->facultyCount }}</strong> faculty</span>
-        @if($this->pendingCount > 0)
-            <span class="text-yellow-700 dark:text-yellow-400">
-                <strong>{{ $this->pendingCount }}</strong> pending approval
-            </span>
-        @endif
-    </div>
+<div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-200 dark:border-neutral-700 pb-4">
+    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['total'] }}</strong> total</span>
+    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['student'] }}</strong> students</span>
+    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['faculty'] }}</strong> faculty</span>
+    @if($this->counts['pending'] > 0)
+        <span class="text-yellow-700 dark:text-yellow-400">
+            <strong>{{ $this->counts['pending'] }}</strong> pending approval
+        </span>
+    @endif
+</div>
 
     {{-- Filters --}}
-    <div class="flex flex-col sm:flex-row gap-2">
-        <input type="text" wire:model.live="search" placeholder="Search name or email..."
-            class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-        <select wire:model.live="roleFilter"
-            class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-            <option value="">All roles</option>
-            <option value="student">Student</option>
-            <option value="faculty">Faculty</option>
-        </select>
-        <select wire:model.live="statusFilter"
-            class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-            <option value="">All status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-        </select>
+<div class="flex flex-col sm:flex-row gap-2">
+    {{-- Search with spinner --}}
+    <div class="relative flex-1">
+        <input type="text"
+            wire:model.live.debounce.500ms="search"
+            placeholder="Search name or email..."
+            class="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+
+        <div wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
+            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+        </div>
     </div>
+
+    <select wire:model.live="roleFilter"
+        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+        <option value="">All roles</option>
+        <option value="student">Student</option>
+        <option value="faculty">Faculty</option>
+    </select>
+
+    <select wire:model.live="statusFilter"
+        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+        <option value="">All status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+    </select>
+</div>
 
     {{-- Table --}}
     <div class="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
@@ -144,10 +158,22 @@
                 @error('createEmail') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <div>
+            <div x-data="{ showPass: false }">
                 <label class="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Password</label>
-                <input type="password" wire:model="createPassword" placeholder="Min. 6 characters"
-                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+                <div class="relative">
+                    <input :type="showPass ? 'text' : 'password'" wire:model="createPassword" placeholder="Min. 6 characters"
+                        class="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+                    <button type="button" @click="showPass = !showPass"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300">
+                        <svg x-show="!showPass" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <svg x-show="showPass" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12c1.292 4.338 5.31 7.5 10.066 7.5.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.774 3.162 10.066 7.5a10.522 10.522 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                        </svg>
+                    </button>
+                </div>
                 @error('createPassword') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
 

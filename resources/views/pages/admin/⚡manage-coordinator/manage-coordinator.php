@@ -13,7 +13,7 @@ new #[Layout('layouts.admin')] class extends Component
 {
     use WithPagination;
 
-    public $statusFilter = 'pending';
+    public $statusFilter = '';
     public $search       = '';
 
     /**
@@ -51,7 +51,7 @@ new #[Layout('layouts.admin')] class extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        return $query->latest()->paginate(10);
+        return $query->latest()->paginate(5);
     }
 
     #[Computed]
@@ -223,7 +223,6 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function clearFilters()
     {
-        $this->statusFilter = 'pending';
         $this->reset('search');
     }
 };
