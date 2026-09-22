@@ -141,36 +141,6 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
         </ul>
       </div>
 
-      {{-- Notifications --}}
-      <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
-        <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">
-          Notifications
-        </span>
-        <ul class="flex flex-col gap-y-1">
-          <li>
-            <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm rounded-lg transition
-                {{ request()->routeIs('portal.notification')
-                    ? 'bg-[#123524] text-white font-medium shadow-sm'
-                    : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800' }}
-                focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
-                href="#!">
-              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              Notifications
-              {{-- Unread badge in sidebar --}}
-              @php $unread = \App\Models\Notification::where('user_id', Auth::id())->where('status', 'unread')->count(); @endphp
-              @if($unread > 0)
-                <span class="ms-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
-                  {{ $unread > 9 ? '9+' : $unread }}
-                </span>
-              @endif
-            </a>
-          </li>
-        </ul>
-      </div>
-
       {{-- Account --}}
       <div class="pt-3 mt-3 flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
         <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">

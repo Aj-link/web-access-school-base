@@ -9,10 +9,16 @@ new class extends Component
     public string $email = '';
     public string $password = '';
     public bool $remember = false;
+    public bool $terms = false;
 
     protected array $rules = [
         'email' => 'required|email',
         'password' => 'required|string|min:6',
+        'terms' => 'accepted',
+    ];
+
+    protected array $messages = [
+        'terms.accepted' => 'You must agree to the Privacy Policy before logging in.',
     ];
 
     public function login()

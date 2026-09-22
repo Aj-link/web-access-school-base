@@ -551,7 +551,17 @@
         return fallbackColors[index % fallbackColors.length];
     }
 
-    const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+    // ✅ Build a soft top-to-bottom gradient fill per dataset, fading to transparent
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+
+    function makeGradient(ctx, color) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, color.replace('1)', '0.45)'));
+        gradient.addColorStop(1, color.replace('1)', '0)'));
+        return gradient;
+    }
+
+    const monthlyChart = new Chart(monthlyCtx, {
         type: 'line',
         data: {
             labels: monthlyLabels,
@@ -561,17 +571,20 @@
                     label: dept.name,
                     data: dept.data,
                     borderColor: color,
-                    backgroundColor: color.replace('1)', '0.1)'),
+                    backgroundColor: makeGradient(monthlyCtx, color),
                     borderWidth: 2.5,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    fill: false,
-                    tension: 0.35,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHitRadius: 12,
+                    pointBackgroundColor: color,
+                    fill: true,
+                    tension: 0.4,
                 };
             })
         },
         options: {
             responsive: true,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false }, // ✅ using our own legend below instead
                 tooltip: {
@@ -584,9 +597,12 @@
                 y: {
                     beginAtZero: true,
                     ticks: { stepSize: 1, color: tickColor },
-                    grid: { color: gridColor }
+                    grid: { color: gridColor, borderDash: [4, 4] }
                 },
-                x: { ticks: { color: tickColor }, grid: { display: false } }
+                x: {
+                    ticks: { color: tickColor },
+                    grid: { display: false }
+                }
             }
         }
     });

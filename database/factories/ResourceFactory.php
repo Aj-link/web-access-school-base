@@ -14,9 +14,9 @@ class ResourceFactory extends Factory
             'resource_type_id' => ResourceType::inRandomOrder()->first()?->id ?? ResourceType::factory(),
             'resource_name' => $this->faker->word(),
             'description' => $this->faker->sentence(),
-            'quantity_available' => $this->faker->numberBetween(10, 200),
+            'quantity_available' => $this->faker->numberBetween(12, 5),
             'unit' => $this->faker->randomElement(['Ream', 'Piece', 'Box', 'Set']),
-            'status' => $this->faker->randomElement(['available', 'unavailable']),
+            'status' => $this->faker->randomElement(['available']),
         ];
     }
 }

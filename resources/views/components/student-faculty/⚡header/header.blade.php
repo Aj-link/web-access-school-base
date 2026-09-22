@@ -63,23 +63,142 @@
             <ul class="flex flex-row items-center gap-x-1 sm:gap-x-2 ms-auto shrink-0">
 
                 {{-- Notification Bell --}}
-                <li class="inline-flex items-center">
-                    <a href="/admin/notifications"
-                        class="relative flex justify-center items-center size-8 sm:size-9 text-sm text-navbar-2-nav-foreground rounded-full hover:bg-navbar-2-nav-hover focus:outline-hidden focus:bg-navbar-2-nav-focus transition">
+                <li x-data="{
+                        open: false,
+                        get unreadCount() { return $wire.unreadCount; },
+                        get totalCount() { return $wire.totalCount; },
+                        get showAll() { return $wire.showAll; },
+                        get notifications() { return $wire.notifications; },
+                        markAllAsRead() { $wire.markAllAsRead(); },
+                        openNotification(id) { $wire.openNotification(id); },
+                        toggleAll() { $wire.toggleShowAll(); }
+                    }"
+                    class="inline-flex items-center relative">
+
+                    {{-- Bell Button --}}
+                    <button @click="open = !open"
+                        class="relative flex justify-center items-center size-8 sm:size-9 text-sm text-gray-600 dark:text-neutral-300 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800 transition"
+                        aria-label="Notifications">
                         <svg class="shrink-0 size-5 dark:text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                             stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                         </svg>
-                        @php
-                            $unread = \App\Models\Notification::where('status', 'unread')->count();
-                        @endphp
-                        @if($unread > 0)
-                            <span class="absolute top-0.5 end-0.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] sm:text-[10px] font-bold text-white bg-[#B8352A] rounded-full ring-2 ring-white dark:ring-[#16281F] animate-pulse">
-                                {{ $unread > 9 ? '9+' : $unread }}
-                            </span>
-                        @endif
-                    </a>
+                        <span x-show="unreadCount > 0" x-cloak
+                            class="absolute -top-0.5 -end-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-[#B8352A] rounded-full border-2 border-white animate-pulse">
+                            <span x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
+                        </span>
+                    </button>
+
+                    {{-- Dropdown Panel — teleported to <body> so it escapes any
+                         transformed ancestor (e.g. the sliding sidebar wrapper). --}}
+                    <template x-teleport="body">
+                        <div x-show="open"
+                            @click.outside="open = false"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                            class="fixed left-3 right-3 sm:left-auto sm:right-4 top-16 w-auto sm:w-96 max-w-full bg-white dark:bg-[#16281F] border border-[#E4E1D8] dark:border-[#2A4B3A] rounded-2xl shadow-2xl z-[70] overflow-hidden"
+                            style="display: none;">
+
+                            {{-- Header --}}
+                            <div class="flex items-center justify-between px-4 py-3 bg-[#FAF7EF] dark:bg-[#0E1A14] border-b border-[#E4E1D8] dark:border-[#2A4B3A]">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg class="size-4 text-[#1C6B45] dark:text-[#7FBF8E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
+                                    <h3 class="text-sm font-semibold text-[#123524] dark:text-white truncate" style="font-family: 'Fraunces', serif;">Notifications</h3>
+                                    <span x-show="unreadCount > 0"
+                                        class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold text-white bg-[#B8352A] rounded-full shrink-0"
+                                        x-text="unreadCount"></span>
+                                </div>
+                                <button x-show="unreadCount > 0"
+                                    @click="markAllAsRead()"
+                                    class="text-xs text-[#1C6B45] hover:text-[#123524] dark:text-[#7FBF8E] font-medium hover:underline transition shrink-0 whitespace-nowrap ms-2">
+                                    Mark all read
+                                </button>
+                            </div>
+
+                            {{-- Notifications List --}}
+                            <div class="max-h-[60vh] sm:max-h-80 overflow-y-auto divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
+
+                                <template x-for="notification in notifications" :key="notification.id">
+                                    <div @click="openNotification(notification.id)"
+                                        class="px-4 py-3 flex items-start gap-3 transition-colors cursor-pointer"
+                                        :class="notification.status === 'pending'
+                                            ? 'bg-[#D4A537]/[0.06] hover:bg-[#D4A537]/[0.1]'
+                                            : 'hover:bg-[#FAF7EF] dark:hover:bg-[#0E1A14]/50'">
+
+                                        {{-- Icon --}}
+                                        <div class="shrink-0 mt-0.5">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                                                :class="notification.is_facility
+                                                    ? 'bg-[#123524]/10 dark:bg-[#123524]/30 text-[#1C6B45] dark:text-[#7FBF8E]'
+                                                    : 'bg-[#D4A537]/15 dark:bg-[#D4A537]/25 text-[#B8862A]'">
+                                                <template x-if="notification.is_facility">
+                                                    <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m4.5 0v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+                                                    </svg>
+                                                </template>
+                                                <template x-if="!notification.is_facility">
+                                                    <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                                    </svg>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        {{-- Content --}}
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                                                <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
+                                                    :class="notification.action_status === 'approved'
+                                                        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
+                                                        : (notification.action_status === 'rejected'
+                                                            ? 'bg-[#B8352A]/15 text-[#B8352A]'
+                                                            : 'bg-[#D4A537]/15 text-[#B8862A]')"
+                                                    x-text="notification.action_status === 'approved' ? 'Approved'
+                                                        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
+                                                </span>
+                                            </div>
+                                            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate"
+                                                x-text="notification.purpose"></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate"
+                                                x-text="notification.message"></p>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
+                                                x-text="notification.time_ago"></p>
+                                        </div>
+
+                                    </div>
+                                </template>
+
+                                {{-- Empty State --}}
+                                <div x-show="notifications.length === 0" class="py-10 sm:py-12 text-center px-4">
+                                    <div class="w-14 h-14 rounded-full bg-[#FAF7EF] dark:bg-[#0E1A14] flex items-center justify-center mx-auto mb-3">
+                                        <svg class="size-7 text-[#B8862A]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-medium text-[#123524] dark:text-gray-300">No notifications yet</p>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">You'll see updates on your requests here</p>
+                                </div>
+
+                            </div>
+
+                            {{-- Footer: View all / Show less (only when there are more than 10) --}}
+                            <div x-show="totalCount > 10"
+                                class="px-4 py-2.5 bg-[#FAF7EF] dark:bg-[#0E1A14] border-t border-[#E4E1D8] dark:border-[#2A4B3A] text-center">
+                                <button type="button" @click="toggleAll()"
+                                    class="text-xs font-medium text-[#1C6B45] hover:text-[#123524] dark:text-[#7FBF8E] hover:underline transition"
+                                    x-text="showAll ? 'Show less ↑' : 'View all notifications →'">
+                                </button>
+                            </div>
+
+                        </div>
+                    </template>
                 </li>
 
                 {{-- User Dropdown --}}
@@ -211,4 +330,8 @@
     </nav>
 </header>
 <!-- ========== END HEADER ========== -->
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 </div>

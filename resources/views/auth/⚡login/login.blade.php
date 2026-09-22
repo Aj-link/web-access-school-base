@@ -100,27 +100,25 @@
                         <a href="/forgot-password" class="text-[#B8862A] hover:text-[#966E22] font-medium">Forgot password?</a>
                     </div>
 
+                    {{-- Terms --}}
+                    <div class="flex items-start gap-2">
+                        <input type="checkbox" wire:model="terms"
+                               class="mt-1 rounded border-[#D8D4C8] text-[#1C6B45] focus:ring-[#1C6B45]">
+                        <label class="text-sm text-gray-600 dark:text-neutral-300">
+                            I agree to the
+                            <a href="/privacy" class="text-[#B8862A] hover:text-[#966E22] font-medium">Privacy Policy</a>
+                        </label>
+                    </div>
+                    @error('terms')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+
                     <!-- Submit -->
                     <button type="submit"
                             class="w-full px-6 py-3.5 rounded-lg bg-[#123524] text-white font-semibold shadow-lg hover:bg-[#0C2418] transition">
                         Log In
                     </button>
                 </form>
-
-                <!-- Divider -->
-                <div class="my-7 flex items-center">
-                    <div class="flex-grow border-t border-[#E4E1D8] dark:border-[#2A4B3A]"></div>
-                    <span class="px-3 text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">or</span>
-                    <div class="flex-grow border-t border-[#E4E1D8] dark:border-[#2A4B3A]"></div>
-                </div>
-
-                <!-- Create Account -->
-                <div class="text-center">
-                    <a href="/register"
-                       class="inline-block w-full px-6 py-3.5 rounded-lg bg-[#D4A537] text-white font-semibold shadow hover:bg-[#B8862A] transition">
-                        Create New Account
-                    </a>
-                </div>
             </div>
         </div>
     </div>

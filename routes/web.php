@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 // Authentication routes
 Route::livewire('/', 'auth::login')->name('login');
-Route::livewire('/register', 'auth::register')->name('register');
 Route::livewire('/waiting', 'auth::waiting')->name('waiting');
 
 //Privacy
