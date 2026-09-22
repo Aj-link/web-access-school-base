@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Schedule;
+use App\Models\RequestSchedule;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Schedule>
+ * @extends Factory<RequestSchedule>
  */
-class ScheduleFactory extends Factory
+class RequestScheduleFactory extends Factory
 {
     /**
      * Define the model's default state.

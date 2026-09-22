@@ -2,27 +2,27 @@
 
 namespace Database\Factories;
 
-use App\Models\Notification;
+use App\Models\Request;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Notification>
- */
 class NotificationFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-        'user_id' => User::factory(),
-        'message' => $this->faker->sentence(),
-        'type'    => $this->faker->randomElement(['SMS','Gmail','Messenger']),
-        'status'  => $this->faker->randomElement(['pending', 'sent', 'failed'])
+            'user_id' => User::factory(),
+            'request_id' => Request::factory(),
+            'message' => fake()->sentence(),
+            'type' => 'Gmail',
+            'status' => fake()->randomElement(['pending', 'sent', 'failed']),
         ];
+    }
+
+    public function sent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'sent',
+        ]);
     }
 }

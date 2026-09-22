@@ -95,4 +95,49 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->take(5)
             ->get();
     }
+
+    #[Computed]
+public function studentFacilityRequests()
+{
+    return ResourceRequest::where('request_type_id', 1)
+        ->whereHas('user', function ($q) {
+            $this->deptFilter($q);
+            $q->role('student');
+        })
+        ->count();
+}
+
+#[Computed]
+public function studentMaterialRequests()
+{
+    return ResourceRequest::where('request_type_id', 2)
+        ->whereHas('user', function ($q) {
+            $this->deptFilter($q);
+            $q->role('student');
+        })
+        ->count();
+}
+
+#[Computed]
+public function facultyFacilityRequests()
+{
+    return ResourceRequest::where('request_type_id', 1)
+        ->whereHas('user', function ($q) {
+            $this->deptFilter($q);
+            $q->role('faculty');
+        })
+        ->count();
+}
+
+#[Computed]
+public function facultyMaterialRequests()
+{
+    return ResourceRequest::where('request_type_id', 2)
+        ->whereHas('user', function ($q) {
+            $this->deptFilter($q);
+            $q->role('faculty');
+        })
+        ->count();
+}
+
 };
