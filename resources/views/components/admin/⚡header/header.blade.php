@@ -36,18 +36,8 @@
                 </li>
             </ul>
 
-            {{-- Right: Coordinator Requests + Notifications + User Dropdown --}}
+            {{-- Right: Notifications + User Dropdown --}}
             <ul class="flex flex-row items-center gap-x-2 ms-auto">
-
-                {{-- Coordinator Requests Button --}}
-                <li class="inline-flex items-center">
-                        @if ($pendingCoordinatorRequests > 0)
-                            <span class="absolute -top-1 -end-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-neutral-900">
-                                {{ $pendingCoordinatorRequests > 9 ? '9+' : $pendingCoordinatorRequests }}
-                            </span>
-                        @endif
-                    </a>
-                </li>
 
                 {{-- Notification Bell --}}
                 <li x-data="{

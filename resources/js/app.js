@@ -1,17 +1,29 @@
 import './bootstrap';
-import { HSStaticMethods } from 'preline/non-auto';
+import 'preline';
 
-// Function to init only the plugins you use
-function autoInit() {
-  HSStaticMethods.autoInit(['dropdown', 'overlay']);
+// Initialize Preline UI components
+function initPrelineComponents() {
+  // Use the recommended HSStaticMethods.autoInit() approach
+  if (window.HSStaticMethods && typeof window.HSStaticMethods.autoInit === 'function') {
+    window.HSStaticMethods.autoInit();
+  }
 }
 
-// Initial page load
-autoInit();
+// Listen for Livewire events to re-initialize components
+document.addEventListener('livewire:navigated', () => {
+  // Re-initialize components after navigation
+  initPrelineComponents();
+});
 
-// Re-initialize ONLY after Livewire morphs the DOM
+document.addEventListener('livewire:updated', () => {
+  initPrelineComponents();
+});
+
+document.addEventListener('livewire:load', () => {
+  initPrelineComponents();
+});
+
+// Initialize on page load
 document.addEventListener('livewire:init', () => {
-  Livewire.hook('morphed', () => {
-    autoInit();
-  });
+  initPrelineComponents();
 });
