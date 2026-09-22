@@ -180,16 +180,24 @@
 </div>
 
 {{-- Chart.js --}}
+{{-- Chart.js --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Pre-computed data for the filter toggle (All / Students / Faculty)
+    const requestData = {
+        all: [{{ $this->facilityRequests }}, {{ $this->materialRequests }}],
+        student: [{{ $this->studentFacilityRequests }}, {{ $this->studentMaterialRequests }}],
+        faculty: [{{ $this->facultyFacilityRequests }}, {{ $this->facultyMaterialRequests }}],
+    };
+
     // 1. Bar Chart - Request Types
-    new Chart(document.getElementById('barChart'), {
+    const barChart = new Chart(document.getElementById('barChart'), {
         type: 'bar',
         data: {
             labels: ['Facility Reservation', 'Material Request'],
             datasets: [{
                 label: 'Total',
-                data: [{{ $this->facilityRequests }}, {{ $this->materialRequests }}],
+                data: requestData.all,
                 backgroundColor: [
                     'rgba(18, 53, 36, 0.85)',
                     'rgba(212, 165, 55, 0.85)',
@@ -213,60 +221,86 @@
         }
     });
 
-    // 2. Pie Chart - Status Breakdown
-    new Chart(document.getElementById('pieChart'), {
-        type: 'pie',
-        data: {
-            labels: ['Pending', 'Approved', 'Rejected'],
-            datasets: [{
-                data: [
-                    {{ $this->pendingRequests }},
-                    {{ $this->approvedRequests }},
-                    {{ $this->rejectedRequests }}
-                ],
-                backgroundColor: [
-                    'rgba(212, 165, 55, 0.9)',
-                    'rgba(28, 107, 69, 0.9)',
-                    'rgba(184, 53, 42, 0.9)',
-                ],
-                borderWidth: 2,
-                borderColor: '#fff',
-                hoverOffset: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
+    // Filter button handling (All / Students / Faculty)
+    const filterButtons = document.querySelectorAll('#lineFilters button');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.dataset.filter;
+
+            // Swap chart data
+            barChart.data.datasets[0].data = requestData[filter];
+            barChart.update();
+
+            // Update active pill styling
+            filterButtons.forEach(b => {
+                b.classList.remove('bg-[#123524]', 'text-white');
+                b.classList.add('text-gray-500', 'dark:text-neutral-400');
+            });
+            btn.classList.add('bg-[#123524]', 'text-white');
+            btn.classList.remove('text-gray-500', 'dark:text-neutral-400');
+        });
     });
 
+    // 2. Pie Chart - Status Breakdown
+    const pieChartEl = document.getElementById('pieChart');
+    if (pieChartEl) {
+        new Chart(pieChartEl, {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Approved', 'Rejected'],
+                datasets: [{
+                    data: [
+                        {{ $this->pendingRequests }},
+                        {{ $this->approvedRequests }},
+                        {{ $this->rejectedRequests }}
+                    ],
+                    backgroundColor: [
+                        'rgba(212, 165, 55, 0.9)',
+                        'rgba(28, 107, 69, 0.9)',
+                        'rgba(184, 53, 42, 0.9)',
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
     // 3. Radial/Doughnut Chart - Approval Rate
-    new Chart(document.getElementById('radialChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Approved', 'Pending', 'Rejected'],
-            datasets: [{
-                data: [
-                    {{ $this->approvedRequests }},
-                    {{ $this->pendingRequests }},
-                    {{ $this->rejectedRequests }}
-                ],
-                backgroundColor: [
-                    'rgba(28, 107, 69, 0.9)',
-                    'rgba(212, 165, 55, 0.9)',
-                    'rgba(184, 53, 42, 0.9)',
-                ],
-                borderWidth: 0,
-                hoverOffset: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: { legend: { display: false } }
-        }
-    });
+    const radialChartEl = document.getElementById('radialChart');
+    if (radialChartEl) {
+        new Chart(radialChartEl, {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved', 'Pending', 'Rejected'],
+                datasets: [{
+                    data: [
+                        {{ $this->approvedRequests }},
+                        {{ $this->pendingRequests }},
+                        {{ $this->rejectedRequests }}
+                    ],
+                    backgroundColor: [
+                        'rgba(28, 107, 69, 0.9)',
+                        'rgba(212, 165, 55, 0.9)',
+                        'rgba(184, 53, 42, 0.9)',
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
 </script>
 </div>

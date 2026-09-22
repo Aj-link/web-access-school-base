@@ -2,31 +2,21 @@
 
 namespace Database\Factories;
 
-use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<AuditLog>
- */
 class AuditLogFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'user_id'    => User::factory(), // creates a user automatically
-            'action'     => $this->faker->randomElement([
-                'created', 'updated', 'deleted', 'viewed'
-            ]),
-            'table_name' => $this->faker->randomElement([
-                'users', 'departments', 'facilities', 'resources'
-            ]),
-            'record_id'  => $this->faker->numberBetween(1, 100),
+            'user_id' => User::factory(),
+            'action' => fake()->randomElement(['created', 'updated', 'deleted', 'approved', 'rejected']),
+            'table_name' => fake()->randomElement(['requests', 'resources', 'stocks', 'users', 'reports']),
+            'record' => [
+                'id' => fake()->numberBetween(1, 1000),
+                'changes' => fake()->words(3),
+            ],
         ];
     }
 }
