@@ -132,7 +132,7 @@
                                             {{ $item->item_name }}
                                         </td>
                                         <td class="px-3 sm:px-4 py-3 text-center text-gray-600 dark:text-neutral-400">
-                                            {{ $item->quantity }}
+                                            {{ $isFacility ? ' ' : $item->quantity }}
                                         </td>
                                         <td class="px-3 sm:px-4 py-3 text-gray-600 dark:text-neutral-400 whitespace-nowrap">
                                             @if($item->request_date)
