@@ -1,10 +1,6 @@
 <?php
 
-namespace App\Livewire\StudentFaculty;
-
-use App\Models\ResourceUsage;
 use App\Models\Request as ResourceRequest;
-use App\Models\RequestItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -13,14 +9,35 @@ use Livewire\Component;
 
 new #[Layout('layouts.student-faculty')] class extends Component
 {
+    // Facility Reservations and Material Requests are BOTH stored in the
+    // `requests` table, distinguished by request_type_id (1 = Facility, 2 = Material).
+    // The room/item detail for each lives in `request_items`.
+
     #[Computed]
     public function totalFacilityReservations()
     {
-        return ResourceUsage::where('user_id', Auth::id())->count();
+        return ResourceRequest::where('user_id', Auth::id())
+            ->where('request_type_id', 1) // Facility Reservation
+            ->count();
     }
 
-    // Facility reservations don't have a status column, so we only show total.
-    // For material requests, we can show approved/pending because 'requests' table has status.
+    #[Computed]
+    public function approvedFacilityReservations()
+    {
+        return ResourceRequest::where('user_id', Auth::id())
+            ->where('request_type_id', 1)
+            ->where('status', 'approved')
+            ->count();
+    }
+
+    #[Computed]
+    public function pendingFacilityReservations()
+    {
+        return ResourceRequest::where('user_id', Auth::id())
+            ->where('request_type_id', 1)
+            ->where('status', 'pending')
+            ->count();
+    }
 
     #[Computed]
     public function totalMaterialRequests()
@@ -48,59 +65,79 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->count();
     }
 
+    // Combined pending across BOTH Facility and Material requests —
+    // used by the "Active (Pending)" stat card, which previously only
+    // reflected Material pending.
+    #[Computed]
+    public function totalPendingRequests()
+    {
+        return ResourceRequest::where('user_id', Auth::id())
+            ->whereIn('request_type_id', [1, 2])
+            ->where('status', 'pending')
+            ->count();
+    }
+
     #[Computed]
     public function recentActivities()
     {
-        // Recent facility reservations (no status, so we just show them)
-        $reservations = ResourceUsage::with('resource')
+        return ResourceRequest::with('items')
             ->where('user_id', Auth::id())
+            ->whereIn('request_type_id', [1, 2])
             ->latest()
-            ->take(5)
+            ->take(7)
             ->get()
-            ->map(fn($item) => [
-                'type'    => 'Facility',
-                'name'    => $item->resource->resource_name ?? '—',
-                'date'    => $item->created_at,
-                'status'  => 'submitted', // default because no status column
-                'details' => Carbon::parse($item->used_date)->format('M d, Y h:i A'),
-            ]);
+            ->map(function ($req) {
+                $isFacility = (int) $req->request_type_id === 1;
+                $firstItem = $req->items->first();
 
-        // Recent material requests (with status)
-        $requests = ResourceRequest::with('items')
-            ->where('user_id', Auth::id())
-            ->where('request_type_id', 2)
-            ->latest()
-            ->take(5)
-            ->get()
-            ->flatMap(function ($req) {
-                return $req->items->map(fn($item) => [
-                    'type'    => 'Material',
-                    'name'    => $item->item_name,
-                    'date'    => $req->created_at,
-                    'status'  => $req->status,
-                    'details' => "Qty: {$item->quantity}",
-                ]);
+                $details = $isFacility
+                    ? ($firstItem
+                        ? Carbon::parse($firstItem->request_date)->format('M d, Y')
+                            . ($firstItem->start_time ? ' · ' . Carbon::parse($firstItem->start_time)->format('h:i A') : '')
+                        : $req->purpose)
+                    : ($req->items->count() > 1
+                        ? $req->items->count() . ' items'
+                        : 'Qty: ' . ($firstItem->quantity ?? '—'));
+
+                return [
+                    'type'     => $isFacility ? 'Facility' : 'Material',
+                    'name'     => $firstItem->item_name ?? $req->purpose,
+                    'status'   => $req->status,
+                    'details'  => $details,
+                    'time_ago' => $req->created_at->diffForHumans(),
+                ];
             });
-
-        $all = $reservations->concat($requests)->sortByDesc('date')->take(7);
-
-        return $all->map(fn($a) => [
-            'type'     => $a['type'],
-            'name'     => $a['name'],
-            'status'   => $a['status'],
-            'details'  => $a['details'],
-            'time_ago' => Carbon::parse($a['date'])->diffForHumans(),
-        ])->values();
     }
 
     #[Computed]
     public function monthlyStats()
     {
-        // Last 6 months facility reservations count (no status filter)
+        // Last 6 months of facility reservations
         $months = collect();
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $count = ResourceUsage::where('user_id', Auth::id())
+            $count = ResourceRequest::where('user_id', Auth::id())
+                ->where('request_type_id', 1) // Facility Reservation
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
+            $months->push([
+                'month' => $month->format('M Y'),
+                'count' => $count,
+            ]);
+        }
+        return $months;
+    }
+
+    #[Computed]
+    public function monthlyMaterialStats()
+    {
+        // Last 6 months of material requests
+        $months = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $count = ResourceRequest::where('user_id', Auth::id())
+                ->where('request_type_id', 2) // Material Request
                 ->whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
                 ->count();

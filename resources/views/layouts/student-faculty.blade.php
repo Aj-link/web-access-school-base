@@ -7,6 +7,7 @@
         <title>{{ $title ?? config('app.name') }}</title>
 
         <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/5/55/LogoCSAV.png">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
 
          @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
             @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -28,6 +29,7 @@
                 </div>
             </div>
         </main>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
         @livewireScripts
     </body>
 </html>
