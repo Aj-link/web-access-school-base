@@ -151,26 +151,26 @@
                                             </div>
                                         </div>
 
-                                        {{-- Content --}}
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                                                <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
-                                                    :class="notification.action_status === 'approved'
-                                                        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
-                                                        : (notification.action_status === 'rejected'
-                                                            ? 'bg-[#B8352A]/15 text-[#B8352A]'
-                                                            : 'bg-[#D4A537]/15 text-[#B8862A]')"
-                                                    x-text="notification.action_status === 'approved' ? 'Approved'
-                                                        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
-                                                </span>
-                                            </div>
-                                            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate"
-                                                x-text="notification.purpose"></p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate"
-                                                x-text="notification.message"></p>
-                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
-                                                x-text="notification.time_ago"></p>
-                                        </div>
+{{-- Content --}}
+<div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+        <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
+            :class="notification.action_status === 'approved'
+                ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
+                : (notification.action_status === 'rejected'
+                    ? 'bg-[#B8352A]/15 text-[#B8352A]'
+                    : 'bg-[#D4A537]/15 text-[#B8862A]')"
+            x-text="notification.action_status === 'approved' ? 'Approved'
+                : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
+        </span>
+    </div>
+    <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words line-clamp-2"
+        x-text="notification.purpose"></p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 break-words line-clamp-2"
+        x-text="notification.message"></p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
+        x-text="notification.time_ago"></p>
+</div>
 
                                     </div>
                                 </template>

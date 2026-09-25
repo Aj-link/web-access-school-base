@@ -3,6 +3,7 @@
 namespace App\Livewire\Coordinator;
 
 use App\Models\Request as ResourceRequest;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -11,15 +12,6 @@ use Livewire\Component;
 
 new #[Layout('layouts.coordinator')] class extends Component
 {
-    /**
-     * Base query scope shared by the listing and the action guards.
-     * Scoped by the request's own department_id (set at creation time),
-     * not the requestor's current department — so a program head only
-     * ever sees requests filed under their own department.
-     *
-     * Also restricted to requests submitted by Student/Faculty accounts
-     * only — Admin or Program Head accounts should never show up here.
-     */
     protected function scopedQuery()
     {
         return ResourceRequest::where('request_type_id', 2)
@@ -49,11 +41,11 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         $departmentId = Auth::user()->department_id;
+        $approverName = Auth::user()->name;
 
         try {
-            DB::transaction(function () use ($request, $departmentId) {
+            DB::transaction(function () use ($request, $departmentId, $approverName) {
 
-                // Pass 1: make sure every item has enough allocated stock before touching anything
                 foreach ($request->items as $item) {
                     $allocation = DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -68,7 +60,6 @@ new #[Layout('layouts.coordinator')] class extends Component
                     }
                 }
 
-                // Pass 2: deduct, now that every item is confirmed fulfillable
                 foreach ($request->items as $item) {
                     DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -77,6 +68,18 @@ new #[Layout('layouts.coordinator')] class extends Component
                 }
 
                 $request->update(['status' => 'approved']);
+
+                $itemsList = $request->items
+                    ->map(fn ($i) => "{$i->item_name} (x{$i->quantity})")
+                    ->implode(', ');
+
+                Notification::create([
+                    'user_id'    => $request->user_id,
+                    'request_id' => $request->id,
+                    'message'    => "{$approverName} approved your material request: {$itemsList}.",
+                    'type'       => 'Gmail',
+                    'status'     => 'pending',
+                ]);
             });
 
             unset($this->requests);
@@ -87,9 +90,22 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function reject(int $id)
     {
-        $request = $this->scopedQuery()->findOrFail($id);
+        $request = $this->scopedQuery()->with('items')->findOrFail($id);
 
         $request->update(['status' => 'rejected']);
+
+        $approverName = Auth::user()->name;
+        $itemsList = $request->items
+            ->map(fn ($i) => "{$i->item_name} (x{$i->quantity})")
+            ->implode(', ');
+
+        Notification::create([
+            'user_id'    => $request->user_id,
+            'request_id' => $request->id,
+            'message'    => "{$approverName} rejected your material request: {$itemsList}.",
+            'type'       => 'Gmail',
+            'status'     => 'pending',
+        ]);
 
         unset($this->requests);
     }

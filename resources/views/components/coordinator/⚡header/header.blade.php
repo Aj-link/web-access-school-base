@@ -149,26 +149,26 @@
                                             </div>
                                         </div>
 
-                                        {{-- Content --}}
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                                                <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
-                                                    :class="notification.action_status === 'approved'
-                                                        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
-                                                        : (notification.action_status === 'rejected'
-                                                            ? 'bg-[#B8352A]/15 text-[#B8352A]'
-                                                            : 'bg-[#D4A537]/15 text-[#B8862A]')"
-                                                    x-text="notification.action_status === 'approved' ? 'Approved'
-                                                        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
-                                                </span>
-                                            </div>
-                                            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate"
-                                                x-text="notification.requester"></p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate"
-                                                x-text="notification.purpose"></p>
-                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
-                                                x-text="notification.time_ago"></p>
-                                        </div>
+{{-- Content --}}
+<div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+        <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
+            :class="notification.action_status === 'approved'
+                ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
+                : (notification.action_status === 'rejected'
+                    ? 'bg-[#B8352A]/15 text-[#B8352A]'
+                    : 'bg-[#D4A537]/15 text-[#B8862A]')"
+            x-text="notification.action_status === 'approved' ? 'Approved'
+                : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
+        </span>
+    </div>
+    <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words"
+        x-text="notification.requester"></p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 break-words line-clamp-2"
+        x-text="notification.purpose"></p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
+        x-text="notification.time_ago"></p>
+</div>
 
                                     </div>
                                 </template>
@@ -195,19 +195,6 @@
                                 </button>
                             </div>
 
-                            {{-- Footer: quick links --}}
-                            <div x-show="notifications.length > 0"
-                                class="px-4 py-3 bg-[#FAF7EF] dark:bg-[#0E1A14] border-t border-[#E4E1D8] dark:border-[#2A4B3A] flex flex-wrap gap-3 justify-center">
-                                <a href="/coordinator/facility"
-                                    class="text-xs font-medium text-[#1C6B45] hover:text-[#123524] dark:text-[#7FBF8E] hover:underline transition">
-                                    View Facility →
-                                </a>
-                                <span class="text-gray-300 dark:text-gray-600">|</span>
-                                <a href="/coordinator/material"
-                                    class="text-xs font-medium text-[#B8862A] hover:text-[#96701F] hover:underline transition">
-                                    View Materials →
-                                </a>
-                            </div>
 
                         </div>
                     </template>

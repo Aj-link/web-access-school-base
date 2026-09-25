@@ -1,134 +1,120 @@
 <?php
 
-use App\Models\Request;
-use App\Models\RequestApproval;
 use App\Models\Notification;
-use App\Models\Resource;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 new class extends Component
 {
-    public bool $showRejectModal = false;
-    public ?int $rejectingRequestId = null;
-    public string $rejectRemarks = '';
+    public int $unreadCount = 0;
+    public int $totalCount = 0;
+    public bool $showAll = false;
+    public array $notifications = [];
 
-    #[Computed]
-    public function pendingRequests()
+    public function mount(): void
     {
-        return Request::with(['user', 'department', 'items.resource', 'requestType'])
-            ->where('department_id', Auth::user()->department_id)
-            ->where('status', 'pending')
+        $this->loadNotifications();
+    }
+
+    public function loadNotifications(): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $latest = Notification::with(['user', 'request.user', 'request.department', 'request.items'])
+            ->where('user_id', Auth::id())
             ->latest()
+            ->take($this->showAll ? 50 : 10)
             ->get();
+
+        $this->totalCount = Notification::where('user_id', Auth::id())->count();
+
+        $this->unreadCount = Notification::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->count();
+
+        $this->notifications = $latest->map(fn ($n) => $this->formatNotification($n))->toArray();
     }
 
-    public function approveRequest(int $requestId): void
+    private function formatNotification(Notification $n): array
     {
-        $request = Request::with('items.resource')->findOrFail($requestId);
+        $message = strtolower($n->message);
 
-        if ($request->department_id !== Auth::user()->department_id) {
-            abort(403);
+        $actionStatus = match (true) {
+            str_contains($message, 'rejected') => 'rejected',
+            str_contains($message, 'approved') => 'approved',
+            default                            => 'info',
+        };
+
+        $isFacility = $n->request
+            ? $n->request->items->contains(fn ($item) => is_null($item->resource_id))
+            : str_contains($message, 'facility');
+
+        return [
+            'id'            => $n->id,
+            'type'          => $n->type === 'Gmail' ? 'System' : $n->type,
+            'is_facility'   => $isFacility,
+            'requester'     => $n->request->user->name ?? 'Admin',
+            'department'    => $n->request->department->department_name ?? '—',
+            // Main bold line: the full detailed action message
+            // (e.g. "Justin approved your facility reservation for
+            // Computer laboratory 3 on Sep 25, 2026 (12:00 - 15:00).")
+            'purpose'       => $n->message,
+            // Secondary line: the student's own submitted purpose text,
+            // kept for context but no longer the headline.
+            'message'       => $n->request->purpose ?? '',
+            'status'        => $n->status,
+            'action_status' => $actionStatus,
+            'request_id'    => $n->request_id,
+            'time_ago'      => $n->created_at->diffForHumans(),
+        ];
+    }
+
+    public function toggleShowAll(): void
+    {
+        $this->showAll = ! $this->showAll;
+        $this->loadNotifications();
+    }
+
+    public function openNotification(int $id): void
+    {
+        $notification = Notification::with('request.items')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (! $notification) {
+            $this->loadNotifications();
+            return;
         }
 
-        DB::transaction(function () use ($request) {
-            // Pass 1: validate stock for every item that needs a resource,
-            // regardless of whether this is a facility reservation with
-            // attached materials or a standalone material request.
-            foreach ($request->items as $item) {
-                if (! $item->resource_id) {
-                    continue;
-                }
-
-                $resource = Resource::lockForUpdate()->findOrFail($item->resource_id);
-
-                if ($resource->quantity_available < $item->quantity) {
-                    throw new \RuntimeException(
-                        "Not enough stock for \"{$resource->resource_name}\". Available: {$resource->quantity_available}, requested: {$item->quantity}."
-                    );
-                }
-            }
-
-            // Pass 2: deduct, now that we know every item can be fulfilled.
-            foreach ($request->items as $item) {
-                if (! $item->resource_id) {
-                    continue;
-                }
-
-                Resource::where('id', $item->resource_id)
-                    ->decrement('quantity_available', $item->quantity);
-            }
-
-            $request->update(['status' => 'approved']);
-
-            RequestApproval::create([
-                'request_id'  => $request->id,
-                'approver_id' => Auth::id(),
-                'status'      => 'approved',
-                'approved_at' => now(),
-            ]);
-
-            Notification::create([
-                'user_id'    => $request->user_id,
-                'request_id' => $request->id,
-                'message'    => "Your request \"{$request->purpose}\" has been approved.",
-                'type'       => 'Gmail',
-                'status'     => 'pending',
-            ]);
-        });
-
-        unset($this->pendingRequests);
-    }
-
-    public function openReject(int $requestId): void
-    {
-        $this->rejectingRequestId = $requestId;
-        $this->rejectRemarks = '';
-        $this->showRejectModal = true;
-    }
-
-    public function cancelReject(): void
-    {
-        $this->showRejectModal = false;
-        $this->rejectingRequestId = null;
-        $this->rejectRemarks = '';
-    }
-
-    public function confirmReject(): void
-    {
-        $this->validate([
-            'rejectRemarks' => 'required|string|min:3',
-        ]);
-
-        $request = Request::findOrFail($this->rejectingRequestId);
-
-        if ($request->department_id !== Auth::user()->department_id) {
-            abort(403);
+        if ($notification->status === 'pending') {
+            $notification->update(['status' => 'sent']);
         }
 
-        DB::transaction(function () use ($request) {
-            $request->update(['status' => 'rejected']);
+        $this->redirect($this->resolveUrl($notification), navigate: true);
+    }
 
-            RequestApproval::create([
-                'request_id'  => $request->id,
-                'approver_id' => Auth::id(),
-                'status'      => 'rejected',
-                'remarks'     => $this->rejectRemarks,
-                'approved_at' => now(),
-            ]);
+    public function markAllAsRead(): void
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->update(['status' => 'sent']);
 
-            Notification::create([
-                'user_id'    => $request->user_id,
-                'request_id' => $request->id,
-                'message'    => "Your request \"{$request->purpose}\" was rejected: {$this->rejectRemarks}",
-                'type'       => 'Gmail',
-                'status'     => 'pending',
-            ]);
-        });
+        $this->loadNotifications();
+    }
 
-        $this->cancelReject();
-        unset($this->pendingRequests);
+    private function resolveUrl(Notification $notification): string
+    {
+        $message = strtolower($notification->message);
+
+        $isFacility = $notification->request
+            ? $notification->request->items->contains(fn ($item) => is_null($item->resource_id))
+            : str_contains($message, 'facility');
+
+        return $isFacility
+            ? route('portal.reservation')
+            : route('portal.material');
     }
 };
