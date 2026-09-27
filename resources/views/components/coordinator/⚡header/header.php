@@ -22,7 +22,7 @@ new class extends Component
             return;
         }
 
-        $latest = Notification::with(['user', 'request.user', 'request.department', 'request.requestItems'])
+        $latest = Notification::with(['user', 'request.user', 'request.department', 'request.items'])
             ->where('user_id', Auth::id())
             ->latest()
             ->take($this->showAll ? 50 : 10)
@@ -48,13 +48,9 @@ new class extends Component
         };
 
         $isFacility = $n->request
-            ? $n->request->requestItems->contains(fn ($item) => is_null($item->resource_id))
+            ? $n->request->items->contains(fn ($item) => is_null($item->resource_id))
             : str_contains($message, 'facility');
 
-        // Prefer the linked request's user name. When there's no linked
-        // request (e.g. "new submission" notices that didn't get a
-        // request_id attached), fall back to parsing the name out of the
-        // message text itself, e.g. "jei submitted a facility reservation..."
         $requesterName = $n->request->user->name ?? null;
 
         if (! $requesterName && preg_match('/^(.*?)\s+submitted/i', $n->message, $matches)) {
@@ -85,7 +81,7 @@ new class extends Component
 
     public function openNotification(int $id): void
     {
-        $notification = Notification::with('request.requestItems')
+        $notification = Notification::with('request.items')
             ->where('id', $id)
             ->where('user_id', Auth::id())
             ->first();
@@ -123,7 +119,7 @@ new class extends Component
         }
 
         $isFacility = $notification->request
-            ? $notification->request->requestItems->contains(fn ($item) => is_null($item->resource_id))
+            ? $notification->request->items->contains(fn ($item) => is_null($item->resource_id))
             : str_contains($message, 'facility');
 
         return $isFacility
