@@ -16,12 +16,6 @@ new #[Layout('layouts.admin')] class extends Component
     public $statusFilter = '';
     public $search       = '';
 
-    /**
-     * Requests from Student/Faculty accounts only land here for Admin's
-     * review — Program Head or Admin-authored requests (if any exist)
-     * are excluded, since this queue is strictly for reviewing
-     * requests filed by students and faculty.
-     */
     protected function incomingRequestsQuery()
     {
         return ResourceRequest::whereHas('user', function ($query) {
@@ -72,11 +66,6 @@ new #[Layout('layouts.admin')] class extends Component
         return $this->incomingRequestsQuery()->where('status', 'rejected')->count();
     }
 
-    /**
-     * Materials currently allocated to each department, built up from
-     * approved requests. Powers the "Department Materials" section
-     * below the requests table.
-     */
     #[Computed]
     public function departmentAllocations()
     {
@@ -107,16 +96,25 @@ new #[Layout('layouts.admin')] class extends Component
             return;
         }
 
+        // ── FIX: block double-booking on facility reservations ──
+        $facilityItem = $request->items->firstWhere('resource_id', null);
+
+        if ($facilityItem && $this->facilityHasConflict(
+            $facilityItem->item_name,
+            $facilityItem->request_date,
+            $facilityItem->start_time,
+            $facilityItem->end_time,
+            $request->id
+        )) {
+            session()->flash('error', 'This facility is already booked for an overlapping time.');
+            return;
+        }
+
         $facilityTypeId = DB::table('resource_types')
             ->where('type_name', 'Facility')
             ->value('id');
 
         // Step 1 — resolve every MATERIAL item to its resource.
-        // Facility items (resource_id null, e.g. "LISC", "ROOM 301", or
-        // a resource whose type is Facility) are never touched.
-        // If the same material appears on more than one line of the
-        // request, the quantities are combined so the stock check is
-        // done on the total.
         $needed = [];
         foreach ($request->items as $item) {
             $resource = $item->resource_id
@@ -137,9 +135,7 @@ new #[Layout('layouts.admin')] class extends Component
             $needed[$resource->id] += (int) $item->quantity;
         }
 
-        // Step 2 — inside ONE transaction: lock the rows, re-check against
-        // the CURRENT stock, deduct from central stock, and credit the
-        // requester's department (resource_all_locations).
+        // Step 2 — inside ONE transaction: lock, re-check, deduct, credit.
         try {
             DB::transaction(function () use ($request, $needed) {
                 // Re-check status under lock so a double-click can't approve twice
@@ -148,8 +144,19 @@ new #[Layout('layouts.admin')] class extends Component
                     throw new \RuntimeException('This request has already been processed.');
                 }
 
+                // ── Re-check conflict under lock (defends against TOCTOU race) ──
+                $facilityItem = $fresh->items()->whereNull('resource_id')->first();
+                if ($facilityItem && $this->facilityHasConflict(
+                    $facilityItem->item_name,
+                    $facilityItem->request_date,
+                    $facilityItem->start_time,
+                    $facilityItem->end_time,
+                    $fresh->id
+                )) {
+                    throw new \RuntimeException('This facility is already booked for an overlapping time.');
+                }
+
                 foreach ($needed as $resourceId => $qty) {
-                    // Lock + read the latest quantity (not a stale value)
                     $resource = Resource::lockForUpdate()->find($resourceId);
 
                     if ($resource->quantity_available < $qty) {
@@ -186,10 +193,11 @@ new #[Layout('layouts.admin')] class extends Component
                 $fresh->update(['status' => 'approved']);
 
                 Notification::create([
-                    'user_id' => $fresh->user_id,
-                    'message' => 'Your request has been approved by the admin.',
-                    'type'    => 'Gmail',
-                    'status'  => 'pending',
+                    'user_id'    => $fresh->user_id,
+                    'request_id' => $fresh->id,
+                    'message'    => 'Your request has been approved by the admin.',
+                    'type'       => 'Gmail',
+                    'status'     => 'pending',
                 ]);
             });
         } catch (\RuntimeException $e) {
@@ -212,10 +220,11 @@ new #[Layout('layouts.admin')] class extends Component
         $request->update(['status' => 'rejected']);
 
         Notification::create([
-            'user_id' => $request->user_id,
-            'message' => 'Your request has been rejected by the admin.',
-            'type'    => 'Gmail',
-            'status'  => 'pending',
+            'user_id'    => $request->user_id,
+            'request_id' => $request->id,
+            'message'    => 'Your request has been rejected by the admin.',
+            'type'       => 'Gmail',
+            'status'     => 'pending',
         ]);
 
         session()->flash('message', 'Request rejected and requester notified.');
@@ -224,5 +233,28 @@ new #[Layout('layouts.admin')] class extends Component
     public function clearFilters()
     {
         $this->reset('search');
+    }
+
+    /**
+     * Does the given facility+date+time overlap an already-approved
+     * reservation for the same facility?
+     */
+    protected function facilityHasConflict(
+        string $facilityName,
+        string $date,
+        string $startTime,
+        string $endTime,
+        int $excludeRequestId
+    ): bool {
+        return DB::table('request_items as ri')
+            ->join('requests as req', 'req.id', '=', 'ri.request_id')
+            ->where('req.status', 'approved')
+            ->where('req.id', '!=', $excludeRequestId)
+            ->whereNull('ri.resource_id')
+            ->where('ri.item_name', $facilityName)
+            ->whereDate('ri.request_date', $date)
+            ->where('ri.start_time', '<', $endTime)
+            ->where('ri.end_time', '>', $startTime)
+            ->exists();
     }
 };

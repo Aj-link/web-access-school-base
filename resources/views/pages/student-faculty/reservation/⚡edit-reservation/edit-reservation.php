@@ -83,7 +83,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
             'quantity'    => $item->quantity,
         ])->values()->toArray();
 
-        // ✅ Load facilities from the resources table managed by admin (same as Create form)
+        // Load facilities from the resources table managed by admin (same as Create form)
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         if ($facilityType) {
@@ -93,7 +93,7 @@ new #[Layout('layouts.student-faculty')] class extends Component
                 ->pluck('resource_name')
                 ->toArray();
         } else {
-            // ✅ Fallback: any resource with "Facility" in the type name
+            // Fallback: any resource with "Facility" in the type name
             $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
                 $q->where('type_name', 'like', '%facility%')
                   ->orWhere('type_name', 'like', '%Facility%')
@@ -104,15 +104,14 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->toArray();
         }
 
-        // ✅ Make sure the currently selected facility_name still appears in the
-        // dropdown even if it's since been renamed/deactivated in resources,
-        // so editing doesn't silently blank out the existing selection.
+        // Ensure the currently selected facility_name still appears in the dropdown
+        // even if it's since been renamed/deactivated in resources.
         if ($this->facility_name && !in_array($this->facility_name, $this->facilityOptions)) {
             $this->facilityOptions[] = $this->facility_name;
             sort($this->facilityOptions);
         }
 
-        // ✅ Load materials (non-facility resources) for the optional picker — same as Create
+        // Load materials (non-facility resources) for the optional picker
         $this->availableResources = Resource::where('status', 'available')
             ->where('quantity_available', '>', 0)
             ->whereHas('resourceType', fn($q) =>
@@ -145,12 +144,31 @@ new #[Layout('layouts.student-faculty')] class extends Component
             return redirect()->route('portal.reservation');
         }
 
+        // ── FIX: block editing into a conflicting slot ──
+        if ($this->facility_name && $this->used_date && $this->start_time && $this->end_time) {
+            $conflict = \DB::table('request_items as ri')
+                ->join('requests as req', 'req.id', '=', 'ri.request_id')
+                ->where('req.status', 'approved')
+                ->where('req.id', '!=', $request->id)
+                ->whereNull('ri.resource_id')
+                ->where('ri.item_name', $this->facility_name)
+                ->whereDate('ri.request_date', $this->used_date)
+                ->where('ri.start_time', '<', $this->end_time)
+                ->where('ri.end_time', '>', $this->start_time)
+                ->exists();
+
+            if ($conflict) {
+                $this->addError('start_time', 'This facility is already booked for an overlapping time. Please choose another slot.');
+                return;
+            }
+        }
+
         $selectedMaterials = collect($this->materials)
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
 
-        // Validate stock — but credit back whatever this item already holds,
-        // so editing an existing material line doesn't wrongly fail against itself.
+        // Validate stock — credit back whatever this item already holds,
+        // so editing an existing material line doesn't fail against itself.
         foreach ($selectedMaterials as $i => $material) {
             $resource = Resource::find($material['resource_id']);
 
@@ -233,10 +251,11 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
         foreach ($programHeads as $programHead) {
             Notification::create([
-                'user_id' => $programHead->id,
-                'message' => Auth::user()->name . ' updated their facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')',
-                'type'    => 'Gmail',
-                'status'  => 'pending',
+                'user_id'    => $programHead->id,
+                'request_id' => $request->id,
+                'message'    => Auth::user()->name . ' updated their facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')',
+                'type'       => 'Gmail',
+                'status'     => 'pending',
             ]);
         }
 

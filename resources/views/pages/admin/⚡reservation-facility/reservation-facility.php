@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Request as ResourceRequest;
+use App\Models\Notification;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -21,15 +22,76 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function accept(int $id)
     {
-        ResourceRequest::findOrFail($id)->update([
-            'status' => 'approved',
+        $request = ResourceRequest::with('items')->findOrFail($id);
+
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            return;
+        }
+
+        // Conflict guard
+        $facilityItem = $request->items->firstWhere('resource_id', null);
+
+        if ($facilityItem && $this->facilityHasConflict(
+            $facilityItem->item_name,
+            $facilityItem->request_date,
+            $facilityItem->start_time,
+            $facilityItem->end_time,
+            $request->id
+        )) {
+            session()->flash('error', 'This facility is already booked for an overlapping time.');
+            return;
+        }
+
+        $request->update(['status' => 'approved']);
+
+        // ── Notify the requester ──
+        Notification::create([
+            'user_id'    => $request->user_id,
+            'request_id' => $request->id,
+            'message'    => 'Your facility reservation has been approved by the admin.',
+            'type'       => 'Gmail',
+            'status'     => 'pending',
         ]);
     }
 
     public function reject(int $id)
     {
-        ResourceRequest::findOrFail($id)->update([
-            'status' => 'rejected',
+        $request = ResourceRequest::findOrFail($id);
+
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            return;
+        }
+
+        $request->update(['status' => 'rejected']);
+
+        // ── Notify the requester ──
+        Notification::create([
+            'user_id'    => $request->user_id,
+            'request_id' => $request->id,
+            'message'    => 'Your facility reservation has been rejected by the admin.',
+            'type'       => 'Gmail',
+            'status'     => 'pending',
         ]);
+    }
+
+    protected function facilityHasConflict(
+        string $facilityName,
+        string $date,
+        string $startTime,
+        string $endTime,
+        int $excludeRequestId
+    ): bool {
+        return \DB::table('request_items as ri')
+            ->join('requests as req', 'req.id', '=', 'ri.request_id')
+            ->where('req.status', 'approved')
+            ->where('req.id', '!=', $excludeRequestId)
+            ->whereNull('ri.resource_id')
+            ->where('ri.item_name', $facilityName)
+            ->whereDate('ri.request_date', $date)
+            ->where('ri.start_time', '<', $endTime)
+            ->where('ri.end_time', '>', $startTime)
+            ->exists();
     }
 };

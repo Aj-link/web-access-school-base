@@ -33,10 +33,30 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function accept(int $id)
     {
-        $request = $this->scopedQuery()->findOrFail($id);
+        $request = $this->scopedQuery()->with('items')->findOrFail($id);
+
+        // Guard 1 — still pending?
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            return;
+        }
+
+        // Guard 2 — double-booking?
+        $facilityItem = $request->items->firstWhere('resource_id', null);
+
+        if ($facilityItem && $this->facilityHasConflict(
+            $facilityItem->item_name,
+            $facilityItem->request_date,
+            $facilityItem->start_time,
+            $facilityItem->end_time,
+            $request->id
+        )) {
+            session()->flash('error', 'This facility is already booked for an overlapping time. Please reject this request or ask the requester to choose another slot.');
+            return;
+        }
+
         $request->update(['status' => 'approved']);
 
-        $facilityItem = $request->items->firstWhere('resource_id', null);
         $approverName = Auth::user()->name;
 
         $details = $facilityItem
@@ -73,5 +93,28 @@ new #[Layout('layouts.coordinator')] class extends Component
             'type'       => 'Gmail',
             'status'     => 'pending',
         ]);
+    }
+
+    /**
+     * Does the given facility+date+time overlap an already-approved
+     * reservation for the same facility?
+     */
+    protected function facilityHasConflict(
+        string $facilityName,
+        string $date,
+        string $startTime,
+        string $endTime,
+        int $excludeRequestId
+    ): bool {
+        return \DB::table('request_items as ri')
+            ->join('requests as req', 'req.id', '=', 'ri.request_id')
+            ->where('req.status', 'approved')
+            ->where('req.id', '!=', $excludeRequestId)
+            ->whereNull('ri.resource_id') // facility line only
+            ->where('ri.item_name', $facilityName)
+            ->whereDate('ri.request_date', $date)
+            ->where('ri.start_time', '<', $endTime)
+            ->where('ri.end_time', '>', $startTime)
+            ->exists();
     }
 };
