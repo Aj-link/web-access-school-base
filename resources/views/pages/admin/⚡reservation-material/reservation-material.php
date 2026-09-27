@@ -4,6 +4,8 @@ namespace App\Livewire\Admin;
 
 use App\Models\Request as ResourceRequest;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -31,7 +33,17 @@ new #[Layout('layouts.admin')] class extends Component
 
         $request->update(['status' => 'approved']);
 
-        // ── Notify the requester ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'approved',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
+
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,
@@ -52,7 +64,17 @@ new #[Layout('layouts.admin')] class extends Component
 
         $request->update(['status' => 'rejected']);
 
-        // ── Notify the requester ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'rejected',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
+
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,

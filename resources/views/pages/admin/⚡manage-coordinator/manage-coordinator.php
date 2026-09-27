@@ -7,6 +7,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 new #[Layout('layouts.admin')] class extends Component
@@ -96,7 +97,7 @@ new #[Layout('layouts.admin')] class extends Component
             return;
         }
 
-        // ── FIX: block double-booking on facility reservations ──
+        // Conflict guard
         $facilityItem = $request->items->firstWhere('resource_id', null);
 
         if ($facilityItem && $this->facilityHasConflict(
@@ -114,7 +115,6 @@ new #[Layout('layouts.admin')] class extends Component
             ->where('type_name', 'Facility')
             ->value('id');
 
-        // Step 1 — resolve every MATERIAL item to its resource.
         $needed = [];
         foreach ($request->items as $item) {
             $resource = $item->resource_id
@@ -122,11 +122,11 @@ new #[Layout('layouts.admin')] class extends Component
                 : Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->first();
 
             if (!$resource) {
-                continue; // facility / non-inventory line item
+                continue;
             }
 
             if ($facilityTypeId && $resource->resource_type_id == $facilityTypeId) {
-                continue; // facility resource
+                continue;
             }
 
             if (!isset($needed[$resource->id])) {
@@ -135,16 +135,13 @@ new #[Layout('layouts.admin')] class extends Component
             $needed[$resource->id] += (int) $item->quantity;
         }
 
-        // Step 2 — inside ONE transaction: lock, re-check, deduct, credit.
         try {
             DB::transaction(function () use ($request, $needed) {
-                // Re-check status under lock so a double-click can't approve twice
                 $fresh = ResourceRequest::lockForUpdate()->find($request->id);
                 if (!$fresh || $fresh->status !== 'pending') {
                     throw new \RuntimeException('This request has already been processed.');
                 }
 
-                // ── Re-check conflict under lock (defends against TOCTOU race) ──
                 $facilityItem = $fresh->items()->whereNull('resource_id')->first();
                 if ($facilityItem && $this->facilityHasConflict(
                     $facilityItem->item_name,
@@ -192,6 +189,18 @@ new #[Layout('layouts.admin')] class extends Component
 
                 $fresh->update(['status' => 'approved']);
 
+                // ── Record the approval ──
+                DB::table('request_approvals')->updateOrInsert(
+                    ['request_id' => $fresh->id, 'approver_id' => Auth::id()],
+                    [
+                        'status'      => 'approved',
+                        'remarks'     => null,
+                        'approved_at' => now(),
+                        'updated_at'  => now(),
+                        'created_at'  => now(),
+                    ]
+                );
+
                 Notification::create([
                     'user_id'    => $fresh->user_id,
                     'request_id' => $fresh->id,
@@ -219,6 +228,18 @@ new #[Layout('layouts.admin')] class extends Component
 
         $request->update(['status' => 'rejected']);
 
+        // ── Record the rejection ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'rejected',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
+
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,
@@ -235,10 +256,6 @@ new #[Layout('layouts.admin')] class extends Component
         $this->reset('search');
     }
 
-    /**
-     * Does the given facility+date+time overlap an already-approved
-     * reservation for the same facility?
-     */
     protected function facilityHasConflict(
         string $facilityName,
         string $date,

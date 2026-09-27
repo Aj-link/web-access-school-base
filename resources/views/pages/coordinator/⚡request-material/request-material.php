@@ -69,6 +69,18 @@ new #[Layout('layouts.coordinator')] class extends Component
 
                 $request->update(['status' => 'approved']);
 
+                // ── Record the approval ──
+                DB::table('request_approvals')->updateOrInsert(
+                    ['request_id' => $request->id, 'approver_id' => Auth::id()],
+                    [
+                        'status'      => 'approved',
+                        'remarks'     => null,
+                        'approved_at' => now(),
+                        'updated_at'  => now(),
+                        'created_at'  => now(),
+                    ]
+                );
+
                 $itemsList = $request->items
                     ->map(fn ($i) => "{$i->item_name} (x{$i->quantity})")
                     ->implode(', ');
@@ -92,7 +104,24 @@ new #[Layout('layouts.coordinator')] class extends Component
     {
         $request = $this->scopedQuery()->with('items')->findOrFail($id);
 
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            return;
+        }
+
         $request->update(['status' => 'rejected']);
+
+        // ── Record the rejection ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'rejected',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
 
         $approverName = Auth::user()->name;
         $itemsList = $request->items

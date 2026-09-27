@@ -4,6 +4,7 @@ use App\Models\Notification;
 use App\Models\Request as ResourceRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -57,6 +58,18 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         $request->update(['status' => 'approved']);
 
+        // ── Record the approval ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'approved',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
+
         $approverName = Auth::user()->name;
 
         $details = $facilityItem
@@ -75,8 +88,26 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function reject(int $id)
     {
-        $request = $this->scopedQuery()->findOrFail($id);
+        $request = $this->scopedQuery()->with('items')->findOrFail($id);
+
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            return;
+        }
+
         $request->update(['status' => 'rejected']);
+
+        // ── Record the rejection ──
+        DB::table('request_approvals')->updateOrInsert(
+            ['request_id' => $request->id, 'approver_id' => Auth::id()],
+            [
+                'status'      => 'rejected',
+                'remarks'     => null,
+                'approved_at' => now(),
+                'updated_at'  => now(),
+                'created_at'  => now(),
+            ]
+        );
 
         $facilityItem = $request->items->firstWhere('resource_id', null);
         $approverName = Auth::user()->name;
@@ -95,10 +126,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         ]);
     }
 
-    /**
-     * Does the given facility+date+time overlap an already-approved
-     * reservation for the same facility?
-     */
     protected function facilityHasConflict(
         string $facilityName,
         string $date,
@@ -106,11 +133,11 @@ new #[Layout('layouts.coordinator')] class extends Component
         string $endTime,
         int $excludeRequestId
     ): bool {
-        return \DB::table('request_items as ri')
+        return DB::table('request_items as ri')
             ->join('requests as req', 'req.id', '=', 'ri.request_id')
             ->where('req.status', 'approved')
             ->where('req.id', '!=', $excludeRequestId)
-            ->whereNull('ri.resource_id') // facility line only
+            ->whereNull('ri.resource_id')
             ->where('ri.item_name', $facilityName)
             ->whereDate('ri.request_date', $date)
             ->where('ri.start_time', '<', $endTime)
