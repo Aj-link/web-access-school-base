@@ -1,106 +1,149 @@
 <div class="select-none">
     <div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
-    <div class="mt-12 max-w-full mx-auto">
-        <div class="flex flex-col border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8 dark:border-neutral-700">
+        <div class="mt-12 max-w-full mx-auto">
+            <div class="flex flex-col border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8 dark:border-neutral-700">
 
-            <!-- Header with Back button -->
-            <div class="mb-8 flex items-center justify-between gap-x-2">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-                    Create Program Head
-                </h2>
+                {{-- Header with Back button --}}
+                <div class="mb-8 flex items-center justify-between gap-x-2">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                            Create User
+                        </h2>
+                        <p class="text-sm text-gray-500 dark:text-neutral-400 mt-1">
+                            Add a program head, faculty, or student account
+                        </p>
+                    </div>
 
-                <a href="{{ route('admin.users') }}"
-                    class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus:outline-hidden dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700">
-                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m12 19-7-7 7-7"/>
-                        <path d="M19 12H5"/>
-                    </svg>
-                    Back
-                </a>
-            </div>
-
-            @if (session('success'))
-                <div class="mb-4 text-green-600 text-sm font-medium">
-                    {{ session('success') }}
+                    <a href="{{ route('admin.users') }}"
+                        class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus:outline-hidden dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700">
+                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 19-7-7 7-7"/>
+                            <path d="M19 12H5"/>
+                        </svg>
+                        Back
+                    </a>
                 </div>
-            @endif
 
-            <form wire:submit.prevent="save">
-                <div class="grid gap-4 lg:gap-6">
-                    <!-- Name -->
-                    <div>
-                        <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">Name</label>
-                        <input wire:model.defer="name" type="text"
-                            class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                        @error('name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                @if (session('success'))
+                    <div class="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium">
+                        {{ session('success') }}
                     </div>
+                @endif
 
-                    <!-- Email -->
-                    <div>
-                        <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">Email</label>
-                        <input wire:model.defer="email" type="email"
-                            class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                        @error('email') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
-                    </div>
+                <form wire:submit.prevent="save">
+                    <div class="grid gap-4 lg:gap-6">
 
-                    <!-- Password -->
-                    <div>
-                        <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">Password</label>
-                        <div class="relative">
-                            <input wire:model.defer="password" type="password" id="password"
-                                class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                            <button type="button" onclick="togglePassword()"
-                                class="absolute inset-y-0 right-0 px-3 text-sm text-gray-600 dark:text-neutral-300">
-                                Show
-                            </button>
+                        {{-- Role --}}
+                        <div>
+                            <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                Role <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                @foreach ($this->roles as $value => $label)
+                                    <label class="cursor-pointer">
+                                        <input type="radio" wire:model.live="role" value="{{ $value }}" class="peer sr-only">
+                                        <div class="text-center py-3 px-4 text-sm font-medium rounded-lg border-2 border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-300 bg-white dark:bg-neutral-900 peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-checked:text-white hover:border-blue-300 dark:hover:border-blue-700 transition">
+                                            {{ $label }}
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('role') <span class="text-red-600 text-sm block mt-1">{{ $message }}</span> @enderror
                         </div>
-                        @error('password') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+
+                        {{-- Name + Email --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+                            <div>
+                                <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                    Name <span class="text-red-500">*</span>
+                                </label>
+                                <input wire:model.defer="name" type="text" placeholder="Juan Dela Cruz"
+                                    class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
+                                @error('name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                    Email <span class="text-red-500">*</span>
+                                </label>
+                                <input wire:model.defer="email" type="email" placeholder="user@csav.edu.ph"
+                                    class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
+                                @error('email') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        {{-- Password + Confirm --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+                            <div>
+                                <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                    Password <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative" x-data="{ show: false }">
+                                    <input :type="show ? 'text' : 'password'" wire:model.defer="password"
+                                        placeholder="Min. 6 characters"
+                                        class="py-2.5 px-4 pr-12 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
+                                    <button type="button" @click="show = !show"
+                                        class="absolute inset-y-0 right-0 px-3 flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                                        :aria-label="show ? 'Hide password' : 'Show password'">
+                                        <span x-text="show ? 'Hide' : 'Show'"></span>
+                                    </button>
+                                </div>
+                                @error('password') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                    Confirm Password <span class="text-red-500">*</span>
+                                </label>
+                                <input type="password" wire:model.defer="password_confirmation"
+                                    placeholder="Re-enter password"
+                                    class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
+                            </div>
+                        </div>
+
+                        {{-- Department --}}
+                        <div>
+                            <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                Department <span class="text-red-500">*</span>
+                            </label>
+                            <select wire:model="department_id"
+                                class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                <option value="">Select department</option>
+                                @foreach($this->departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->department_name }}</option>
+                                @endforeach
+                            </select>
+                            @error('department_id') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        {{-- Info note --}}
+                        <div class="flex items-start gap-2.5 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 px-3.5 py-3">
+                            <svg class="size-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <path stroke-linecap="round" d="M12 16v-4m0-4h.01" />
+                            </svg>
+                            <p class="text-xs text-blue-800 dark:text-blue-300">
+                                The account will be created with status <strong>Approved</strong> and can log in immediately with the password you set.
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Confirm Password -->
-                    <div>
-                        <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">Confirm Password</label>
-                        <input wire:model.defer="password_confirmation" type="password"
-                            class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                    {{-- Save Button --}}
+                    <div class="mt-6 flex gap-3">
+                        <button type="submit"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="py-3 px-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden transition">
+                            <span wire:loading.remove wire:target="save">Create User</span>
+                            <span wire:loading wire:target="save">Creating...</span>
+                        </button>
+                        <a href="{{ route('admin.users') }}"
+                            class="py-3 px-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700 transition">
+                            Cancel
+                        </a>
                     </div>
-
-                    <!-- Department -->
-                    <div>
-                        <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">Department</label>
-                        <select wire:model="department_id"
-                            class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                            <option value="">Select department</option>
-                            @foreach($this->departments as $department)
-                                <option value="{{ $department->id }}">{{ $department->department_name }}</option>
-                            @endforeach
-                        </select>
-                        @error('department_id') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                </div>
-
-                <!-- Save Button -->
-                <div class="mt-6 grid">
-                    <button type="submit"
-                        class="w-50 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden">
-                        Save
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-    {{-- Always remember that you are absolutely unique. Just like everyone else. - Margaret Mead --}}
-</div>
-<script>
-function togglePassword() {
-    const input = document.getElementById('password');
-    const button = input.nextElementSibling;
-    if (input.type === 'password') {
-        input.type = 'text';
-        button.textContent = 'Hide';
-    } else {
-        input.type = 'password';
-        button.textContent = 'Show';
-    }
-}
-</script>

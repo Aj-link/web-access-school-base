@@ -73,13 +73,24 @@
     {{-- Monthly Requests Chart --}}
     <div class="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 shadow-sm rounded-2xl p-6">
 
-        {{-- Header --}}
+        {{-- Header with Year Dropdown --}}
         <div class="flex items-start justify-between mb-5 gap-3 flex-wrap">
             <div>
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Monthly Requests</h2>
-                <p class="text-sm text-gray-400 dark:text-neutral-500">Grouped by department, {{ now()->year }}</p>
+                <p class="text-sm text-gray-400 dark:text-neutral-500">Grouped by department, {{ $chartYear }}</p>
             </div>
-            <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-medium">This Year</span>
+
+            <div class="flex items-center gap-2">
+                <label for="chartYear" class="text-xs font-medium text-gray-500 dark:text-neutral-400">Year</label>
+                <select
+                    id="chartYear"
+                    wire:model.live="chartYear"
+                    class="text-sm bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-neutral-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer">
+                    @foreach ($this->availableYears as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         {{-- Summary strip --}}
@@ -92,6 +103,15 @@
 
         {{-- Legend --}}
         <div id="monthlyLegend" wire:ignore class="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-6 pt-5 border-t border-gray-100 dark:border-neutral-800"></div>
+
+        {{-- Hidden payload: passes fresh data from PHP to JS on each Livewire render --}}
+        <div
+            id="chartPayload"
+            wire:ignore
+            data-labels='@json($this->monthlyData["labels"])'
+            data-series='@json($this->monthlyData["departments"])'
+            data-year="{{ $chartYear }}"
+            style="display:none;"></div>
     </div>
 
     {{-- Recent Requests Table --}}
@@ -494,157 +514,135 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     (function () {
-        const isDark = document.documentElement.classList.contains('dark');
-        const gridColor  = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.045)';
-        const tickColor  = isDark ? 'rgba(160,160,160,0.9)'  : 'rgba(100,105,115,0.9)';
-        const labelColor = isDark ? '#e5e7eb' : '#1f2937';
+        let monthlyChart = null;
 
-        const monthlyLabels = @json($this->monthlyData['labels']);
-        const departmentSeries = @json($this->monthlyData['departments']);
+        function buildChart(labels, series, canvas) {
+            const isDark     = document.documentElement.classList.contains('dark');
+            const gridColor  = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.045)';
+            const tickColor  = isDark ? 'rgba(160,160,160,0.9)'  : 'rgba(100,105,115,0.9)';
+            const labelColor = isDark ? '#e5e7eb' : '#1f2937';
 
-        const palette = {
-            GRAY:   '#64748b', // Computer Studies
-            BLUE:   '#3b82f6', // Education
-            RED:    '#ef4444', // Criminology
-            YELLOW: '#eab308', // Business
-            GREEN:  '#22c55e', // Arts
-            ORANGE: '#f97316', // Engineering
-        };
-        const fallback = ['#a855f7', '#14b8a6', '#ec4899'];
-
-        function getDeptColor(name, index) {
-            const n = (name || '').toLowerCase();
-            if (n.includes('comput'))   return palette.GRAY;
-            if (n.includes('educ'))     return palette.BLUE;
-            if (n.includes('crim'))     return palette.RED;
-            if (n.includes('business')) return palette.YELLOW;
-            if (/\barts?\b/.test(n))    return palette.GREEN;
-            if (n.includes('engin'))    return palette.ORANGE;
-            return fallback[index % fallback.length];
-        }
-
-        const canvas = document.getElementById('monthlyChart');
-        const ctx = canvas.getContext('2d');
-
-        const sortedSeries = [...departmentSeries]
-            .map(d => ({ ...d, total: d.data.reduce((a, b) => a + b, 0) }))
-            .sort((a, b) => b.total - a.total);
-
-        // ✅ FIX: Peak = the TALLEST SINGLE BAR across all depts × months
-        let peakBar = 1;
-        sortedSeries.forEach(dept => {
-            dept.data.forEach(v => {
-                if (v > peakBar) peakBar = v;
-            });
-        });
-        const yMax = Math.ceil((peakBar + 2) / 2) * 2;
-
-        const datasets = sortedSeries.map((dept, i) => {
-            const color = getDeptColor(dept.name, i);
-
-            return {
-                label: dept.name,
-                data: dept.data,
-                backgroundColor: color,
-                borderColor: color,
-                borderWidth: 0,
-                barPercentage: 0.75,
-                categoryPercentage: 0.8,
-                borderRadius: 3,
-                borderSkipped: false,
-                hoverBackgroundColor: color,
-                animation: {
-                    delay: i * 60,
-                    duration: 700,
-                    easing: 'easeOutQuart',
-                },
+            const palette = {
+                GRAY:   '#64748b',
+                BLUE:   '#3b82f6',
+                RED:    '#ef4444',
+                YELLOW: '#eab308',
+                GREEN:  '#22c55e',
+                ORANGE: '#f97316',
             };
-        });
+            const fallback = ['#a855f7', '#14b8a6', '#ec4899'];
 
-        const existing = Chart.getChart(canvas);
-        if (existing) existing.destroy();
+            function getDeptColor(name, index) {
+                const n = (name || '').toLowerCase();
+                if (n.includes('comput'))   return palette.GRAY;
+                if (n.includes('educ'))     return palette.BLUE;
+                if (n.includes('crim'))     return palette.RED;
+                if (n.includes('business')) return palette.YELLOW;
+                if (/\barts?\b/.test(n))    return palette.GREEN;
+                if (n.includes('engin'))    return palette.ORANGE;
+                return fallback[index % fallback.length];
+            }
 
-        const monthlyChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: monthlyLabels, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: { top: 16, right: 12, bottom: 6, left: 6 },
-                },
-                animation: {
-                    duration: 700,
-                    easing: 'easeOutQuart',
-                },
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: isDark ? 'rgba(23,23,23,0.98)' : 'rgba(255,255,255,0.99)',
-                        titleColor: labelColor,
-                        bodyColor: labelColor,
-                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-                        borderWidth: 1,
-                        padding: { top: 12, right: 16, bottom: 12, left: 16 },
-                        cornerRadius: 10,
-                        boxPadding: 8,
-                        titleFont: { size: 13, weight: '700' },
-                        bodyFont: { size: 12, weight: '500' },
-                        bodySpacing: 6,
-                        displayColors: true,
-                        usePointStyle: true,
-                        filter: (item) => item.parsed.y > 0,
-                        itemSort: (a, b) => b.parsed.y - a.parsed.y,
-                        callbacks: {
-                            label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y}`,
-                            footer: (items) => {
-                                const total = items.reduce((sum, i) => sum + i.parsed.y, 0);
-                                return `Total: ${total}`;
+            const sortedSeries = [...series]
+                .map(d => ({ ...d, total: d.data.reduce((a, b) => a + b, 0) }))
+                .sort((a, b) => b.total - a.total);
+
+            let peakBar = 1;
+            sortedSeries.forEach(dept => {
+                dept.data.forEach(v => { if (v > peakBar) peakBar = v; });
+            });
+            const yMax = Math.ceil((peakBar + 2) / 2) * 2;
+
+            const datasets = sortedSeries.map((dept, i) => {
+                const color = getDeptColor(dept.name, i);
+                return {
+                    label: dept.name,
+                    data: dept.data,
+                    backgroundColor: color,
+                    borderColor: color,
+                    borderWidth: 0,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.8,
+                    borderRadius: 3,
+                    borderSkipped: false,
+                    hoverBackgroundColor: color,
+                };
+            });
+
+            const existing = Chart.getChart(canvas);
+            if (existing) existing.destroy();
+
+            const ctx = canvas.getContext('2d');
+
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 16, right: 12, bottom: 6, left: 6 } },
+                    animation: { duration: 700, easing: 'easeOutQuart' },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(23,23,23,0.98)' : 'rgba(255,255,255,0.99)',
+                            titleColor: labelColor,
+                            bodyColor: labelColor,
+                            borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                            borderWidth: 1,
+                            padding: { top: 12, right: 16, bottom: 12, left: 16 },
+                            cornerRadius: 10,
+                            boxPadding: 8,
+                            titleFont: { size: 13, weight: '700' },
+                            bodyFont: { size: 12, weight: '500' },
+                            bodySpacing: 6,
+                            displayColors: true,
+                            usePointStyle: true,
+                            filter: (item) => item.parsed.y > 0,
+                            itemSort: (a, b) => b.parsed.y - a.parsed.y,
+                            callbacks: {
+                                label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y}`,
+                                footer: (items) => {
+                                    const total = items.reduce((sum, i) => sum + i.parsed.y, 0);
+                                    return `Total: ${total}`;
+                                },
                             },
                         },
                     },
-                },
-                scales: {
-                    x: {
-                        stacked: false,
-                        ticks: {
-                            color: tickColor,
-                            font: { size: 12, weight: '600' },
-                            padding: 12,
-                            autoSkip: false,
+                    scales: {
+                        x: {
+                            stacked: false,
+                            ticks: { color: tickColor, font: { size: 12, weight: '600' }, padding: 12, autoSkip: false },
+                            grid: { display: false, drawOnChartArea: false },
+                            border: { display: false },
                         },
-                        grid: {
-                            display: false,
-                            drawOnChartArea: false,
+                        y: {
+                            stacked: false,
+                            beginAtZero: true,
+                            max: yMax,
+                            ticks: {
+                                color: tickColor,
+                                font: { size: 11, weight: '500' },
+                                padding: 14,
+                                stepSize: 2,
+                                callback: (v) => v === 0 ? '0' : v,
+                            },
+                            grid: { color: gridColor, drawBorder: false, drawTicks: false },
+                            border: { display: false },
                         },
-                        border: { display: false },
-                    },
-                    y: {
-                        stacked: false,
-                        beginAtZero: true,
-                        max: yMax,
-                        ticks: {
-                            color: tickColor,
-                            font: { size: 11, weight: '500' },
-                            padding: 14,
-                            stepSize: 2,
-                            callback: (v) => v === 0 ? '0' : v,
-                        },
-                        grid: {
-                            color: gridColor,
-                            drawBorder: false,
-                            drawTicks: false,
-                        },
-                        border: { display: false },
                     },
                 },
-            },
-        });
+            });
 
-        function renderSummary() {
+            renderSummary(sortedSeries, getDeptColor);
+            renderLegend(monthlyChart);
+        }
+
+        function renderSummary(sortedSeries, getDeptColor) {
             const el = document.getElementById('monthlySummary');
             if (!el) return;
+
             el.innerHTML = '';
 
             const top = sortedSeries[0];
@@ -656,7 +654,6 @@
             }
 
             const topColor = getDeptColor(top.name, 0);
-
             const chip = (label, value, color) => `
                 <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-50 dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700/70">
                     <span class="w-2 h-2 rounded-full shrink-0" style="background-color:${color}"></span>
@@ -671,13 +668,14 @@
                 chip('Depts', sortedSeries.length, '#9ca3af');
         }
 
-        function renderLegend() {
+        function renderLegend(chart) {
             const legendEl = document.getElementById('monthlyLegend');
             if (!legendEl) return;
+
             legendEl.innerHTML = '';
 
-            monthlyChart.data.datasets.forEach((dataset, index) => {
-                const meta = monthlyChart.getDatasetMeta(index);
+            chart.data.datasets.forEach((dataset, index) => {
+                const meta = chart.getDatasetMeta(index);
                 const hidden = meta.hidden === true;
                 const total = dataset.data.reduce((a, b) => a + b, 0);
 
@@ -696,16 +694,43 @@
 
                 btn.addEventListener('click', () => {
                     meta.hidden = !hidden;
-                    monthlyChart.update();
-                    renderLegend();
+                    chart.update();
+                    renderLegend(chart);
                 });
 
                 legendEl.appendChild(btn);
             });
         }
 
-        renderSummary();
-        renderLegend();
+        function drawChart() {
+            const payload = document.getElementById('chartPayload');
+            if (!payload) return;
+
+            const canvas = document.getElementById('monthlyChart');
+            if (!canvas) return;
+
+            const labels = JSON.parse(payload.dataset.labels);
+            const series = JSON.parse(payload.dataset.series);
+
+            buildChart(labels, series, canvas);
+        }
+
+        // Initial render on page load
+        document.addEventListener('DOMContentLoaded', drawChart);
+        document.addEventListener('livewire:navigated', drawChart);
+
+        // ── Re-render when the PHP component dispatches chartYearChanged ──
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('chartYearChanged', (payload) => {
+                // payload is an array when dispatched from Livewire 3
+                const data = Array.isArray(payload) ? payload[0] : payload;
+
+                const canvas = document.getElementById('monthlyChart');
+                if (!canvas) return;
+
+                buildChart(data.labels, data.series, canvas);
+            });
+        });
     })();
 </script>
 </div>

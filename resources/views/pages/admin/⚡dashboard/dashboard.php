@@ -14,9 +14,33 @@ new #[Layout('layouts.admin')] class extends Component
 {
     public ?int $historyUserId = null;
 
+    // Year filter for the Monthly Requests chart
+    public int $chartYear;
+
+    public function mount()
+    {
+        $this->chartYear = (int) now()->year;
+    }
+
+    /**
+     * Livewire hook — fires automatically when chartYear is updated.
+     * Dispatches a browser event that the chart script listens for.
+     */
+    public function updatedChartYear()
+    {
+        // Force recompute of monthlyData (it caches by $this->chartYear)
+        unset($this->monthlyData);
+
+        // Send a signal to the front-end with fresh data
+        $this->dispatch('chartYearChanged',
+            labels: $this->monthlyData['labels'],
+            series: $this->monthlyData['departments'],
+            year:   $this->chartYear,
+        );
+    }
+
     public function showHistory($userId)
     {
-        // Only program heads can have their history opened
         $isProgramHead = User::role('program head')->whereKey($userId)->exists();
 
         if (! $isProgramHead) {
@@ -31,10 +55,6 @@ new #[Layout('layouts.admin')] class extends Component
         $this->historyUserId = null;
     }
 
-    /**
-     * Only count requests that have reached the admin's visibility scope.
-     * Requests still at 'pending' (with student/faculty) are excluded.
-     */
     private function adminVisibleRequests()
     {
         return ResourceRequest::whereIn('status', [
@@ -54,7 +74,6 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function pendingRequests()
     {
-        // "Pending" for admin = waiting at coordinator or admin level
         return $this->adminVisibleRequests()
             ->whereIn('status', ['pending'])
             ->count();
@@ -107,7 +126,6 @@ new #[Layout('layouts.admin')] class extends Component
     #[Computed]
     public function recentRequests()
     {
-        // One row per requester: their latest request only
         $latestIds = $this->adminVisibleRequests()
             ->selectRaw('MAX(id) as id')
             ->groupBy('user_id')
@@ -145,10 +163,6 @@ new #[Layout('layouts.admin')] class extends Component
             ->get();
     }
 
-    /**
-     * ✅ New: Stock analytics — Available / Low Stock / Out of Stock,
-     * based on quantity_available on the resources table.
-     */
     #[Computed]
     public function availableStockCount()
     {
@@ -173,26 +187,41 @@ new #[Layout('layouts.admin')] class extends Component
         return Resource::count();
     }
 
-    /**
-     * ✅ Updated: monthly totals broken down PER DEPARTMENT,
-     * so "Monthly Requests" shows which department leads each month.
-     * Shape: [
-     *   'labels' => ['Jan', 'Feb', ...],
-     *   'departments' => [
-     *       ['name' => 'Computer Studies', 'data' => [3, 5, 0, ...]],
-     *       ['name' => 'Engineering', 'data' => [1, 2, 4, ...]],
-     *       ...
-     *   ]
-     * ]
+        /**
+     * Years that have any requests in the database, plus the current year.
+     * Uses PHP-side year extraction so it works on both MySQL and SQLite.
      */
+    #[Computed]
+    public function availableYears()
+    {
+        $years = $this->adminVisibleRequests()
+            ->pluck('created_at')
+            ->map(fn ($date) => (int) \Carbon\Carbon::parse($date)->year)
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->toArray();
+
+        $currentYear = (int) now()->year;
+
+        if (! in_array($currentYear, $years, true)) {
+            $years[] = $currentYear;
+            rsort($years);
+        }
+
+        return $years;
+    }
+
     #[Computed]
     public function monthlyData()
     {
         $rows = $this->adminVisibleRequests()
-            ->whereYear('created_at', now()->year)
+            ->whereYear('created_at', $this->chartYear)
             ->get(['created_at', 'department_id']);
 
-        $labels = collect(range(1, 12))->map(fn ($m) => now()->month($m)->format('M'))->values();
+        $labels = collect(range(1, 12))
+            ->map(fn ($m) => now()->month($m)->format('M'))
+            ->values();
 
         $departments = Department::all();
 
@@ -211,7 +240,7 @@ new #[Layout('layouts.admin')] class extends Component
         })->values();
 
         return [
-            'labels' => $labels,
+            'labels'      => $labels,
             'departments' => $series,
         ];
     }
