@@ -27,7 +27,7 @@
         {{-- Total Units --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
             <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-[#123524]/10 flex items-center justify-center">
-                <svg class="size-5 sm:size-6 text-[#123524]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <svg class="size-5 sm:size-6 text-[#123524] dark:text-green-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                 </svg>
             </div>
@@ -65,7 +65,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
             <div class="shrink-0 size-8 rounded-lg bg-[#123524]/10 flex items-center justify-center">
-                <svg class="size-4 text-[#123524]" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                <svg class="size-4 text-[#123524] dark:text-green-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
                 </svg>
             </div>
@@ -91,96 +91,96 @@
     @endif
 
     {{-- Pending Facility Reservations --}}
-@if($this->pendingFacilityRequests->isNotEmpty())
-<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
-    <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Facility Reservations</h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Approving locks in the room for that date and time — conflicting bookings are blocked automatically.
-        </p>
-    </div>
+    @if($this->pendingFacilityRequests->isNotEmpty())
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Facility Reservations</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Approving locks in the room for that date and time — conflicting bookings are blocked automatically.
+            </p>
+        </div>
 
-    <div class="divide-y divide-gray-100 dark:divide-gray-700">
-        @foreach($this->pendingFacilityRequests as $item)
-        <div class="px-4 sm:px-6 py-4">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                            {{ $item->facility_name }}
-                        </span>
-                        @if($item->has_conflict)
-                            <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
-                                Time Conflict — Already Booked
+        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+            @foreach($this->pendingFacilityRequests as $item)
+            <div class="px-4 sm:px-6 py-4">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                {{ $item->facility_name }}
                             </span>
-                        @else
-                            <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                                Slot Free
-                            </span>
+                            @if($item->has_conflict)
+                                <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
+                                    Time Conflict — Already Booked
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
+                                    Slot Free
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }}
+                            &middot;
+                            {{ \Carbon\Carbon::parse($item->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($item->end_time)->format('g:i A') }}
+                            &middot;
+                            Requested by {{ $item->requester_name }}
+                        </p>
+                        @if($item->purpose)
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">"{{ Str::limit($item->purpose, 80) }}"</p>
                         @endif
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }}
-                        &middot;
-                        {{ \Carbon\Carbon::parse($item->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($item->end_time)->format('g:i A') }}
-                        &middot;
-                        Requested by {{ $item->requester_name }}
-                    </p>
-                    @if($item->purpose)
-                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">"{{ Str::limit($item->purpose, 80) }}"</p>
-                    @endif
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button
+                            type="button"
+                            wire:click="approveRequest({{ $item->request_id }})"
+                            wire:confirm="Approve this facility reservation for {{ $item->facility_name }}?"
+                            @disabled($item->has_conflict)
+                            class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                            Approve
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="openReject({{ $item->request_id }})"
+                            class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        >
+                            Reject
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
-                    <button
-                        type="button"
-                        wire:click="approveRequest({{ $item->request_id }})"
-                        wire:confirm="Approve this facility reservation for {{ $item->facility_name }}?"
-                        @disabled($item->has_conflict)
-                        class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                    >
-                        Approve
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="openReject({{ $item->request_id }})"
-                        class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                        Reject
-                    </button>
+                @if($rejectingRequestId === $item->request_id)
+                <div class="mt-3 bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Reason for rejecting (optional)
+                    </label>
+                    <textarea
+                        wire:model="rejectRemarks"
+                        rows="2"
+                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
+                        placeholder="e.g. Conflicts with another event, missing details, etc."
+                    ></textarea>
+                    <div class="flex gap-2">
+                        <button type="button" wire:click="confirmReject"
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition">
+                            Confirm Reject
+                        </button>
+                        <button type="button" wire:click="cancelReject"
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
+                @endif
             </div>
-
-            @if($rejectingRequestId === $item->request_id)
-            <div class="mt-3 bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Reason for rejecting (optional)
-                </label>
-                <textarea
-                    wire:model="rejectRemarks"
-                    rows="2"
-                    class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
-                    placeholder="e.g. Conflicts with another event, missing details, etc."
-                ></textarea>
-                <div class="flex gap-2">
-                    <button type="button" wire:click="confirmReject"
-                        class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition">
-                        Confirm Reject
-                    </button>
-                    <button type="button" wire:click="cancelReject"
-                        class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            @endif
+            @endforeach
         </div>
-        @endforeach
     </div>
-</div>
-@endif
+    @endif
 
-    {{-- Table --}}
+    {{-- Department Resource Allocation Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Department Resource Allocation</h3>
@@ -280,6 +280,216 @@
             </div>
         @endif
     </div>
+
+    {{-- ──────────────────────────────────────────────────────────── --}}
+    {{-- My Recent Approvals — the last 10 decisions YOU made           --}}
+    {{-- ──────────────────────────────────────────────────────────── --}}
+    @if($this->recentApprovals->isNotEmpty())
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mt-6 sm:mt-8">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">My Recent Approvals</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Last 10 material requests you approved or rejected
+                </p>
+            </div>
+            <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-[#123524]/5 dark:bg-[#123524]/20 text-[#123524] dark:text-green-400 rounded-full text-xs font-semibold">
+                {{ $this->recentApprovals->count() }}
+            </span>
+        </div>
+
+        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+            @foreach($this->recentApprovals as $approval)
+            <div class="px-4 sm:px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition"
+                 x-data="{ open: false }">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="shrink-0 size-9 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold">
+                                {{ strtoupper(substr($approval->requester_name, 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                                    {{ $approval->requester_name }}
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {{ \Carbon\Carbon::parse($approval->decided_at)->format('M d, Y · g:i A') }}
+                                    · {{ $approval->item_count }} item{{ $approval->item_count == 1 ? '' : 's' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        @if($approval->purpose)
+                            <p class="text-xs text-gray-500 dark:text-gray-400 italic mb-2">
+                                "{{ \Illuminate\Support\Str::limit($approval->purpose, 100) }}"
+                            </p>
+                        @endif
+
+                        @if($approval->items_list)
+                            <div class="rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2 flex items-center justify-between gap-2">
+                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">
+                                    <span class="font-semibold">Items:</span> {{ $approval->items_list }}
+                                </p>
+                                <button type="button" @click="open = !open"
+                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[#123524] dark:text-green-400 hover:underline whitespace-nowrap">
+                                    <span x-text="open ? 'Hide' : 'View'"></span>
+                                    <svg class="size-3 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                                         fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        @endif
+
+                        {{-- Expanded details --}}
+                        <div x-show="open" x-cloak x-transition.opacity.duration.200ms
+                             class="mt-3 rounded-lg border border-[#123524]/20 dark:border-green-900/30 bg-[#123524]/[0.03] dark:bg-green-900/10 p-3 space-y-2">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-[#123524] dark:text-green-400 mb-1">
+                                Full Breakdown
+                            </p>
+                            @foreach($approval->items_list ? explode(', ', $approval->items_list) : [] as $line)
+                                <div class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                    <span class="size-1.5 rounded-full bg-[#123524] dark:bg-green-400 shrink-0"></span>
+                                    <span>{{ $line }}</span>
+                                </div>
+                            @endforeach
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-200 dark:border-gray-700">
+                                Decision: <strong>{{ ucfirst($approval->decision) }}</strong>
+                                · {{ \Carbon\Carbon::parse($approval->decided_at)->diffForHumans() }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 self-start">
+                        @if($approval->decision === 'approved')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Approved
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Rejected
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- ──────────────────────────────────────────────────────────── --}}
+    {{-- Material Approval History — full department history            --}}
+    {{-- ──────────────────────────────────────────────────────────── --}}
+    @if($this->materialHistory->isNotEmpty())
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mt-6 sm:mt-8">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Material Approval History</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    All material requests that have been approved or rejected in your department
+                </p>
+            </div>
+            <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">
+                {{ $this->materialHistory->count() }}
+            </span>
+        </div>
+
+        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+            @foreach($this->materialHistory as $entry)
+            <div class="px-4 sm:px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition"
+                 x-data="{ open: false }">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="shrink-0 size-9 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold">
+                                {{ strtoupper(substr($entry->requester_name, 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                                    {{ $entry->requester_name }}
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {{ \Carbon\Carbon::parse($entry->decided_at)->format('M d, Y · g:i A') }}
+                                    · {{ $entry->item_count }} item{{ $entry->item_count == 1 ? '' : 's' }}
+                                    @if($entry->approver_name)
+                                        · by {{ $entry->approver_name }}
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+
+                        @if($entry->purpose)
+                            <p class="text-xs text-gray-500 dark:text-gray-400 italic mb-2">
+                                "{{ \Illuminate\Support\Str::limit($entry->purpose, 100) }}"
+                            </p>
+                        @endif
+
+                        @if($entry->items_list)
+                            <div class="rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2 flex items-center justify-between gap-2">
+                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">
+                                    <span class="font-semibold">Items:</span> {{ $entry->items_list }}
+                                </p>
+                                <button type="button" @click="open = !open"
+                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[#123524] dark:text-green-400 hover:underline whitespace-nowrap">
+                                    <span x-text="open ? 'Hide' : 'View'"></span>
+                                    <svg class="size-3 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                                         fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        @endif
+
+                        {{-- Expanded details --}}
+                        <div x-show="open" x-cloak x-transition.opacity.duration.200ms
+                             class="mt-3 rounded-lg border border-[#123524]/20 dark:border-green-900/30 bg-[#123524]/[0.03] dark:bg-green-900/10 p-3 space-y-2">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-[#123524] dark:text-green-400 mb-1">
+                                Full Breakdown
+                            </p>
+                            @foreach($entry->items_list ? explode(', ', $entry->items_list) : [] as $line)
+                                <div class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                                    <span class="size-1.5 rounded-full bg-[#123524] dark:bg-green-400 shrink-0"></span>
+                                    <span>{{ $line }}</span>
+                                </div>
+                            @endforeach
+                            @if($entry->approval_remarks)
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-200 dark:border-gray-700">
+                                    <strong>Remarks:</strong> {{ $entry->approval_remarks }}
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 self-start">
+                        @if($entry->request_status === 'approved')
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Approved
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Rejected
+                            </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
 </div>
 </div>

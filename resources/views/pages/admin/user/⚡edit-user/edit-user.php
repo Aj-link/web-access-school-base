@@ -2,6 +2,7 @@
 
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\PasswordResetByAdminNotification;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -9,6 +10,12 @@ use Livewire\Component;
 
 new #[Layout('layouts.admin')] class extends Component
 {
+    /**
+     * The default password that the "Reset to Default" button applies.
+     * Change this to whatever you want the fallback password to be.
+     */
+    private const DEFAULT_PASSWORD = 'csav.csav';
+
     public $user;
     public $name;
     public $email;
@@ -38,10 +45,6 @@ new #[Layout('layouts.admin')] class extends Component
         return $this->user->hasRole('admin');
     }
 
-    /**
-     * Role options. Admin is not editable from this page — that's intentional
-     * so a mistake here can't lock the admin out.
-     */
     #[Computed()]
     public function roles()
     {
@@ -52,6 +55,16 @@ new #[Layout('layouts.admin')] class extends Component
         ];
     }
 
+    /**
+     * Expose the default password to the blade so it can be shown
+     * in the button label if you want.
+     */
+    #[Computed()]
+    public function defaultPassword()
+    {
+        return self::DEFAULT_PASSWORD;
+    }
+
     protected function rules()
     {
         $rules = [
@@ -60,7 +73,6 @@ new #[Layout('layouts.admin')] class extends Component
             'password' => 'nullable|string|min:6|confirmed',
         ];
 
-        // Only admins bypass the department requirement
         if (! $this->isAdmin) {
             $rules['department_id'] = 'required|exists:departments,id';
             $rules['role']          = 'required|in:program head,faculty,student';
@@ -87,30 +99,85 @@ new #[Layout('layouts.admin')] class extends Component
     {
         $this->validate();
 
+        $passwordChanged = filled($this->password);
+        $plainPassword   = $this->password;
+
         $data = [
             'name'  => $this->name,
             'email' => $this->email,
         ];
 
-        // Admins keep no department
         if (! $this->isAdmin) {
             $data['department_id'] = $this->department_id;
         }
 
-        // Only touch the password if a new one was typed
-        if (filled($this->password)) {
-            $data['password'] = Hash::make($this->password);
+        if ($passwordChanged) {
+            $data['password'] = Hash::make($plainPassword);
         }
 
         $this->user->update($data);
 
-        // Sync the role if the user isn't an admin
         if (! $this->isAdmin) {
             $this->user->syncRoles([$this->role]);
         }
 
+        if ($passwordChanged) {
+            $this->sendPasswordResetEmail($plainPassword);
+        }
+
         $this->reset(['password', 'password_confirmation']);
 
-        session()->flash('success', 'User updated successfully!');
+        $message = $passwordChanged
+            ? 'User updated successfully! A password reset email has been sent.'
+            : 'User updated successfully!';
+
+        session()->flash('success', $message);
+    }
+
+    /**
+     * ── NEW: One-click password reset to the default ──
+     */
+    public function resetToDefaultPassword(): void
+    {
+        if ($this->isAdmin) {
+            session()->flash('success', 'Cannot reset the admin password from this page.');
+            return;
+        }
+
+        $default = self::DEFAULT_PASSWORD;
+
+        $this->user->update([
+            'password' => Hash::make($default),
+        ]);
+
+        $this->sendPasswordResetEmail($default);
+
+        session()->flash('success', "Password reset to the default value. A reset email has been sent to {$this->user->email}.");
+    }
+
+    /**
+     * Shared helper — sends the PasswordResetByAdminNotification
+     * with the given plaintext password.
+     */
+    protected function sendPasswordResetEmail(string $plainPassword): void
+    {
+        try {
+            $departmentName = Department::find($this->department_id)?->department_name;
+            $roleName       = $this->user->roles->first()?->name;
+
+            $roleLabel = $roleName
+                ? ucwords(str_replace('_', ' ', $roleName))
+                : null;
+
+            $this->user->notify(new PasswordResetByAdminNotification(
+                userName:    $this->user->name,
+                userEmail:   $this->user->email,
+                newPassword: $plainPassword,
+                role:        $roleLabel,
+                department:  $departmentName,
+            ));
+        } catch (\Throwable $e) {
+            \Log::warning('PasswordResetByAdminNotification failed: ' . $e->getMessage());
+        }
     }
 };

@@ -56,22 +56,59 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        $request->update(['status' => 'approved']);
-
-        // ── Record the approval ──
-        DB::table('request_approvals')->updateOrInsert(
-            ['request_id' => $request->id, 'approver_id' => Auth::id()],
-            [
-                'status'      => 'approved',
-                'remarks'     => null,
-                'approved_at' => now(),
-                'updated_at'  => now(),
-                'created_at'  => now(),
-            ]
-        );
-
+        $departmentId = Auth::user()->department_id;
         $approverName = Auth::user()->name;
 
+        // ── NEW: deduct attached materials from the department's allocation ──
+        $materialItems = $request->items->whereNotNull('resource_id');
+
+        try {
+            DB::transaction(function () use ($request, $materialItems, $departmentId) {
+
+                // Pass 1 — validate every material has enough allocated stock
+                foreach ($materialItems as $item) {
+                    $allocation = DB::table('resource_all_locations')
+                        ->where('resource_id', $item->resource_id)
+                        ->where('department_id', $departmentId)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$allocation || $allocation->allocated_quantity < $item->quantity) {
+                        throw new \RuntimeException(
+                            "Not enough allocated stock for \"{$item->item_name}\". Please request a restock from Admin first."
+                        );
+                    }
+                }
+
+                // Pass 2 — deduct from department allocation
+                foreach ($materialItems as $item) {
+                    DB::table('resource_all_locations')
+                        ->where('resource_id', $item->resource_id)
+                        ->where('department_id', $departmentId)
+                        ->decrement('allocated_quantity', $item->quantity);
+                }
+
+                // Mark the request approved
+                $request->update(['status' => 'approved']);
+
+                // Record the approval
+                DB::table('request_approvals')->updateOrInsert(
+                    ['request_id' => $request->id, 'approver_id' => Auth::id()],
+                    [
+                        'status'      => 'approved',
+                        'remarks'     => null,
+                        'approved_at' => now(),
+                        'updated_at'  => now(),
+                        'created_at'  => now(),
+                    ]
+                );
+            });
+        } catch (\RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
+            return;
+        }
+
+        // Notification (outside the transaction — safe if it fails)
         $details = $facilityItem
             ? "{$facilityItem->item_name} on " . Carbon::parse($facilityItem->request_date)->format('M d, Y')
                 . " ({$facilityItem->start_time} - {$facilityItem->end_time})"

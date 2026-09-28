@@ -75,9 +75,16 @@
                         {{-- Password + Confirm --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                             <div>
-                                <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
-                                    Password <span class="text-red-500">*</span>
-                                </label>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm text-gray-700 font-medium dark:text-white">
+                                        Password <span class="text-red-500">*</span>
+                                    </label>
+                                    <button type="button"
+                                        wire:click="useDefaultPassword"
+                                        class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
+                                        Use default ({{ $this->defaultPassword }})
+                                    </button>
+                                </div>
                                 <div class="relative" x-data="{ show: false }">
                                     <input :type="show ? 'text' : 'password'" wire:model.defer="password"
                                         placeholder="Min. 6 characters"
@@ -108,7 +115,7 @@
                             </label>
                             <select wire:model="department_id"
                                 class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                <option value="">Select department</option>
+                                <optison value="">Select department</option>
                                 @foreach($this->departments as $department)
                                     <option value="{{ $department->id }}">{{ $department->department_name }}</option>
                                 @endforeach

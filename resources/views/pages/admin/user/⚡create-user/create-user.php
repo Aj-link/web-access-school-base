@@ -2,13 +2,20 @@
 
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\AccountCreatedByAdminNotification;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-new #[Layout('layouts::admin')] class extends Component
+new #[Layout('layouts.admin')] class extends Component
 {
+    /**
+     * The default password used by the "Use Default" button.
+     * Change this to whatever you want.
+     */
+    private const DEFAULT_PASSWORD = 'csav.csav';
+
     public $name;
     public $email;
     public $password;
@@ -22,10 +29,6 @@ new #[Layout('layouts::admin')] class extends Component
         return Department::orderBy('department_name')->get(['id', 'department_name']);
     }
 
-    /**
-     * Role options. Admin is not listed here — admins are seeded, not created
-     * from this page. Faculty covers both teaching and staff positions.
-     */
     #[Computed()]
     public function roles()
     {
@@ -34,6 +37,15 @@ new #[Layout('layouts::admin')] class extends Component
             'faculty'      => 'Faculty',
             'student'      => 'Student',
         ];
+    }
+
+    /**
+     * Expose the default password to the blade.
+     */
+    #[Computed()]
+    public function defaultPassword(): string
+    {
+        return self::DEFAULT_PASSWORD;
     }
 
     protected function rules()
@@ -62,14 +74,28 @@ new #[Layout('layouts::admin')] class extends Component
         'role.in'                => 'Selected role is invalid.',
     ];
 
+    /**
+     * ── NEW: One-click fill both password fields with the default ──
+     */
+    public function useDefaultPassword(): void
+    {
+        $this->password              = self::DEFAULT_PASSWORD;
+        $this->password_confirmation = self::DEFAULT_PASSWORD;
+
+        // Clear any stale validation errors
+        $this->resetErrorBag(['password', 'password_confirmation']);
+    }
+
     public function save()
     {
         $this->validate();
 
+        $plainPassword = $this->password;
+
         $user = User::create([
             'name'          => $this->name,
             'email'         => $this->email,
-            'password'      => Hash::make($this->password),
+            'password'      => Hash::make($plainPassword),
             'department_id' => $this->department_id,
             'status'        => 'approved',
         ]);
@@ -78,9 +104,23 @@ new #[Layout('layouts::admin')] class extends Component
 
         $roleLabel = $this->roles[$this->role] ?? ucfirst($this->role);
 
+        $departmentName = Department::find($this->department_id)?->department_name;
+
+        try {
+            $user->notify(new AccountCreatedByAdminNotification(
+                userName:        $user->name,
+                userEmail:       $user->email,
+                defaultPassword: $plainPassword,
+                role:            $roleLabel,
+                department:      $departmentName,
+            ));
+        } catch (\Throwable $e) {
+            \Log::warning('AccountCreatedByAdminNotification failed: ' . $e->getMessage());
+        }
+
         $this->reset(['name', 'email', 'password', 'password_confirmation', 'department_id']);
         $this->role = 'program head';
 
-        session()->flash('success', "{$roleLabel} created successfully!");
+        session()->flash('success', "{$roleLabel} created successfully! A welcome email has been sent to {$user->email}.");
     }
 };

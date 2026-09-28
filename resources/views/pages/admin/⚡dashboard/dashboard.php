@@ -62,7 +62,10 @@ new #[Layout('layouts.admin')] class extends Component
             'approved',
             'rejected',
             'cancelled',
-        ]);
+        ])
+        ->whereHas('user', function ($q) {
+                $q->role('program head');
+            });
     }
 
     #[Computed]

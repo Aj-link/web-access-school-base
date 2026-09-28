@@ -55,7 +55,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
     {
         $this->used_date = date('Y-m-d');
 
-        // ✅ Load facilities from the resources table managed by admin
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         if ($facilityType) {
@@ -65,7 +64,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
                 ->pluck('resource_name')
                 ->toArray();
         } else {
-            // Fallback: any resource with "Facility" in the type name
             $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
                 $q->where('type_name', 'like', '%facility%')
                   ->orWhere('type_name', 'like', '%Facility%')
@@ -76,9 +74,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->toArray();
         }
 
-        // ✅ FIX: Materials scoped to what's actually allocated to the user's OWN department
-        // (previously pulled global quantity_available, letting any user request
-        // materials never allocated to their department)
         $departmentId = Auth::user()->department_id;
 
         $this->availableResources = $departmentId
@@ -99,25 +94,19 @@ new #[Layout('layouts.student-faculty')] class extends Component
             : collect();
     }
 
-    /**
- * Materials available for a given row's dropdown: everything minus
- * whatever's already picked in OTHER material rows (prevents the same
- * resource being requested twice in one reservation). The row's own
- * current selection is always kept.
- */
-public function getMaterialOptionsForRow(int $currentIndex)
-{
-    $selectedElsewhere = collect($this->materials)
-        ->except($currentIndex)
-        ->pluck('resource_id')
-        ->filter()
-        ->map(fn ($id) => (int) $id)
-        ->all();
+    public function getMaterialOptionsForRow(int $currentIndex)
+    {
+        $selectedElsewhere = collect($this->materials)
+            ->except($currentIndex)
+            ->pluck('resource_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
-    return collect($this->availableResources)
-        ->reject(fn ($resource) => in_array((int) $resource->id, $selectedElsewhere))
-        ->values();
-}
+        return collect($this->availableResources)
+            ->reject(fn ($resource) => in_array((int) $resource->id, $selectedElsewhere))
+            ->values();
+    }
 
     public function addMaterial(): void
     {
@@ -130,6 +119,83 @@ public function getMaterialOptionsForRow(int $currentIndex)
         $this->materials = array_values($this->materials);
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // LIVE CONFLICT FEEDBACK
+    // ─────────────────────────────────────────────────────────────────
+
+    public function updatedFacilityName(): void
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedUsedDate(): void
+    {
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedStartTime(): void
+    {
+        $this->validateTimeRangeLive();
+        $this->validateFacilityConflictLive();
+    }
+
+    public function updatedEndTime(): void
+    {
+        $this->validateTimeRangeLive();
+        $this->validateFacilityConflictLive();
+    }
+
+    protected function validateTimeRangeLive(): void
+    {
+        $this->resetErrorBag('end_time');
+
+        if ($this->start_time && $this->end_time && $this->end_time <= $this->start_time) {
+            $this->addError('end_time', 'End time must be after start time.');
+        }
+    }
+
+    protected function validateFacilityConflictLive(): void
+    {
+        $this->resetErrorBag('facility_name');
+
+        if ($message = $this->facilityConflict()) {
+            $this->addError('facility_name', $message);
+        }
+    }
+
+    /**
+     * Returns a human-readable conflict message if the chosen
+     * facility/date/time overlaps an already-approved reservation.
+     */
+    protected function facilityConflict(): ?string
+    {
+        if (!$this->facility_name || !$this->used_date || !$this->start_time || !$this->end_time) {
+            return null;
+        }
+
+        $conflict = RequestItem::whereNull('resource_id')
+            ->where('item_name', $this->facility_name)
+            ->whereDate('request_date', $this->used_date)
+            ->whereHas('request', fn ($q) => $q->where('status', 'approved'))
+            ->where('start_time', '<', $this->end_time)
+            ->where('end_time', '>', $this->start_time)
+            ->first();
+
+        if ($conflict) {
+            $from = \Carbon\Carbon::parse($conflict->start_time)->format('g:i A');
+            $to   = \Carbon\Carbon::parse($conflict->end_time)->format('g:i A');
+            $date = \Carbon\Carbon::parse($this->used_date)->format('M d, Y');
+
+            return "Sorry, {$this->facility_name} is already booked on {$date} from {$from} to {$to}. Please select another time or date.";
+        }
+
+        return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // SUBMIT
+    // ─────────────────────────────────────────────────────────────────
+
     public function submit()
     {
         $this->validate();
@@ -139,14 +205,18 @@ public function getMaterialOptionsForRow(int $currentIndex)
             return;
         }
 
+        // ── Server-side block — cannot rely on live check alone ──
+        if ($message = $this->facilityConflict()) {
+            $this->addError('facility_name', $message);
+            return;
+        }
+
         $departmentId = Auth::user()->department_id;
 
         $selectedMaterials = collect($this->materials)
             ->filter(fn($m) => !empty($m['resource_id']))
             ->values();
 
-        // ✅ FIX: Validate requested quantity against the DEPARTMENT'S allocation,
-        // not the resource's global quantity_available.
         foreach ($selectedMaterials as $i => $material) {
             $allocation = DB::table('resource_all_locations')
                 ->join('resources', 'resources.id', '=', 'resource_all_locations.resource_id')
@@ -199,7 +269,6 @@ public function getMaterialOptionsForRow(int $currentIndex)
             ]);
         }
 
-        // Notify program heads in the same department
         $programHeads = User::role('program head')
             ->where('department_id', $departmentId)
             ->get();
@@ -213,10 +282,11 @@ public function getMaterialOptionsForRow(int $currentIndex)
 
         foreach ($programHeads as $programHead) {
             Notification::create([
-                'user_id' => $programHead->id,
-                'message' => Auth::user()->name . ' submitted a facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')' . $materialsSummary,
-                'type'    => 'Gmail',
-                'status'  => 'pending',
+                'user_id'    => $programHead->id,
+                'request_id' => $request->id,
+                'message'    => Auth::user()->name . ' submitted a facility reservation for ' . $this->facility_name . ' on ' . $this->used_date . ' (' . $this->start_time . ' - ' . $this->end_time . ')' . $materialsSummary,
+                'type'       => 'Gmail',
+                'status'     => 'pending',
             ]);
         }
 

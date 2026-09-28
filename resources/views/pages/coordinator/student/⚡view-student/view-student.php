@@ -4,6 +4,7 @@ namespace App\Livewire\ProgramHead;
 
 use App\Models\User;
 use App\Notifications\NewUserPendingNotification;
+use App\Notifications\AccountCreatedByProgramHeadNotification;
 use App\Models\Notification as InAppNotification;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -76,7 +77,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->paginate(10);
     }
 
-    // ── Single-query stats (replaces 5 separate #[Computed] counts) ──
     #[Computed]
     public function counts(): array
     {
@@ -122,30 +122,47 @@ new #[Layout('layouts.coordinator')] class extends Component
             'createRole'     => 'required|in:student,faculty',
         ]);
 
+        $plainPassword = $this->createPassword;
+
         $user = User::create([
             'name'          => $this->createName,
             'email'         => $this->createEmail,
-            'password'      => Hash::make($this->createPassword),
+            'password'      => Hash::make($plainPassword),
             'department_id' => $this->departmentId,
-            'status'        => 'pending', // ✅ admin must approve first
+            'status'        => 'pending',
         ]);
 
         $user->assignRole($this->createRole);
 
-        // ✅ Notify every admin: email + bell notification
         $roleLabel = ucfirst($this->createRole);
 
-        User::role('admin')->get()->each(function ($admin) use ($user, $roleLabel) {
-            // Email (queued)
-            $admin->notify(new NewUserPendingNotification(
-                userName:   $user->name,
-                userEmail:  $user->email,
-                role:       $roleLabel,
-                department: $this->departmentName,
+        // ── 1. Welcome email to the NEW USER (from the Program Head) ──
+        try {
+            $user->notify(new AccountCreatedByProgramHeadNotification(
+                userName:         $user->name,
+                userEmail:        $user->email,
+                defaultPassword:  $plainPassword,
+                role:             $roleLabel,
+                department:       $this->departmentName,
+                programHeadName:  Auth::user()->name,
             ));
+        } catch (\Throwable $e) {
+            \Log::warning('AccountCreatedByProgramHeadNotification failed: ' . $e->getMessage());
+        }
 
-            // Bell in the admin header (message contains "registration",
-            // so clicking it goes to /admin/students)
+        // ── 2. Notify every admin (email + in-app bell) that a new account awaits approval ──
+        User::role('admin')->get()->each(function ($admin) use ($user, $roleLabel) {
+            try {
+                $admin->notify(new NewUserPendingNotification(
+                    userName:   $user->name,
+                    userEmail:  $user->email,
+                    role:       $roleLabel,
+                    department: $this->departmentName,
+                ));
+            } catch (\Throwable $e) {
+                \Log::warning('NewUserPendingNotification failed: ' . $e->getMessage());
+            }
+
             InAppNotification::create([
                 'user_id' => $admin->id,
                 'message' => "New {$roleLabel} registration: {$user->name} is waiting for account approval.",
@@ -153,7 +170,7 @@ new #[Layout('layouts.coordinator')] class extends Component
         });
 
         $this->showCreateModal = false;
-        session()->flash('success', $roleLabel . ' created successfully. Waiting for admin approval.');
+        session()->flash('success', $roleLabel . ' created successfully. Welcome email sent. Waiting for admin approval.');
 
         unset($this->counts, $this->students);
     }

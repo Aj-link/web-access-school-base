@@ -11,41 +11,44 @@ new #[Layout('layouts.coordinator')] class extends Component
 {
     use WithPagination;
 
-    // Which request's reject-remarks box is currently open (request_id or null)
     public ?int $rejectingRequestId = null;
     public string $rejectRemarks = '';
 
     public function mount()
     {
-        // ✅ Restrict this page to Program Head only
         if (!Auth::user()->hasRole('program head')) {
             abort(403, 'Only Program Heads can view department resources.');
         }
     }
 
-    /**
-     * Format a raw pcs quantity according to the resource's unit.
-     */
+    protected function studentFacultyIds(): array
+    {
+        return DB::table('users as u')
+            ->join('model_has_roles as mhr', function ($join) {
+                $join->on('mhr.model_id', '=', 'u.id')
+                     ->where('mhr.model_type', 'App\\Models\\User');
+            })
+            ->join('roles as r', 'r.id', '=', 'mhr.role_id')
+            ->where('u.department_id', Auth::user()->department_id)
+            ->whereIn('r.name', ['student', 'faculty'])
+            ->pluck('u.id')
+            ->all();
+    }
+
     protected function formatQuantity(int $qtyInPcs, ?string $unit): string
     {
-
         $unit = trim($unit ?? '') ?: 'Ream';
 
         return "{$qtyInPcs} {$unit}";
     }
 
-    /**
-     * ✅ NEW: does a given facility+date+time overlap an already-approved
-     * reservation for the same facility? Used both to warn on the pending
-     * list and to hard-block approval.
-     */
     protected function facilityHasConflict(string $facilityName, string $date, string $startTime, string $endTime, int $excludeRequestId): bool
     {
         return DB::table('request_items as ri')
             ->join('requests as req', 'req.id', '=', 'ri.request_id')
             ->where('req.status', 'approved')
             ->where('req.id', '!=', $excludeRequestId)
-            ->whereNull('ri.resource_id') // facility line only
+            ->whereNull('ri.resource_id')
             ->where('ri.item_name', $facilityName)
             ->whereDate('ri.request_date', $date)
             ->where('ri.start_time', '<', $endTime)
@@ -78,43 +81,46 @@ new #[Layout('layouts.coordinator')] class extends Component
     }
 
     #[Computed]
-public function allocations()
-{
-    $paginator = DB::table('resource_all_locations as ral')
-        ->join('resources as r', 'r.id', '=', 'ral.resource_id')
-        ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
-        ->where('ral.department_id', Auth::user()->department_id)
-        ->where('rt.type_name', '!=', 'Facility')
-        ->select('ral.id', 'ral.resource_id', 'ral.allocated_quantity', 'r.resource_name', 'r.unit')
-        ->orderByDesc('ral.updated_at')
-        ->paginate(10);
+    public function allocations()
+    {
+        $paginator = DB::table('resource_all_locations as ral')
+            ->join('resources as r', 'r.id', '=', 'ral.resource_id')
+            ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
+            ->where('ral.department_id', Auth::user()->department_id)
+            ->where('rt.type_name', '!=', 'Facility')
+            ->select('ral.id', 'ral.resource_id', 'ral.allocated_quantity', 'r.resource_name', 'r.unit')
+            ->orderByDesc('ral.updated_at')
+            ->paginate(10);
 
-    return $paginator->through(function ($row) {
-        $row->formatted_quantity = $this->formatQuantity(
-            (int) $row->allocated_quantity,
-            $row->unit
-        );
-        return $row;
-    });
-}
+        return $paginator->through(function ($row) {
+            $row->formatted_quantity = $this->formatQuantity(
+                (int) $row->allocated_quantity,
+                $row->unit
+            );
+            return $row;
+        });
+    }
 
     #[Computed]
     public function totalAllocated()
     {
         return DB::table('resource_all_locations as ral')
-        ->join('resources as r', 'r.id', '=', 'ral.resource_id')
-        ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
-        ->where('ral.department_id', Auth::user()->department_id)
-        ->where('rt.type_name', '!=', 'Facility')
-        ->sum('ral.allocated_quantity');
+            ->join('resources as r', 'r.id', '=', 'ral.resource_id')
+            ->join('resource_types as rt', 'rt.id', '=', 'r.resource_type_id')
+            ->where('ral.department_id', Auth::user()->department_id)
+            ->where('rt.type_name', '!=', 'Facility')
+            ->sum('ral.allocated_quantity');
     }
 
-    // Pending MATERIAL line items (resource_id set) from this department.
-    // Note: this deliberately excludes the facility line itself — see
-    // pendingFacilityRequests() below for those.
     #[Computed]
     public function pendingMaterialRequests()
     {
+        $studentFacultyIds = $this->studentFacultyIds();
+
+        if (empty($studentFacultyIds)) {
+            return collect();
+        }
+
         $allocatedByResource = DB::table('resource_all_locations')
             ->where('department_id', Auth::user()->department_id)
             ->pluck('allocated_quantity', 'resource_id');
@@ -125,7 +131,9 @@ public function allocations()
             ->join('users as u', 'u.id', '=', 'req.user_id')
             ->where('req.department_id', Auth::user()->department_id)
             ->where('req.status', 'pending')
+            ->where('req.request_type_id', 2)
             ->whereNotNull('ri.resource_id')
+            ->whereIn('req.user_id', $studentFacultyIds)
             ->select(
                 'req.id as request_id',
                 'ri.resource_id',
@@ -152,23 +160,23 @@ public function allocations()
             });
     }
 
-    /**
-     * ✅ NEW: Pending FACILITY reservations (the room/facility line item
-     * itself, resource_id is null). Previously these never appeared
-     * anywhere for the Program Head to act on if the reservation had no
-     * materials attached — this surfaces them and flags scheduling
-     * conflicts against already-approved bookings before you click Approve.
-     */
     #[Computed]
     public function pendingFacilityRequests()
     {
+        $studentFacultyIds = $this->studentFacultyIds();
+
+        if (empty($studentFacultyIds)) {
+            return collect();
+        }
+
         return DB::table('request_items as ri')
             ->join('requests as req', 'req.id', '=', 'ri.request_id')
             ->join('users as u', 'u.id', '=', 'req.user_id')
             ->where('req.department_id', Auth::user()->department_id)
             ->where('req.status', 'pending')
-            ->where('req.request_type_id', 1) // facility reservations only
-            ->whereNull('ri.resource_id')      // the facility line itself
+            ->where('req.request_type_id', 1)
+            ->whereNull('ri.resource_id')
+            ->whereIn('req.user_id', $studentFacultyIds)
             ->select(
                 'req.id as request_id',
                 'ri.item_name as facility_name',
@@ -191,14 +199,117 @@ public function allocations()
             });
     }
 
-    /**
-     * ✅ Approve a request (facility, material, or both):
-     *   - If it has a facility line, block approval if that room/time
-     *     overlaps an already-approved booking (double-booking guard).
-     *   - If it has material line items, deduct them from the department's
-     *     allocated stock — two-pass so a multi-item request never
-     *     deducts partially.
-     */
+    #[Computed]
+    public function recentApprovals()
+    {
+        $studentFacultyIds = $this->studentFacultyIds();
+
+        if (empty($studentFacultyIds)) {
+            return collect();
+        }
+
+        $rows = DB::table('request_approvals as ra')
+            ->join('requests as req', 'req.id', '=', 'ra.request_id')
+            ->join('users as u', 'u.id', '=', 'req.user_id')
+            ->where('ra.approver_id', Auth::id())
+            ->where('req.department_id', Auth::user()->department_id)
+            ->where('req.request_type_id', 2)
+            ->whereIn('ra.status', ['approved', 'rejected'])
+            ->whereIn('req.user_id', $studentFacultyIds)
+            ->select(
+                'ra.id as approval_id',
+                'ra.status as decision',
+                'ra.approved_at',
+                'ra.created_at as decided_at',
+                'req.id as request_id',
+                'req.purpose',
+                'u.name as requester_name'
+            )
+            ->orderByDesc('ra.approved_at')
+            ->limit(10)
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return $rows;
+        }
+
+        $requestIds = $rows->pluck('request_id')->all();
+
+        // ── FIX: removed whereNotNull('resource_id') — request_type_id=2
+        //    already guarantees these are material items, so filtering
+        //    by resource_id was hiding items with legacy null values.
+        $itemsByRequest = DB::table('request_items')
+            ->whereIn('request_id', $requestIds)
+            ->select('request_id', 'item_name', 'quantity')
+            ->get()
+            ->groupBy('request_id');
+
+        return $rows->map(function ($row) use ($itemsByRequest) {
+            $items = $itemsByRequest->get($row->request_id, collect());
+
+            $row->item_count = $items->count();
+            $row->items_list = $items->map(fn ($i) => "{$i->item_name} × {$i->quantity}")->implode(', ');
+
+            return $row;
+        });
+    }
+
+    #[Computed]
+    public function materialHistory()
+    {
+        $studentFacultyIds = $this->studentFacultyIds();
+
+        if (empty($studentFacultyIds)) {
+            return collect();
+        }
+
+        $rows = DB::table('requests as req')
+            ->join('users as u', 'u.id', '=', 'req.user_id')
+            ->leftJoin('request_approvals as ra', function ($join) {
+                $join->on('ra.request_id', '=', 'req.id')
+                     ->whereIn('ra.status', ['approved', 'rejected']);
+            })
+            ->leftJoin('users as approver', 'approver.id', '=', 'ra.approver_id')
+            ->where('req.department_id', Auth::user()->department_id)
+            ->where('req.request_type_id', 2)
+            ->whereIn('req.status', ['approved', 'rejected'])
+            ->whereIn('req.user_id', $studentFacultyIds)
+            ->select(
+                'req.id as request_id',
+                'req.purpose',
+                'req.status as request_status',
+                'req.updated_at as decided_at',
+                'u.name as requester_name',
+                'approver.name as approver_name',
+                'ra.remarks as approval_remarks'
+            )
+            ->orderByDesc('req.updated_at')
+            ->limit(20)
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return $rows;
+        }
+
+        $requestIds = $rows->pluck('request_id')->all();
+
+        // ── FIX: same as recentApprovals — no resource_id filter needed.
+        $itemsByRequest = DB::table('request_items')
+            ->whereIn('request_id', $requestIds)
+            ->select('request_id', 'item_name', 'quantity')
+            ->get()
+            ->groupBy('request_id');
+
+        return $rows->map(function ($row) use ($itemsByRequest) {
+            $items = $itemsByRequest->get($row->request_id, collect());
+
+            $row->item_count = $items->count();
+            $row->items_list = $items->map(fn ($i) => "{$i->item_name} × {$i->quantity}")->implode(', ');
+
+            return $row;
+        });
+    }
+
     public function approveRequest(int $requestId): void
     {
         $departmentId = Auth::user()->department_id;
@@ -222,8 +333,6 @@ public function allocations()
         try {
             DB::transaction(function () use ($materialItems, $facilityItem, $departmentId, $requestId, $request) {
 
-                // ✅ FIX: block approval if the room is already booked for an
-                // overlapping time on that date.
                 if ($facilityItem) {
                     $conflict = $this->facilityHasConflict(
                         $facilityItem->item_name,
@@ -242,7 +351,6 @@ public function allocations()
                     }
                 }
 
-                // Pass 1: validate every material item has enough allocated stock
                 foreach ($materialItems as $item) {
                     $allocation = DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -257,7 +365,6 @@ public function allocations()
                     }
                 }
 
-                // Pass 2: deduct, now that we know every item can be fulfilled
                 foreach ($materialItems as $item) {
                     DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -287,13 +394,7 @@ public function allocations()
             session()->flash('error', $e->getMessage());
         }
 
-        unset(
-            $this->allocations,
-            $this->pendingMaterialRequests,
-            $this->pendingFacilityRequests,
-            $this->totalAllocated,
-            $this->materialsSummary
-        );
+        $this->refreshComputed();
     }
 
     public function openReject(int $requestId): void
@@ -342,12 +443,19 @@ public function allocations()
         $this->rejectingRequestId = null;
         $this->rejectRemarks = '';
 
+        $this->refreshComputed();
+    }
+
+    protected function refreshComputed(): void
+    {
         unset(
             $this->allocations,
             $this->pendingMaterialRequests,
             $this->pendingFacilityRequests,
             $this->totalAllocated,
-            $this->materialsSummary
+            $this->materialsSummary,
+            $this->recentApprovals,
+            $this->materialHistory
         );
     }
 };
