@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignID('request_id')->constrained('requests')->cascadeOnDelete();
             $table->foreignID('approver_id')->constrained('users')->cascadeOnDelete();
             $table->string('status')->default('pending');
-            $table->string('remarks')->nullable();
+            $table->longText('remarks')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });

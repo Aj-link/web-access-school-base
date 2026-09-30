@@ -13,7 +13,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'status' ,'department_id', 'responsibility_center_id'])]
+#[Fillable([
+    'avatar',
+    'name',
+    'email',
+    'password',
+    'status',
+    'department_id',
+    'responsibility_center_id',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -33,31 +41,33 @@ class User extends Authenticatable
         ];
     }
 
-public function auditLogs(): HasMany {
-    return $this->hasMany(AuditLog::class);
-}
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
 
-public function responsibility(): BelongsTo
-{
-    return $this->belongsTo(ResponsibilityCenter::class, 'responsibility_center_id');
-}
+    public function responsibility(): BelongsTo
+    {
+        return $this->belongsTo(ResponsibilityCenter::class, 'responsibility_center_id');
+    }
 
-public function department(): BelongsTo
-{
-    return $this->belongsTo(Department::class);
-}
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
 
-public function notifications(): HasMany {
-    return $this->hasMany(Notification::class);
-}
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
 
+    public function resourceUsages(): HasMany
+    {
+        return $this->hasMany(ResourceUsage::class);
+    }
 
-public function resourceUsages(): HasMany {
-    return $this->hasMany(ResourceUsage::class);
-}
-
-public function requests(): HasMany{
-    return $this->hasMany(Request::class);
-}
-
+    public function requests(): HasMany
+    {
+        return $this->hasMany(Request::class);
+    }
 }

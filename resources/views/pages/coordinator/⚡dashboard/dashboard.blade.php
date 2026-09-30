@@ -90,9 +90,9 @@
                 <p class="text-xs sm:text-sm text-gray-400">Facility vs Material Requests</p>
             </div>
             <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
-            <div class="inline-flex rounded-full border border-[#E4E1D8] dark:border-[#2A4B3A] p-0.5 text-xs font-medium" id="lineFilters">
-                <button type="button" data-filter="student" class="px-3 py-1 rounded-full bg-[#123524] text-white">Students</button>
-                <button type="button" data-filter="faculty" class="px-3 py-1 rounded-full text-gray-500 dark:text-neutral-400">Faculty</button>
+                <div class="inline-flex rounded-full border border-[#E4E1D8] dark:border-[#2A4B3A] p-0.5 text-xs font-medium" id="lineFilters">
+                    <button type="button" data-filter="student" class="px-3 py-1 rounded-full bg-[#123524] text-white">Students</button>
+                    <button type="button" data-filter="faculty" class="px-3 py-1 rounded-full text-gray-500 dark:text-neutral-400">Faculty</button>
                 </div>
             </div>
             <div class="relative w-full h-[200px]">
@@ -102,65 +102,74 @@
     </div>
 
     {{-- Student & Faculty Request History --}}
-<div class="bg-white border border-[#E4E1D8] rounded-2xl shadow-sm overflow-hidden dark:bg-[#16281F] dark:border-[#2A4B3A]">
-    <div class="px-4 sm:px-6 py-4 border-b border-[#E4E1D8] dark:border-[#2A4B3A]">
-        <h2 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-neutral-200" style="font-family: 'Fraunces', serif;">
-            Request History
-        </h2>
-        <p class="text-xs sm:text-sm text-gray-400">How many reservations and material requests each person has made</p>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-[640px] w-full divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
-            <thead class="bg-[#FAF7EF] dark:bg-[#0E1A14]">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Role</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Facility Reservations</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Material Requests</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Total</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
-                @forelse($this->userRequestHistory as $user)
-                    <tr class="hover:bg-[#FAF7EF] dark:hover:bg-[#0E1A14]/50 transition">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold ring-2 ring-[#D4A537]/40 shrink-0">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-medium text-gray-800 dark:text-neutral-200 truncate">{{ $user->name }}</p>
-                                    <p class="text-xs text-gray-400 truncate">{{ $user->email }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
-                                {{ $user->hasRole('student') ? 'bg-[#B8352A]/8 text-[#B8352A]' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300' }}">
-                                {{ ucfirst($user->getRoleNames()->first() ?? 'N/A') }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-neutral-300">
-                            {{ $user->facility_count }}
-                        </td>
-                        <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-neutral-300">
-                            {{ $user->material_count }}
-                        </td>
-                        <td class="px-6 py-4 text-center text-sm font-semibold text-[#123524] dark:text-neutral-200">
-                            {{ $user->total_count }}
-                        </td>
-                    </tr>
-                @empty
+    <div class="bg-white border border-[#E4E1D8] rounded-2xl shadow-sm overflow-hidden dark:bg-[#16281F] dark:border-[#2A4B3A]">
+        <div class="px-4 sm:px-6 py-4 border-b border-[#E4E1D8] dark:border-[#2A4B3A]">
+            <h2 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-neutral-200" style="font-family: 'Fraunces', serif;">
+                Request History
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-400">How many reservations and material requests each person has made</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-[640px] w-full divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
+                <thead class="bg-[#FAF7EF] dark:bg-[#0E1A14]">
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-gray-400">
-                            No request history yet.
-                        </td>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Role</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Facility Reservations</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Material Requests</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#B8862A]">Total</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-[#E4E1D8] dark:divide-[#2A4B3A]">
+                    @forelse($this->userRequestHistory as $user)
+                        <tr wire:key="history-{{ $user->id }}" class="hover:bg-[#FAF7EF] dark:hover:bg-[#0E1A14]/50 transition">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+
+                                    {{-- Avatar (photo if uploaded, otherwise initial) --}}
+                                    @if ($user->avatar)
+                                        <img src="{{ asset($user->avatar) }}"
+                                             alt="{{ $user->name }}"
+                                             class="w-8 h-8 rounded-full object-cover ring-2 ring-[#D4A537]/40 shrink-0">
+                                    @else
+                                        <div class="w-8 h-8 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold ring-2 ring-[#D4A537]/40 shrink-0">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 dark:text-neutral-200 truncate">{{ $user->name }}</p>
+                                        <p class="text-xs text-gray-400 truncate">{{ $user->email }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap
+                                    {{ $user->hasRole('student') ? 'bg-[#B8352A]/8 text-[#B8352A]' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300' }}">
+                                    {{ ucfirst($user->getRoleNames()->first() ?? 'N/A') }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-neutral-300">
+                                {{ $user->facility_count }}
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm text-gray-700 dark:text-neutral-300">
+                                {{ $user->material_count }}
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm font-semibold text-[#123524] dark:text-neutral-200">
+                                {{ $user->total_count }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-400">
+                                No request history yet.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
 </div>
 

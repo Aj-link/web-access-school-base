@@ -7,13 +7,10 @@ use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Spatie\Permission\Models\Role;
 
 new #[Layout('layouts.admin')] class extends Component
 {
-    /**
-     * The default password that the "Reset to Default" button applies.
-     * Change this to whatever you want the fallback password to be.
-     */
     private const DEFAULT_PASSWORD = 'csav.csav';
 
     public $user;
@@ -21,16 +18,16 @@ new #[Layout('layouts.admin')] class extends Component
     public $email;
     public $password;
     public $password_confirmation;
-    public $department_id;
-    public $role = 'student';
+    public $department_id = '';
+    public $role = '';
 
     public function mount($id)
     {
-        $this->user              = User::with('roles')->findOrFail($id);
-        $this->name              = $this->user->name;
-        $this->email             = $this->user->email;
-        $this->department_id     = $this->user->department_id;
-        $this->role              = $this->user->roles->first()?->name ?? 'student';
+        $this->user          = User::with('roles')->findOrFail($id);
+        $this->name          = $this->user->name;
+        $this->email         = $this->user->email;
+        $this->department_id = $this->user->department_id ?? '';
+        $this->role          = $this->user->roles->first()?->name ?? '';
     }
 
     #[Computed()]
@@ -45,20 +42,18 @@ new #[Layout('layouts.admin')] class extends Component
         return $this->user->hasRole('admin');
     }
 
+    /**
+     * ✅ Roles pulled from the database — new roles appear here automatically.
+     */
     #[Computed()]
     public function roles()
     {
-        return [
-            'program head' => 'Program Head',
-            'faculty'      => 'Faculty',
-            'student'      => 'Student',
-        ];
+        return Role::orderBy('name')
+            ->get()
+            ->mapWithKeys(fn ($r) => [$r->name => ucwords($r->name)])
+            ->toArray();
     }
 
-    /**
-     * Expose the default password to the blade so it can be shown
-     * in the button label if you want.
-     */
     #[Computed()]
     public function defaultPassword()
     {
@@ -68,14 +63,14 @@ new #[Layout('layouts.admin')] class extends Component
     protected function rules()
     {
         $rules = [
-            'name'  => 'required|string|min:3',
-            'email' => 'required|email|unique:users,email,' . $this->user->id,
+            'name'     => 'required|string|min:3',
+            'email'    => 'required|email|unique:users,email,' . $this->user->id,
             'password' => 'nullable|string|min:6|confirmed',
         ];
 
         if (! $this->isAdmin) {
             $rules['department_id'] = 'required|exists:departments,id';
-            $rules['role']          = 'required|in:program head,faculty,student';
+            $rules['role']          = 'required|string|exists:roles,name';   // ← DB-backed
         }
 
         return $rules;
@@ -92,7 +87,7 @@ new #[Layout('layouts.admin')] class extends Component
         'department_id.required' => 'Please select a department.',
         'department_id.exists'   => 'Selected department is invalid.',
         'role.required'          => 'Please select a role.',
-        'role.in'                => 'Selected role is invalid.',
+        'role.exists'            => 'Selected role is invalid.',
     ];
 
     public function save()
@@ -104,7 +99,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $data = [
             'name'  => $this->name,
-            'email' => $this->email,
+            'email' => strtolower($this->email),
         ];
 
         if (! $this->isAdmin) {
@@ -134,9 +129,6 @@ new #[Layout('layouts.admin')] class extends Component
         session()->flash('success', $message);
     }
 
-    /**
-     * ── NEW: One-click password reset to the default ──
-     */
     public function resetToDefaultPassword(): void
     {
         if ($this->isAdmin) {
@@ -155,10 +147,6 @@ new #[Layout('layouts.admin')] class extends Component
         session()->flash('success', "Password reset to the default value. A reset email has been sent to {$this->user->email}.");
     }
 
-    /**
-     * Shared helper — sends the PasswordResetByAdminNotification
-     * with the given plaintext password.
-     */
     protected function sendPasswordResetEmail(string $plainPassword): void
     {
         try {

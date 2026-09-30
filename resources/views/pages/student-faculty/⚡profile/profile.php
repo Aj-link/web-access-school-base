@@ -1,70 +1,113 @@
 <?php
 
-namespace App\Livewire\StudentFaculty;
-
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts.student-faculty')] class extends Component
 {
-    public $name;
-    public $email;
-    public $department;
-    public $role;
+    use WithFileUploads;
 
-    // Password fields
-    public $current_password;
-    public $new_password;
-    public $new_password_confirmation;
+    public string $name = '';
+    public string $email = '';
+    public string $department = '';
+    public string $role = '';
 
-    public function mount()
+    // Avatar
+    public $avatar;
+    public ?string $currentAvatar = null;
+
+    public function mount(): void
     {
         $user = Auth::user();
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->department = $user->department->department_name ?? 'Not assigned';
-        $this->role = $user->roles->first()->name ?? 'No role';
+
+        $this->name          = $user->name ?? '';
+        $this->email         = $user->email ?? '';
+        $this->department    = $user->department?->department_name ?? 'Not assigned';
+        $this->role          = $user->roles->first()?->name ?? 'No role';
+        $this->currentAvatar = $user->avatar;
     }
 
-    protected function rules()
+    protected function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . Auth::id(),
-            'current_password' => 'required_with:new_password|current_password',
-            'new_password' => 'nullable|min:6|confirmed',
+            'avatar' => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,jpe,png,gif,webp',
+                'mimetypes:image/jpeg,image/jpg,image/pjpeg,image/png,image/gif,image/webp',
+                'max:5120',
+            ],
         ];
     }
 
     protected $messages = [
-        'name.required' => 'Name is required.',
-        'email.required' => 'Email is required.',
-        'email.email' => 'Please enter a valid email address.',
-        'email.unique' => 'This email is already taken.',
-        'current_password.current_password' => 'Current password is incorrect.',
-        'new_password.min' => 'New password must be at least 6 characters.',
-        'new_password.confirmed' => 'Password confirmation does not match.',
+        'avatar.file'      => 'The uploaded file is not valid. Please try again.',
+        'avatar.image'     => 'Only image files are allowed. Documents, videos, and music files cannot be uploaded.',
+        'avatar.mimes'     => 'Only image files are allowed — JPG, JPEG, PNG, GIF, or WebP.',
+        'avatar.mimetypes' => 'The file content does not match a supported image format.',
+        'avatar.max'       => 'Image is too large. Maximum size is 5MB.',
     ];
 
-    public function updateProfile()
-{
-    $this->validate();
+    public function updatedAvatar(): void
+    {
+        $this->validateOnly('avatar');
 
-    $user = Auth::user();
-    $data = ['name' => $this->name, 'email' => $this->email];
+        if (! $this->avatar) {
+            return;
+        }
 
-    if ($this->new_password) {
-        $data['password'] = $this->new_password;
+        $user = Auth::user();
+
+        // Delete the old avatar file
+        $this->deleteAvatarFile($user->avatar);
+
+        // Make sure the folder exists
+        $dir = public_path('avatars');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // Write the file explicitly instead of ->move() (avoids empty/corrupt files)
+        $filename = Str::uuid() . '.' . $this->avatar->extension();
+        file_put_contents($dir . DIRECTORY_SEPARATOR . $filename, $this->avatar->get());
+
+        $path = 'avatars/' . $filename;
+
+        $user->update(['avatar' => $path]);
+
+        $this->reset('avatar');
+        $this->currentAvatar = $path;
+
+        session()->flash('message', 'Profile photo updated successfully.');
+
+        // Tell the header to refresh its avatar
+        $this->dispatch('avatar-updated');
     }
 
-    $user->update($data);
+    public function removeAvatar(): void
+    {
+        $user = Auth::user();
 
-    if ($this->new_password) {
-        $this->reset(['current_password', 'new_password', 'new_password_confirmation']);
+        $this->deleteAvatarFile($user->avatar);
+
+        $user->update(['avatar' => null]);
+
+        $this->currentAvatar = null;
+
+        session()->flash('message', 'Profile photo removed.');
+
+        // Tell the header to refresh its avatar
+        $this->dispatch('avatar-updated');
     }
 
-    session()->flash('message', 'Profile updated successfully.');
-}
+    protected function deleteAvatarFile(?string $path): void
+    {
+        if ($path && file_exists(public_path($path))) {
+            @unlink(public_path($path));
+        }
+    }
 };

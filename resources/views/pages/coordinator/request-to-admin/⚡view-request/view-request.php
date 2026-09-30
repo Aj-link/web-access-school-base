@@ -13,24 +13,15 @@ use Illuminate\Support\Facades\Auth;
 
 new #[Layout('layouts.coordinator')] class extends Component
 {
-    // Edit modal state
     public bool $showEditModal = false;
     public ?int $editingId = null;
     public $request_type_id = '';
-
-    // Shared fields
     public $purpose = '';
     public $request_date = '';
-
-    // Facility fields
     public $facility_name = '';
     public $start_time = '';
     public $end_time = '';
     public array $facilityOptions = [];
-
-    // Material fields — resource_id-based, matching the create form.
-    // Used for BOTH: optional add-on to a Facility Reservation (type 1),
-    // AND as the main required list for a Material Request (type 2).
     public $items = [];
     public $availableResources = [];
 
@@ -107,8 +98,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->get();
     }
 
-    // Returns the resource list for a given row, excluding resources
-    // already picked in OTHER rows (so the same material can't appear twice)
     public function getResourcesForRow(int $currentIndex)
     {
         $selectedElsewhere = collect($this->items)
@@ -123,8 +112,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->values();
     }
 
-    // Live guard — if a resource is picked that's already used in
-    // another row, reset it and show an error
     public function updatedItems($value, $key)
     {
         if (! str_ends_with($key, '.resource_id') || $value === '' || $value === null) {
@@ -146,7 +133,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
     }
 
-    // Live re-check every time facility/date/time changes, same as Create
     public function updatedFacilityName()
     {
         $this->validateFacilityConflictLive();
@@ -176,10 +162,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
     }
 
-    // Checks whether the chosen facility/date/time overlaps an
-    // ALREADY APPROVED reservation for the same facility — excluding
-    // this request's own current facility item, since editing your
-    // own booking shouldn't conflict with itself.
     protected function facilityConflict(): ?string
     {
         if (!$this->facility_name || !$this->request_date || !$this->start_time || !$this->end_time) {
@@ -233,7 +215,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             $this->start_time    = $facilityItem?->start_time ?? '';
             $this->end_time      = $facilityItem?->end_time ?? '';
 
-            // NEW: load any materials already attached to this facility reservation
             $this->items = $request->items
                 ->whereNotNull('resource_id')
                 ->map(fn ($i) => [
@@ -292,13 +273,10 @@ new #[Layout('layouts.coordinator')] class extends Component
             }
         }
 
-        // Materials to actually save — applies to BOTH facility (optional)
-        // and material-request (required) rows, mirroring the Create form
         $selectedItems = collect($this->items)
             ->filter(fn ($i) => !empty($i['resource_id']))
             ->values();
 
-        // Duplicate guard — applies whenever more than one material row is picked
         $duplicateIds = $selectedItems
             ->pluck('resource_id')
             ->map(fn ($id) => (int) $id)
@@ -307,7 +285,7 @@ new #[Layout('layouts.coordinator')] class extends Component
         if ($duplicateIds->isNotEmpty()) {
             foreach ($selectedItems as $i => $item) {
                 if ($duplicateIds->contains((int) $item['resource_id'])) {
-                    $this->addError("items.$i.resource_id", 'This material is selected more than once. Please combine the quantity into a single row instead.');
+                    $this->addError("items.$i.resource_id", 'This material is selected more than once.');
                 }
             }
             return;
@@ -328,7 +306,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         $request->update(['purpose' => $this->purpose]);
-
         $request->items()->delete();
 
         if ($this->request_type_id == 1) {
@@ -358,7 +335,7 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         $this->closeEdit();
-        session()->flash('success', 'Request updated successfully!');
+        session()->flash('success', 'Request updated successfully.');
     }
 
     public function addItem()

@@ -1,4 +1,4 @@
-<div>
+<div class="select-none">
 <div class="max-w-5xl px-4 py-8 sm:px-6 mx-auto space-y-6">
 
     {{-- Header --}}
@@ -20,50 +20,50 @@
         </div>
     @endif
 
-    {{-- Stats: simple text row instead of 4 cards --}}
-<div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-200 dark:border-neutral-700 pb-4">
-    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['total'] }}</strong> total</span>
-    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['student'] }}</strong> students</span>
-    <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['faculty'] }}</strong> faculty</span>
-    @if($this->counts['pending'] > 0)
-        <span class="text-yellow-700 dark:text-yellow-400">
-            <strong>{{ $this->counts['pending'] }}</strong> pending approval
-        </span>
-    @endif
-</div>
-
-    {{-- Filters --}}
-<div class="flex flex-col sm:flex-row gap-2">
-    {{-- Search with spinner --}}
-    <div class="relative flex-1">
-        <input type="text"
-            wire:model.live.debounce.500ms="search"
-            placeholder="Search name or email..."
-            class="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-
-        <div wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
-            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-        </div>
+    {{-- Stats: simple text row --}}
+    <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-neutral-400 border-b border-gray-200 dark:border-neutral-700 pb-4">
+        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['total'] }}</strong> total</span>
+        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['student'] }}</strong> students</span>
+        <span><strong class="text-gray-800 dark:text-neutral-200">{{ $this->counts['faculty'] }}</strong> faculty</span>
+        @if($this->counts['pending'] > 0)
+            <span class="text-yellow-700 dark:text-yellow-400">
+                <strong>{{ $this->counts['pending'] }}</strong> pending approval
+            </span>
+        @endif
     </div>
 
-    <select wire:model.live="roleFilter"
-        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-        <option value="">All roles</option>
-        <option value="student">Student</option>
-        <option value="faculty">Faculty</option>
-    </select>
+    {{-- Filters --}}
+    <div class="flex flex-col sm:flex-row gap-2">
+        {{-- Search with spinner --}}
+        <div class="relative flex-1">
+            <input type="text"
+                wire:model.live.debounce.500ms="search"
+                placeholder="Search name or email..."
+                class="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
 
-    <select wire:model.live="statusFilter"
-        class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
-        <option value="">All status</option>
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-    </select>
-</div>
+            <div wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <select wire:model.live="roleFilter"
+            class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+            <option value="">All roles</option>
+            <option value="student">Student</option>
+            <option value="faculty">Faculty</option>
+        </select>
+
+        <select wire:model.live="statusFilter"
+            class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1C6B45]">
+            <option value="">All status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+        </select>
+    </div>
 
     {{-- Table --}}
     <div class="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
@@ -80,10 +80,26 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-neutral-700">
                     @forelse($this->students as $user)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700/30">
+                        <tr wire:key="member-{{ $user->id }}" class="hover:bg-gray-50 dark:hover:bg-neutral-700/30">
                             <td class="px-4 py-3">
-                                <p class="font-medium text-gray-800 dark:text-neutral-200">{{ $user->name }}</p>
-                                <p class="text-xs text-gray-400 dark:text-neutral-500">{{ $user->email }}</p>
+                                <div class="flex items-center gap-3">
+
+                                    {{-- Avatar (photo if uploaded, otherwise initial) --}}
+                                    @if ($user->avatar)
+                                        <img src="{{ asset($user->avatar) }}"
+                                             alt="{{ $user->name }}"
+                                             class="size-9 rounded-full object-cover shrink-0 ring-1 ring-gray-200 dark:ring-neutral-600">
+                                    @else
+                                        <div class="size-9 rounded-full bg-[#123524] dark:bg-green-700 text-white flex items-center justify-center text-sm font-semibold shrink-0">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+
+                                    <div class="min-w-0">
+                                        <p class="font-medium text-gray-800 dark:text-neutral-200 truncate">{{ $user->name }}</p>
+                                        <p class="text-xs text-gray-400 dark:text-neutral-500 truncate">{{ $user->email }}</p>
+                                    </div>
+                                </div>
                             </td>
                             <td class="hidden sm:table-cell px-4 py-3 text-gray-600 dark:text-neutral-400">
                                 {{ ucfirst($user->roles->first()?->name ?? 'N/A') }}

@@ -5,26 +5,26 @@
     <div class="mb-6 sm:mb-8">
         <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Department Resources</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Materials allocated to your department from approved requests
+            Materials used by your department's students and faculty
         </p>
     </div>
 
-    {{-- Flash messages --}}
-    @if (session('message'))
-        <div class="mb-6 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-4 py-3 text-sm text-green-700 dark:text-green-400">
-            {{ session('message') }}
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="mb-6 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-            {{ session('error') }}
-        </div>
-    @endif
-
     {{-- Summary Cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 sm:mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
+            <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <svg class="size-5 sm:size-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Approved</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
+                    {{ $this->materialLogs->where('status', 'approved')->count() }}
+                </p>
+            </div>
+        </div>
 
-        {{-- Total Units --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
             <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-[#123524]/10 flex items-center justify-center">
                 <svg class="size-5 sm:size-6 text-[#123524] dark:text-green-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -32,16 +32,11 @@
                 </svg>
             </div>
             <div class="min-w-0">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Total Units Allocated
-                </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
-                    {{ number_format($this->totalAllocated) }}
-                </p>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Units</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">{{ number_format($this->totalAllocated) }}</p>
             </div>
         </div>
 
-        {{-- Distinct Resource Types --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
             <div class="shrink-0 size-10 sm:size-12 rounded-lg bg-[#D4A537]/10 flex items-center justify-center">
                 <svg class="size-5 sm:size-6 text-[#B8862A]" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -49,38 +44,24 @@
                 </svg>
             </div>
             <div class="min-w-0">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Resource Types
-                </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">
-                    {{ $this->allocations->total() }}
-                </p>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Resource Types</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5">{{ $this->resourceTypeCount }}</p>
             </div>
         </div>
-
     </div>
 
-    {{-- Quick Materials Summary --}}
+    {{-- My Department's Materials --}}
     @if($this->materialsSummary->isNotEmpty())
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-            <div class="shrink-0 size-8 rounded-lg bg-[#123524]/10 flex items-center justify-center">
-                <svg class="size-4 text-[#123524] dark:text-green-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
-                </svg>
-            </div>
-            <div>
-                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">My Department's Materials</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Quick view of what your department currently holds</p>
-            </div>
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">My Department's Materials</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Quick view of what your department currently holds</p>
         </div>
 
         <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @foreach($this->materialsSummary as $material)
-                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30 px-4 py-3 hover:border-[#123524]/30 hover:bg-[#123524]/5 dark:hover:bg-[#123524]/10 transition">
-                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {{ $material->resource_name }}
-                    </span>
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30 px-4 py-3">
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $material->resource_name }}</span>
                     <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
                         {{ $material->formatted_quantity }}
                     </span>
@@ -90,148 +71,143 @@
     </div>
     @endif
 
-    {{-- Pending Facility Reservations --}}
-    @if($this->pendingFacilityRequests->isNotEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mb-6 sm:mb-8">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Pending Facility Reservations</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Approving locks in the room for that date and time — conflicting bookings are blocked automatically.
-            </p>
-        </div>
-
-        <div class="divide-y divide-gray-100 dark:divide-gray-700">
-            @foreach($this->pendingFacilityRequests as $item)
-            <div class="px-4 sm:px-6 py-4">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                                {{ $item->facility_name }}
-                            </span>
-                            @if($item->has_conflict)
-                                <span class="inline-flex items-center px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-xs font-semibold">
-                                    Time Conflict — Already Booked
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                                    Slot Free
-                                </span>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ \Carbon\Carbon::parse($item->request_date)->format('M d, Y') }}
-                            &middot;
-                            {{ \Carbon\Carbon::parse($item->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($item->end_time)->format('g:i A') }}
-                            &middot;
-                            Requested by {{ $item->requester_name }}
-                        </p>
-                        @if($item->purpose)
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 italic">"{{ Str::limit($item->purpose, 80) }}"</p>
-                        @endif
-                    </div>
-
-                    <div class="flex items-center gap-2 shrink-0">
-                        <button
-                            type="button"
-                            wire:click="approveRequest({{ $item->request_id }})"
-                            wire:confirm="Approve this facility reservation for {{ $item->facility_name }}?"
-                            @disabled($item->has_conflict)
-                            class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-[#123524] text-white hover:bg-[#123524]/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                        >
-                            Approve
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="openReject({{ $item->request_id }})"
-                            class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                        >
-                            Reject
-                        </button>
-                    </div>
-                </div>
-
-                @if($rejectingRequestId === $item->request_id)
-                <div class="mt-3 bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 space-y-2">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">
-                        Reason for rejecting (optional)
-                    </label>
-                    <textarea
-                        wire:model="rejectRemarks"
-                        rows="2"
-                        class="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 focus:ring focus:ring-red-200 focus:border-red-300"
-                        placeholder="e.g. Conflicts with another event, missing details, etc."
-                    ></textarea>
-                    <div class="flex gap-2">
-                        <button type="button" wire:click="confirmReject"
-                            class="px-3 py-1.5 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition">
-                            Confirm Reject
-                        </button>
-                        <button type="button" wire:click="cancelReject"
-                            class="px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-                @endif
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- Department Resource Allocation Table --}}
+    {{-- Material Logs (table) --}}
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Department Resource Allocation</h3>
+
+        {{-- Header + filters --}}
+        <div class="px-4 sm:px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Material Logs</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Full history of approved and rejected materials in your department</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z"/>
+                    </svg>
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search material, requester, role..."
+                           class="w-full sm:w-64 pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:border-[#123524] focus:ring-[#123524]">
+                </div>
+                <input type="date" wire:model.live="dateFrom"
+                       class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:border-[#123524] focus:ring-[#123524]">
+                <input type="date" wire:model.live="dateTo"
+                       class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:border-[#123524] focus:ring-[#123524]">
+            </div>
         </div>
 
-        {{-- Desktop / tablet table --}}
-        <div class="hidden sm:block overflow-x-auto">
+        <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                <thead class="bg-gray-50 dark:bg-gray-900/40">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            Resource
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            Allocated Quantity
-                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Material</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Qty</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Before / After</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Department</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Requested By</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    @forelse($this->allocations as $allocation)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="shrink-0 size-8 rounded-md bg-[#123524]/5 flex items-center justify-center">
-                                    <svg class="size-4 text-[#123524]/70" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    @forelse($this->materialLogs as $log)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+
+                        {{-- Material --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-3">
+                                <div class="shrink-0 size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <svg class="size-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
                                     </svg>
                                 </div>
-                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                                    {{ $allocation->resource_name }}
-                                </span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $log->item_name }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $log->resource_type ?? '—' }}</p>
+                                </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                                {{ $allocation->formatted_quantity }}
-                            </span>
+
+                        {{-- Type --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($log->status === 'approved')
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                                    <svg class="size-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    Approved
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                    <svg class="size-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Rejected
+                                </span>
+                            @endif
+                            <p class="text-[11px] text-gray-400 mt-1">{{ $log->source }}</p>
+                        </td>
+
+                        {{-- Qty --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($log->status === 'approved')
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                    − {{ $log->quantity }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+                                    {{ $log->quantity }}
+                                </span>
+                            @endif
+                            <p class="text-[11px] text-gray-400 mt-1">{{ trim($log->unit ?? '') ?: 'Pcs' }}</p>
+                        </td>
+
+                        {{-- Before / After --}}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">{{ $log->before }}</span>
+                            <span class="mx-1 text-gray-400">→</span>
+                            <span class="font-bold text-gray-800 dark:text-gray-100">{{ $log->after }}</span>
+                        </td>
+
+                        {{-- Department --}}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {{ $log->department_name ?? '—' }}
+                        </td>
+
+                        {{-- Date --}}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {{ \Carbon\Carbon::parse($log->decided_at)->format('M d, Y') }}
+                            <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($log->decided_at)->format('h:i A') }}</p>
+                        </td>
+
+                        {{-- Requested by + role --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                <div class="shrink-0 size-6 rounded-full bg-[#123524] text-white flex items-center justify-center text-[10px] font-bold">
+                                    {{ strtoupper(substr($log->requester_name, 0, 1)) }}
+                                </div>
+                                <span class="text-sm text-gray-800 dark:text-gray-200">{{ $log->requester_name }}</span>
+
+                                @if($log->requester_role === 'faculty')
+                                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                        Faculty
+                                    </span>
+                                @elseif($log->requester_role === 'student')
+                                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                                        Student
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="2" class="px-6 py-16 text-center">
+                        <td colspan="7" class="px-6 py-16 text-center">
                             <div class="flex flex-col items-center gap-3">
-                                <div class="size-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                                    <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
+                                <div class="size-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <svg class="size-7 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                 </div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    No resources have been allocated to your department yet.
-                                </p>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">No material logs found</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Approved or rejected materials will appear here.</p>
                             </div>
                         </td>
                     </tr>
@@ -239,257 +215,7 @@
                 </tbody>
             </table>
         </div>
-
-        {{-- Mobile stacked cards --}}
-        <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
-            @forelse($this->allocations as $allocation)
-            <div class="px-4 py-4 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="shrink-0 size-8 rounded-md bg-[#123524]/5 flex items-center justify-center">
-                        <svg class="size-4 text-[#123524]/70" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {{ $allocation->resource_name }}
-                    </span>
-                </div>
-                <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold">
-                    {{ $allocation->formatted_quantity }}
-                </span>
-            </div>
-            @empty
-            <div class="px-4 py-16 text-center">
-                <div class="flex flex-col items-center gap-3">
-                    <div class="size-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                        <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/>
-                        </svg>
-                    </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        No resources have been allocated to your department yet.
-                    </p>
-                </div>
-            </div>
-            @endforelse
-        </div>
-
-        @if($this->allocations->hasPages())
-            <div class="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                {{ $this->allocations->links() }}
-            </div>
-        @endif
     </div>
-
-    {{-- ──────────────────────────────────────────────────────────── --}}
-    {{-- My Recent Approvals — the last 10 decisions YOU made           --}}
-    {{-- ──────────────────────────────────────────────────────────── --}}
-    @if($this->recentApprovals->isNotEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mt-6 sm:mt-8">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
-            <div>
-                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">My Recent Approvals</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Last 10 material requests you approved or rejected
-                </p>
-            </div>
-            <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-[#123524]/5 dark:bg-[#123524]/20 text-[#123524] dark:text-green-400 rounded-full text-xs font-semibold">
-                {{ $this->recentApprovals->count() }}
-            </span>
-        </div>
-
-        <div class="divide-y divide-gray-100 dark:divide-gray-700">
-            @foreach($this->recentApprovals as $approval)
-            <div class="px-4 sm:px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition"
-                 x-data="{ open: false }">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="shrink-0 size-9 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold">
-                                {{ strtoupper(substr($approval->requester_name, 0, 1)) }}
-                            </div>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                                    {{ $approval->requester_name }}
-                                </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {{ \Carbon\Carbon::parse($approval->decided_at)->format('M d, Y · g:i A') }}
-                                    · {{ $approval->item_count }} item{{ $approval->item_count == 1 ? '' : 's' }}
-                                </p>
-                            </div>
-                        </div>
-
-                        @if($approval->purpose)
-                            <p class="text-xs text-gray-500 dark:text-gray-400 italic mb-2">
-                                "{{ \Illuminate\Support\Str::limit($approval->purpose, 100) }}"
-                            </p>
-                        @endif
-
-                        @if($approval->items_list)
-                            <div class="rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2 flex items-center justify-between gap-2">
-                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">
-                                    <span class="font-semibold">Items:</span> {{ $approval->items_list }}
-                                </p>
-                                <button type="button" @click="open = !open"
-                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[#123524] dark:text-green-400 hover:underline whitespace-nowrap">
-                                    <span x-text="open ? 'Hide' : 'View'"></span>
-                                    <svg class="size-3 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
-                                         fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        @endif
-
-                        {{-- Expanded details --}}
-                        <div x-show="open" x-cloak x-transition.opacity.duration.200ms
-                             class="mt-3 rounded-lg border border-[#123524]/20 dark:border-green-900/30 bg-[#123524]/[0.03] dark:bg-green-900/10 p-3 space-y-2">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-[#123524] dark:text-green-400 mb-1">
-                                Full Breakdown
-                            </p>
-                            @foreach($approval->items_list ? explode(', ', $approval->items_list) : [] as $line)
-                                <div class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                                    <span class="size-1.5 rounded-full bg-[#123524] dark:bg-green-400 shrink-0"></span>
-                                    <span>{{ $line }}</span>
-                                </div>
-                            @endforeach
-                            <p class="text-[11px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-200 dark:border-gray-700">
-                                Decision: <strong>{{ ucfirst($approval->decision) }}</strong>
-                                · {{ \Carbon\Carbon::parse($approval->decided_at)->diffForHumans() }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="shrink-0 self-start">
-                        @if($approval->decision === 'approved')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Approved
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                                Rejected
-                            </span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- ──────────────────────────────────────────────────────────── --}}
-    {{-- Material Approval History — full department history            --}}
-    {{-- ──────────────────────────────────────────────────────────── --}}
-    @if($this->materialHistory->isNotEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden mt-6 sm:mt-8">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
-            <div>
-                <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Material Approval History</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    All material requests that have been approved or rejected in your department
-                </p>
-            </div>
-            <span class="shrink-0 inline-flex items-center px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">
-                {{ $this->materialHistory->count() }}
-            </span>
-        </div>
-
-        <div class="divide-y divide-gray-100 dark:divide-gray-700">
-            @foreach($this->materialHistory as $entry)
-            <div class="px-4 sm:px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition"
-                 x-data="{ open: false }">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="shrink-0 size-9 rounded-full bg-[#123524] text-white flex items-center justify-center text-sm font-bold">
-                                {{ strtoupper(substr($entry->requester_name, 0, 1)) }}
-                            </div>
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                                    {{ $entry->requester_name }}
-                                </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {{ \Carbon\Carbon::parse($entry->decided_at)->format('M d, Y · g:i A') }}
-                                    · {{ $entry->item_count }} item{{ $entry->item_count == 1 ? '' : 's' }}
-                                    @if($entry->approver_name)
-                                        · by {{ $entry->approver_name }}
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
-
-                        @if($entry->purpose)
-                            <p class="text-xs text-gray-500 dark:text-gray-400 italic mb-2">
-                                "{{ \Illuminate\Support\Str::limit($entry->purpose, 100) }}"
-                            </p>
-                        @endif
-
-                        @if($entry->items_list)
-                            <div class="rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2 flex items-center justify-between gap-2">
-                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">
-                                    <span class="font-semibold">Items:</span> {{ $entry->items_list }}
-                                </p>
-                                <button type="button" @click="open = !open"
-                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[#123524] dark:text-green-400 hover:underline whitespace-nowrap">
-                                    <span x-text="open ? 'Hide' : 'View'"></span>
-                                    <svg class="size-3 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
-                                         fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        @endif
-
-                        {{-- Expanded details --}}
-                        <div x-show="open" x-cloak x-transition.opacity.duration.200ms
-                             class="mt-3 rounded-lg border border-[#123524]/20 dark:border-green-900/30 bg-[#123524]/[0.03] dark:bg-green-900/10 p-3 space-y-2">
-                            <p class="text-[11px] font-semibold uppercase tracking-wide text-[#123524] dark:text-green-400 mb-1">
-                                Full Breakdown
-                            </p>
-                            @foreach($entry->items_list ? explode(', ', $entry->items_list) : [] as $line)
-                                <div class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                                    <span class="size-1.5 rounded-full bg-[#123524] dark:bg-green-400 shrink-0"></span>
-                                    <span>{{ $line }}</span>
-                                </div>
-                            @endforeach
-                            @if($entry->approval_remarks)
-                                <p class="text-[11px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-200 dark:border-gray-700">
-                                    <strong>Remarks:</strong> {{ $entry->approval_remarks }}
-                                </p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="shrink-0 self-start">
-                        @if($entry->request_status === 'approved')
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Approved
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                                Rejected
-                            </span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
 
 </div>
 </div>

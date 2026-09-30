@@ -7,8 +7,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 new #[Layout('layouts.admin')] class extends Component
 {
@@ -17,6 +17,13 @@ new #[Layout('layouts.admin')] class extends Component
     public $statusFilter = '';
     public $search       = '';
 
+    // ✅ NEW: Reject dialog state
+    public ?int   $rejectingRequestId = null;
+    public string $rejectReason       = '';
+
+    /**
+     * Requests from Program Head accounts only land here for Admin's review.
+     */
     protected function incomingRequestsQuery()
     {
         return ResourceRequest::whereHas('user', function ($query) {
@@ -86,6 +93,9 @@ new #[Layout('layouts.admin')] class extends Component
             ->get();
     }
 
+    // ============================================================
+    // APPROVE
+    // ============================================================
     public function approve($id)
     {
         $request = $this->incomingRequestsQuery()
@@ -94,20 +104,6 @@ new #[Layout('layouts.admin')] class extends Component
 
         if ($request->status !== 'pending') {
             session()->flash('error', 'This request has already been processed.');
-            return;
-        }
-
-        // Conflict guard
-        $facilityItem = $request->items->firstWhere('resource_id', null);
-
-        if ($facilityItem && $this->facilityHasConflict(
-            $facilityItem->item_name,
-            $facilityItem->request_date,
-            $facilityItem->start_time,
-            $facilityItem->end_time,
-            $request->id
-        )) {
-            session()->flash('error', 'This facility is already booked for an overlapping time.');
             return;
         }
 
@@ -121,13 +117,8 @@ new #[Layout('layouts.admin')] class extends Component
                 ? Resource::find($item->resource_id)
                 : Resource::whereRaw('LOWER(resource_name) = ?', [strtolower($item->item_name)])->first();
 
-            if (!$resource) {
-                continue;
-            }
-
-            if ($facilityTypeId && $resource->resource_type_id == $facilityTypeId) {
-                continue;
-            }
+            if (!$resource) continue;
+            if ($facilityTypeId && $resource->resource_type_id == $facilityTypeId) continue;
 
             if (!isset($needed[$resource->id])) {
                 $needed[$resource->id] = 0;
@@ -138,19 +129,9 @@ new #[Layout('layouts.admin')] class extends Component
         try {
             DB::transaction(function () use ($request, $needed) {
                 $fresh = ResourceRequest::lockForUpdate()->find($request->id);
+
                 if (!$fresh || $fresh->status !== 'pending') {
                     throw new \RuntimeException('This request has already been processed.');
-                }
-
-                $facilityItem = $fresh->items()->whereNull('resource_id')->first();
-                if ($facilityItem && $this->facilityHasConflict(
-                    $facilityItem->item_name,
-                    $facilityItem->request_date,
-                    $facilityItem->start_time,
-                    $facilityItem->end_time,
-                    $fresh->id
-                )) {
-                    throw new \RuntimeException('This facility is already booked for an overlapping time.');
                 }
 
                 foreach ($needed as $resourceId => $qty) {
@@ -189,22 +170,19 @@ new #[Layout('layouts.admin')] class extends Component
 
                 $fresh->update(['status' => 'approved']);
 
-                // ── Record the approval ──
-                DB::table('request_approvals')->updateOrInsert(
-                    ['request_id' => $fresh->id, 'approver_id' => Auth::id()],
-                    [
-                        'status'      => 'approved',
-                        'remarks'     => null,
-                        'approved_at' => now(),
-                        'updated_at'  => now(),
-                        'created_at'  => now(),
-                    ]
-                );
+                // ✅ Record approval
+                \App\Models\RequestApproval::create([
+                    'request_id'  => $fresh->id,
+                    'approver_id' => Auth::id(),
+                    'status'      => 'approved',
+                    'remarks'     => null,
+                    'approved_at' => now(),
+                ]);
 
                 Notification::create([
                     'user_id'    => $fresh->user_id,
                     'request_id' => $fresh->id,
-                    'message'    => 'Your request has been approved by the admin.',
+                    'message'    => Auth::user()->name . ' (Admin) approved your request.',
                     'type'       => 'Gmail',
                     'status'     => 'pending',
                 ]);
@@ -217,61 +195,66 @@ new #[Layout('layouts.admin')] class extends Component
         session()->flash('message', 'Request approved. Inventory updated.');
     }
 
-    public function reject($id)
+    // ============================================================
+    // ✅ REJECT WITH REASON
+    // ============================================================
+    public function openReject(int $id): void
     {
-        $request = $this->incomingRequestsQuery()->findOrFail($id);
+        $this->rejectingRequestId = $id;
+        $this->rejectReason = '';
+    }
+
+    public function cancelReject(): void
+    {
+        $this->rejectingRequestId = null;
+        $this->rejectReason = '';
+    }
+
+    public function confirmReject(): void
+    {
+        if (! $this->rejectingRequestId) return;
+
+        $request = $this->incomingRequestsQuery()->findOrFail($this->rejectingRequestId);
 
         if ($request->status !== 'pending') {
             session()->flash('error', 'This request has already been processed.');
+            $this->cancelReject();
             return;
         }
 
+        // 1. Mark rejected
         $request->update(['status' => 'rejected']);
 
-        // ── Record the rejection ──
-        DB::table('request_approvals')->updateOrInsert(
-            ['request_id' => $request->id, 'approver_id' => Auth::id()],
-            [
-                'status'      => 'rejected',
-                'remarks'     => null,
-                'approved_at' => now(),
-                'updated_at'  => now(),
-                'created_at'  => now(),
-            ]
-        );
+        // 2. Save rejection row with reason
+        \App\Models\RequestApproval::create([
+            'request_id'  => $request->id,
+            'approver_id' => Auth::id(),
+            'status'      => 'rejected',
+            'remarks'     => $this->rejectReason ?: null,
+            'approved_at' => now(),
+        ]);
+
+        // 3. Notify requester
+        $message = Auth::user()->name . ' (Admin) rejected your request.';
+        if ($this->rejectReason) {
+            $message .= ' Reason: ' . $this->rejectReason;
+        }
 
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,
-            'message'    => 'Your request has been rejected by the admin.',
+            'message'    => $message,
             'type'       => 'Gmail',
             'status'     => 'pending',
         ]);
 
         session()->flash('message', 'Request rejected and requester notified.');
+
+        $this->cancelReject();
     }
 
     public function clearFilters()
     {
         $this->reset('search');
-    }
-
-    protected function facilityHasConflict(
-        string $facilityName,
-        string $date,
-        string $startTime,
-        string $endTime,
-        int $excludeRequestId
-    ): bool {
-        return DB::table('request_items as ri')
-            ->join('requests as req', 'req.id', '=', 'ri.request_id')
-            ->where('req.status', 'approved')
-            ->where('req.id', '!=', $excludeRequestId)
-            ->whereNull('ri.resource_id')
-            ->where('ri.item_name', $facilityName)
-            ->whereDate('ri.request_date', $date)
-            ->where('ri.start_time', '<', $endTime)
-            ->where('ri.end_time', '>', $startTime)
-            ->exists();
     }
 };

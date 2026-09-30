@@ -27,6 +27,17 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->requestModel = $request;
     }
 
+    /**
+     * Latest rejection approval row (with reason), if any.
+     */
+    public function getRejectionProperty()
+    {
+        return $this->requestModel->approvals
+            ->where('status', 'rejected')
+            ->sortByDesc('approved_at')
+            ->first();
+    }
+
     public function statusBadgeClasses(string $status): string
     {
         return match ($status) {

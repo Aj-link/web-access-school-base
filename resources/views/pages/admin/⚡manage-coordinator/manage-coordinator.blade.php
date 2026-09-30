@@ -76,8 +76,7 @@
 
         {{-- Flash Messages --}}
         @if (session()->has('message'))
-            <div
-                class="mb-4 p-3 rounded-lg bg-green-100 text-green-800 border border-green-200 text-sm flex items-center gap-2">
+            <div class="mb-4 p-3 rounded-lg bg-green-100 text-green-800 border border-green-200 text-sm flex items-center gap-2">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -86,8 +85,7 @@
         @endif
 
         @if (session()->has('error'))
-            <div
-                class="mb-4 p-3 rounded-lg bg-red-100 text-red-800 border border-red-200 text-sm flex items-center gap-2">
+            <div class="mb-4 p-3 rounded-lg bg-red-100 text-red-800 border border-red-200 text-sm flex items-center gap-2">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="9" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
@@ -97,25 +95,19 @@
         @endif
 
         {{-- Table --}}
-        <div
-            class="overflow-x-auto bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm">
+        <div class="overflow-x-auto bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
                 <thead class="bg-gray-50 dark:bg-neutral-900/30">
                     <tr>
-                        <th
-                            class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
                             Requester</th>
-                        <th
-                            class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
                             Department</th>
-                        <th
-                            class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
                             Type</th>
-                        <th
-                            class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
+                        <th class="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
                             Status</th>
-                        <th
-                            class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
+                        <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-400">
                             Actions</th>
                     </tr>
                 </thead>
@@ -126,13 +118,11 @@
                             {{-- Requester --}}
                             <td class="px-4 py-2.5">
                                 <div class="flex items-center gap-2">
-                                    <div
-                                        class="w-6 h-6 rounded-full bg-green-700 text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                                    <div class="w-6 h-6 rounded-full bg-green-700 text-white flex items-center justify-center text-[11px] font-bold shrink-0">
                                         {{ strtoupper(substr($req->user->name, 0, 1)) }}
                                     </div>
                                     <div>
-                                        <p
-                                            class="text-xs font-medium text-gray-800 dark:text-neutral-200 leading-tight">
+                                        <p class="text-xs font-medium text-gray-800 dark:text-neutral-200 leading-tight">
                                             {{ $req->user->name }}</p>
                                         <p class="text-[11px] text-gray-400 dark:text-neutral-500 leading-tight">
                                             {{ $req->user->email }}</p>
@@ -147,36 +137,30 @@
 
                             {{-- Type --}}
                             <td class="px-6 py-4">
-                                <span
-                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
-                                {{ $req->request_type_id == 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' }}">
+                                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
+                                    {{ $req->request_type_id == 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' }}">
                                     {{ $req->requestType?->type_name ?? '—' }}
                                 </span>
                             </td>
 
                             {{-- Status --}}
                             <td class="px-4 py-2.5">
-                                <span
-                                    class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full
-                                @if ($req->status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
-                                @elseif($req->status === 'approved') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
-                                @else bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 @endif">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full
+                                    @if ($req->status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                                    @elseif($req->status === 'approved') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                    @else bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 @endif">
                                     @if ($req->status === 'pending')
-                                        <svg class="size-2.5" fill="none" stroke="currentColor" stroke-width="2"
-                                            viewBox="0 0 24 24">
+                                        <svg class="size-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <circle cx="12" cy="12" r="9" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3" />
                                         </svg>
                                     @elseif($req->status === 'approved')
-                                        <svg class="size-2.5" fill="none" stroke="currentColor"
-                                            stroke-width="2.5" viewBox="0 0 24 24">
+                                        <svg class="size-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                         </svg>
                                     @else
-                                        <svg class="size-2.5" fill="none" stroke="currentColor"
-                                            stroke-width="2.5" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M6 18L18 6M6 6l12 12" />
+                                        <svg class="size-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     @endif
                                     {{ ucfirst($req->status) }}
@@ -195,8 +179,7 @@
                                         class="px-3 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                                         Approve
                                     </button>
-                                    <button wire:click="reject({{ $req->id }})"
-                                        wire:confirm="Reject this request?"
+                                    <button wire:click="openReject({{ $req->id }})"
                                         class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
                                         Reject
                                     </button>
@@ -204,6 +187,49 @@
                             </td>
 
                         </tr>
+
+                        {{-- ✅ Inline Reject Form --}}
+                        @if ($rejectingRequestId === $req->id)
+                            <tr class="bg-red-50/40 dark:bg-red-900/10">
+                                <td colspan="5" class="px-6 py-4">
+                                    <div class="max-w-2xl bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-900/50 rounded-lg p-4 space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="size-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
+                                            </svg>
+                                            <label class="text-sm font-semibold text-red-700 dark:text-red-400">
+                                                Reason for rejecting this request
+                                            </label>
+                                            <span class="text-xs text-gray-400 dark:text-neutral-500">(optional)</span>
+                                        </div>
+
+                                        <textarea wire:model="rejectReason" rows="3"
+                                            placeholder="e.g. Missing documents, budget exceeded, conflicting schedule..."
+                                            class="w-full px-3 py-2 text-sm rounded-lg border border-red-200 dark:border-red-900/50 dark:bg-neutral-900 dark:text-neutral-200 focus:ring-2 focus:ring-red-300 focus:border-red-400"></textarea>
+
+                                        <p class="text-xs text-gray-500 dark:text-neutral-400">
+                                            This reason will be sent to <strong>{{ $req->user->name }}</strong> via in-app notification and email.
+                                        </p>
+
+                                        <div class="flex justify-end gap-2">
+                                            <button wire:click="cancelReject"
+                                                class="px-4 py-2 text-sm font-medium bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-600 transition">
+                                                Cancel
+                                            </button>
+                                            <button wire:click="confirmReject"
+                                                wire:loading.attr="disabled"
+                                                wire:loading.class="opacity-50 cursor-not-allowed"
+                                                class="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                                <span wire:loading.remove wire:target="confirmReject">Confirm Rejection</span>
+                                                <span wire:loading wire:target="confirmReject">Rejecting...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
+
                     @empty
                         <tr>
                             <td colspan="5" class="px-6 py-14 text-center">
@@ -212,8 +238,7 @@
                                     <path stroke-linecap="round"
                                         d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" />
                                 </svg>
-                                <p class="text-sm font-medium text-gray-500 dark:text-neutral-400">No requests found
-                                </p>
+                                <p class="text-sm font-medium text-gray-500 dark:text-neutral-400">No requests found</p>
                                 <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">
                                     {{ $search || $statusFilter ? 'Try adjusting your filters.' : 'No incoming requests yet.' }}
                                 </p>
@@ -228,6 +253,5 @@
                 {{ $this->requests->links() }}
             </div>
         </div>
-
     </div>
 </div>

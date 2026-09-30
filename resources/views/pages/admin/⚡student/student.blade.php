@@ -52,6 +52,19 @@
         </a>
     </div>
 
+    {{-- Flash messages --}}
+    @if (session()->has('success'))
+        <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-lg text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 rounded-lg text-sm">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow overflow-hidden">
 
         {{-- Header --}}
@@ -106,14 +119,20 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                     @forelse($this->users as $user)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition">
+                        <tr wire:key="user-{{ $user->id }}" class="hover:bg-gray-50 dark:hover:bg-neutral-700 transition">
 
-                            {{-- Name --}}
+                            {{-- Name + Avatar --}}
                             <td class="px-4 sm:px-6 py-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold shrink-0">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                                    </div>
+                                    @if ($user->avatar)
+                                        <img src="{{ asset($user->avatar) }}"
+                                             alt="{{ $user->name }}"
+                                             class="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-gray-200 dark:ring-neutral-600">
+                                    @else
+                                        <div class="w-8 h-8 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold shrink-0">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
                                     <p class="text-sm font-medium text-gray-800 dark:text-neutral-200 whitespace-nowrap">{{ $user->name }}</p>
                                 </div>
                             </td>

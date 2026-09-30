@@ -231,6 +231,11 @@ new #[Layout('layouts.coordinator')] class extends Component
 
         if ($user->department_id !== $this->departmentId) return;
 
+        // Remove the member's avatar file so it doesn't get orphaned
+        if ($user->avatar && file_exists(public_path($user->avatar))) {
+            @unlink(public_path($user->avatar));
+        }
+
         $user->delete();
         session()->flash('success', 'User deleted successfully.');
 

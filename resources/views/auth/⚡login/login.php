@@ -29,20 +29,22 @@ new class extends Component
 
         $throttleKey = Str::lower($this->email) . '|' . request()->ip();
 
-        // Block login if too many failed attempts — lockout duration grows each time
         if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
             $seconds = RateLimiter::availableIn($throttleKey);
             $this->addError('email', "Too many failed attempts. Please try again in {$seconds} seconds.");
             return;
         }
 
-        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        // ✅ FIX: normalize email to lowercase for case-insensitive login
+        if (Auth::attempt([
+            'email'    => strtolower($this->email),
+            'password' => $this->password,
+        ], $this->remember)) {
             RateLimiter::clear($throttleKey);
             session()->regenerate();
 
             $user = Auth::user();
 
-            // Check approval status FIRST, before any role check
             if ($user->status === 'rejected') {
                 Auth::logout();
                 $this->addError('email', 'Your account has been rejected. Please contact the registrar.');
@@ -50,11 +52,9 @@ new class extends Component
             }
 
             if ($user->status !== 'approved') {
-                // Do NOT logout — waiting page needs Auth::user() to work
                 return redirect()->route('waiting');
             }
 
-            // Only reached if approved
             if ($user->hasRole('admin')) {
                 return redirect()->route('admin.dashboard');
             }
@@ -66,12 +66,11 @@ new class extends Component
             return redirect()->route('portal.dashboard');
         }
 
-        // Failed attempt: lock out for a growing decay time
         $attempts = RateLimiter::attempts($throttleKey);
         $decaySeconds = match (true) {
-            $attempts >= 6 => 300, // 5 min after repeated abuse
-            $attempts >= 3 => 120, // 2 min
-            default => 60,          // 1 min
+            $attempts >= 6 => 300,
+            $attempts >= 3 => 120,
+            default        => 60,
         };
 
         RateLimiter::hit($throttleKey, $decaySeconds);

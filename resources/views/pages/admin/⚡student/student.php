@@ -69,7 +69,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user->update(['status' => 'approved']);
 
-        // ✅ FIX: pass the user's actual role so the email says the right thing
+        // Pass the user's actual role so the email says the right thing
         $roleName = ucfirst($user->roles->first()?->name ?? 'user');
 
         try {

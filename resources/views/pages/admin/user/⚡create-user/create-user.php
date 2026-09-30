@@ -10,18 +10,14 @@ use Livewire\Component;
 
 new #[Layout('layouts.admin')] class extends Component
 {
-    /**
-     * The default password used by the "Use Default" button.
-     * Change this to whatever you want.
-     */
     private const DEFAULT_PASSWORD = 'csav.csav';
 
     public $name;
     public $email;
     public $password;
     public $password_confirmation;
-    public $department_id;
-    public $role = 'program head';
+    public $department_id = '';
+    public $role = '';
 
     #[Computed()]
     public function departments()
@@ -29,19 +25,17 @@ new #[Layout('layouts.admin')] class extends Component
         return Department::orderBy('department_name')->get(['id', 'department_name']);
     }
 
-    #[Computed()]
-    public function roles()
-    {
-        return [
-            'program head' => 'Program Head',
-            'faculty'      => 'Faculty',
-            'student'      => 'Student',
-        ];
-    }
+#[Computed()]
+public function roles()
+{
+    return \Spatie\Permission\Models\Role::orderBy('name')
+        ->get()
+        ->mapWithKeys(function ($role) {
+            return [$role->name => ucwords($role->name)];
+        })
+        ->toArray();
+}
 
-    /**
-     * Expose the default password to the blade.
-     */
     #[Computed()]
     public function defaultPassword(): string
     {
@@ -74,15 +68,37 @@ new #[Layout('layouts.admin')] class extends Component
         'role.in'                => 'Selected role is invalid.',
     ];
 
-    /**
-     * ── NEW: One-click fill both password fields with the default ──
-     */
+    // ✅ NEW: Auto-fill name from email (only if name is empty)
+    public function updatedEmail($value): void
+    {
+        if (! empty($this->name)) {
+            return;
+        }
+
+        if (! $value) {
+            return;
+        }
+
+        $lower = strtolower(trim($value));
+
+        if (! str_ends_with($lower, '@csav.edu.ph')) {
+            return;
+        }
+
+        $localPart = strstr($lower, '@', true);
+
+        if (! $localPart) {
+            return;
+        }
+
+        $this->name = ucfirst($localPart);
+    }
+
     public function useDefaultPassword(): void
     {
         $this->password              = self::DEFAULT_PASSWORD;
         $this->password_confirmation = self::DEFAULT_PASSWORD;
 
-        // Clear any stale validation errors
         $this->resetErrorBag(['password', 'password_confirmation']);
     }
 
@@ -94,7 +110,7 @@ new #[Layout('layouts.admin')] class extends Component
 
         $user = User::create([
             'name'          => $this->name,
-            'email'         => $this->email,
+            'email'         => strtolower($this->email),   // ✅ lowercased
             'password'      => Hash::make($plainPassword),
             'department_id' => $this->department_id,
             'status'        => 'approved',

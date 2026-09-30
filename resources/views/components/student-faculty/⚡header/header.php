@@ -2,6 +2,7 @@
 
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 new class extends Component
@@ -14,6 +15,13 @@ new class extends Component
     public function mount(): void
     {
         $this->loadNotifications();
+    }
+
+    #[On('avatar-updated')]
+    public function refreshAvatar(): void
+    {
+        // Intentionally empty: receiving the event re-renders the header,
+        // which re-reads Auth::user()->avatar.
     }
 
     public function loadNotifications(): void

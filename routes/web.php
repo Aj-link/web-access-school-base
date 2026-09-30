@@ -28,7 +28,7 @@ Route::middleware(['auth', 'approved', 'admin'])->prefix('admin')->group(functio
     //role
     Route::livewire('/roles', 'pages::admin.role.view-role')->name('admin.roles');
     Route::livewire('/roles/create', 'pages::admin.role.create-role')->name('admin.roles.create');
-    Route::livewire('/roles/{id}/edit', 'pages::admin.role.edit-role')->name('admin.roles.edit');
+    Route::livewire('/roles/{role}/edit', 'pages::admin.role.edit-role')->name('admin.roles.edit');
 
     //department
     Route::livewire('/departments', 'pages::admin.deparments.view-department')->name('admin.departments');
@@ -79,6 +79,9 @@ Route::middleware(['auth', 'approved', 'program head', 'department'])->prefix('p
     //pofile
     Route::livewire('/profile', 'pages::coordinator.profile')->name('coordinator.profile');
 
+    //Settings
+    Route::livewire('/settings', 'pages::coordinator.settings')->name('coordinator.settings');
+
     //student|faculty
     Route::livewire('/view-student', 'pages::coordinator.student.view-student')->name('programHead.students');
 });
@@ -99,4 +102,7 @@ Route::middleware(['auth', 'approved', 'role:faculty|student', 'department'])->p
 
     //Profile
     Route::livewire('/profile', 'pages::student-faculty.profile')->name('portal.profile');
+
+    //Settings
+    Route::livewire('/settings', 'pages::student-faculty.settings')->name('portal.settings');
 });

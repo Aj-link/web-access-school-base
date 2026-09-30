@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignID('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignID('department_id')->constrained('departments')->cascadeOnDelete();
             $table->foreignId('request_type_id')->nullable()->constrained('request_types')->nullOnDelete(); // ✅ points to request_types
-            $table->string('purpose');
+            $table->longText('purpose');
             $table->string('status')->default('pending');
             $table->foreignID('current_responsibility_center_id')->nullable()->constrained('responsibility_centers')->cascadeOnDelete();
             $table->timestamps();

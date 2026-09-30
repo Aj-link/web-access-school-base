@@ -43,10 +43,10 @@
 
                 {{-- Department Badge (coordinator's assigned department) --}}
                 @if (Auth::user()->department)
-                        <li class="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 bg-[#123524]/5 dark:bg-white/10 border border-[#123524]/10 dark:border-white/20 rounded-full shrink-0">
-                            <svg class="size-3 sm:size-3.5 text-[#123524]/60 dark:text-emerald-300/70 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
-                            </svg>
+                    <li class="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 bg-[#123524]/5 dark:bg-white/10 border border-[#123524]/10 dark:border-white/20 rounded-full shrink-0">
+                        <svg class="size-3 sm:size-3.5 text-[#123524]/60 dark:text-emerald-300/70 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
+                        </svg>
                         <span class="text-xs font-medium text-[#123524] dark:text-white/100 whitespace-nowrap">
                             {{ Auth::user()->department->department_name }}
                         </span>
@@ -149,26 +149,26 @@
                                             </div>
                                         </div>
 
-{{-- Content --}}
-<div class="flex-1 min-w-0">
-    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-        <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
-            :class="notification.action_status === 'approved'
-                ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
-                : (notification.action_status === 'rejected'
-                    ? 'bg-[#B8352A]/15 text-[#B8352A]'
-                    : 'bg-[#D4A537]/15 text-[#B8862A]')"
-            x-text="notification.action_status === 'approved' ? 'Approved'
-                : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
-        </span>
-    </div>
-    <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words"
-        x-text="notification.requester"></p>
-    <p class="text-xs text-gray-500 dark:text-gray-400 break-words line-clamp-2"
-        x-text="notification.purpose"></p>
-    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
-        x-text="notification.time_ago"></p>
-</div>
+                                        {{-- Content --}}
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                                                <span class="text-xs font-medium px-1.5 py-0.5 rounded-md"
+                                                    :class="notification.action_status === 'approved'
+                                                        ? 'bg-[#1C6B45]/15 text-[#1C6B45] dark:bg-[#1C6B45]/25 dark:text-[#7FBF8E]'
+                                                        : (notification.action_status === 'rejected'
+                                                            ? 'bg-[#B8352A]/15 text-[#B8352A]'
+                                                            : 'bg-[#D4A537]/15 text-[#B8862A]')"
+                                                    x-text="notification.action_status === 'approved' ? 'Approved'
+                                                        : (notification.action_status === 'rejected' ? 'Rejected' : 'Info')">
+                                                </span>
+                                            </div>
+                                            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 break-words"
+                                                x-text="notification.requester"></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 break-words line-clamp-2"
+                                                x-text="notification.purpose"></p>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
+                                                x-text="notification.time_ago"></p>
+                                        </div>
 
                                     </div>
                                 </template>
@@ -195,7 +195,6 @@
                                 </button>
                             </div>
 
-
                         </div>
                     </template>
                 </li>
@@ -207,9 +206,19 @@
                         <button id="hs-coordinator-user-dropdown" type="button"
                             class="p-0.5 inline-flex shrink-0 items-center gap-x-1.5 sm:gap-x-2 text-start rounded-full hover:bg-navbar-nav-hover focus:outline-hidden focus:bg-navbar-nav-focus"
                             aria-haspopup="menu" aria-expanded="false" aria-label="User Dropdown">
-                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123524] dark:bg-green-700 text-white flex items-center justify-center text-xs sm:text-sm font-bold ring-3 ring-[#D4A537]/50 dark:ring-[#D4A537]/50 shrink-0">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                            </div>
+
+                            {{-- Avatar (photo if uploaded, otherwise initial) --}}
+                            @if (Auth::user()->avatar)
+                                <img src="{{ asset(Auth::user()->avatar) }}"
+                                     wire:key="header-avatar-{{ Auth::user()->avatar }}"
+                                     alt="{{ Auth::user()->name }}"
+                                     class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-3 ring-[#D4A537]/50 shrink-0">
+                            @else
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123524] dark:bg-green-700 text-white flex items-center justify-center text-xs sm:text-sm font-bold ring-3 ring-[#D4A537]/50 dark:ring-[#D4A537]/50 shrink-0">
+                                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                </div>
+                            @endif
+
                             <div class="hidden sm:block text-left">
                                 <span class="text-xs font-medium text-gray-900 dark:text-white">{{ Auth::user()->name }}</span>
                             </div>
@@ -222,17 +231,24 @@
 
                         {{-- Dropdown Menu --}}
                         <div class="hs-dropdown-menu hs-dropdown-open:opacity-100 w-60 transition-[opacity,margin] duration opacity-0 hidden z-20 bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 rounded-xl shadow-xl"
-                            role="menu" aria-orientation="vertical" aria-labelledby="hs-admin-user-dropdown">
+                            role="menu" aria-orientation="vertical" aria-labelledby="hs-coordinator-user-dropdown">
 
                             {{-- User Info --}}
                             <div class="py-3 px-3.5 border-b border-gray-200 dark:border-neutral-700">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ Auth::user()->name }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-neutral-400">{{ Auth::user()->email }}</p>
+                                    @if (Auth::user()->avatar)
+                                        <img src="{{ asset(Auth::user()->avatar) }}"
+                                             wire:key="menu-avatar-{{ Auth::user()->avatar }}"
+                                             alt="{{ Auth::user()->name }}"
+                                             class="w-9 h-9 rounded-full object-cover shrink-0">
+                                    @else
+                                        <div class="w-9 h-9 rounded-full bg-green-700 text-white flex items-center justify-center text-sm font-bold shrink-0">
+                                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ Auth::user()->name }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-neutral-400 truncate">{{ Auth::user()->email }}</p>
                                         <p class="text-xs text-gray-500 dark:text-neutral-400 capitalize">
                                             {{ Auth::user()->roles->first()->name ?? 'No Role' }}
                                         </p>
@@ -277,8 +293,8 @@
                             </div>
 
                             {{-- Menu Items --}}
-                             <div class="p-1">
-                                 <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
+                            <div class="p-1">
+                                <a class="flex items-center gap-x-3 py-2 px-3 rounded-lg text-sm text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800"
                                     href="/programHead/profile">
                                     <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />

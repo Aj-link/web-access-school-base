@@ -33,22 +33,88 @@
                 <form wire:submit.prevent="save">
                     <div class="grid gap-4 lg:gap-6">
 
-                        {{-- Role --}}
+                        {{-- ✅ Department FIRST --}}
                         <div>
-                            <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                            <label for="department-select" class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
+                                Department <span class="text-red-500">*</span>
+                            </label>
+
+                            <div class="relative">
+                                {{-- Building icon on the left --}}
+                                <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                                    <svg class="size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M13 21V11h6v10M9 9v.01M9 12v.01M9 15v.01"/>
+                                    </svg>
+                                </div>
+
+                                <select
+                                    id="department-select"
+                                    wire:model="department_id"
+                                    class="py-2.5 ps-10 pe-10 block w-full border-gray-200 rounded-lg sm:text-sm appearance-none
+                                           focus:border-blue-500 focus:ring-blue-500
+                                           dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300
+                                           @error('department_id') border-red-300 dark:border-red-700 @enderror">
+                                <option value="" disabled>Select Department</option>
+                                    @foreach($this->departments as $department)
+                                        <option value="{{ $department->id }}">
+                                            {{ $department->department_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+
+                                {{-- Chevron icon on the right --}}
+                                <div class="absolute inset-y-0 end-0 flex items-center pe-3.5 pointer-events-none">
+                                    <svg class="size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            @error('department_id')
+                                <span class="block text-red-600 text-sm mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        {{-- ✅ Role — now a dropdown --}}
+                        <div>
+                            <label for="role-select" class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
                                 Role <span class="text-red-500">*</span>
                             </label>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                @foreach ($this->roles as $value => $label)
-                                    <label class="cursor-pointer">
-                                        <input type="radio" wire:model.live="role" value="{{ $value }}" class="peer sr-only">
-                                        <div class="text-center py-3 px-4 text-sm font-medium rounded-lg border-2 border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-300 bg-white dark:bg-neutral-900 peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-checked:text-white hover:border-blue-300 dark:hover:border-blue-700 transition">
-                                            {{ $label }}
-                                        </div>
-                                    </label>
-                                @endforeach
+
+                            <div class="relative">
+                                {{-- User icon on the left --}}
+                                <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                                    <svg class="size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
+                                    </svg>
+                                </div>
+
+                                <select
+                                    id="role-select"
+                                    wire:model.live="role"
+                                    class="py-2.5 ps-10 pe-10 block w-full border-gray-200 rounded-lg sm:text-sm appearance-none
+                                           focus:border-blue-500 focus:ring-blue-500
+                                           dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300
+                                           @error('role') border-red-300 dark:border-red-700 @enderror">
+
+                                    <option value="" disabled>Select Role</option>
+
+                                    @foreach ($this->roles as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+
+                                {{-- Chevron icon on the right --}}
+                                <div class="absolute inset-y-0 end-0 flex items-center pe-3.5 pointer-events-none">
+                                    <svg class="size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/>
+                                    </svg>
+                                </div>
                             </div>
-                            @error('role') <span class="text-red-600 text-sm block mt-1">{{ $message }}</span> @enderror
+
+                            @error('role')
+                                <span class="block text-red-600 text-sm mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
 
                         {{-- Name + Email --}}
@@ -106,21 +172,6 @@
                                     placeholder="Re-enter password"
                                     class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
                             </div>
-                        </div>
-
-                        {{-- Department --}}
-                        <div>
-                            <label class="block mb-2 text-sm text-gray-700 font-medium dark:text-white">
-                                Department <span class="text-red-500">*</span>
-                            </label>
-                            <select wire:model="department_id"
-                                class="py-2.5 px-4 block w-full border-gray-200 rounded-lg sm:text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                <optison value="">Select department</option>
-                                @foreach($this->departments as $department)
-                                    <option value="{{ $department->id }}">{{ $department->department_name }}</option>
-                                @endforeach
-                            </select>
-                            @error('department_id') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- Info note --}}

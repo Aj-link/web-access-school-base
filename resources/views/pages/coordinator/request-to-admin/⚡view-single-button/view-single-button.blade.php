@@ -14,16 +14,63 @@
         <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden">
 
             {{-- Header --}}
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-neutral-700">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-                    {{ $requestModel->requestType->type_name ?? 'Request' }} <span class="text-gray-400 dark:text-neutral-500 font-normal">#{{ $requestModel->id }}</span>
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-neutral-400">
-                    Submitted {{ $requestModel->created_at->format('M d, Y \a\t h:i A') }}
-                </p>
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-neutral-700 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                        {{ $requestModel->requestType->type_name ?? 'Request' }} <span class="text-gray-400 dark:text-neutral-500 font-normal">#{{ $requestModel->id }}</span>
+                    </h2>
+                    <p class="text-sm text-gray-500 dark:text-neutral-400">
+                        Submitted {{ $requestModel->created_at->format('M d, Y \a\t h:i A') }}
+                    </p>
+                </div>
+
+                {{-- Status badge --}}
+                @php
+                    $status = $requestModel->status;
+                    $badgeClasses = match ($status) {
+                        'approved'  => 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',
+                        'rejected'  => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                        'pending'   => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                        'cancelled' => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                        default     => 'bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-neutral-300',
+                    };
+                @endphp
+                <span class="shrink-0 px-3 py-1 text-xs font-semibold rounded-full {{ $badgeClasses }}">
+                    {{ ucfirst(str_replace('_', ' ', $status)) }}
+                </span>
             </div>
 
             <div class="p-6 space-y-6">
+
+                {{-- ✅ Rejection reason panel (only if rejected) --}}
+                @if ($status === 'rejected' && $this->rejection?->remarks)
+                    <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50">
+                        <div class="flex items-start gap-3">
+                            <div class="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-400">
+                                    Rejection Reason
+                                </p>
+                                <p class="text-sm text-red-900 dark:text-red-200 mt-1 whitespace-pre-wrap break-words">
+                                    {{ $this->rejection->remarks }}
+                                </p>
+                                @if ($this->rejection->approver)
+                                    <p class="text-[11px] text-red-600/70 dark:text-red-400/70 mt-2">
+                                        Rejected by <strong>{{ $this->rejection->approver->name }}</strong>
+                                        @if ($this->rejection->approved_at)
+                                            · {{ \Carbon\Carbon::parse($this->rejection->approved_at)->diffForHumans() }}
+                                        @endif
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Purpose --}}
                 <div>
@@ -58,10 +105,9 @@
                 @php
                     $facilityItem = $requestModel->items->whereNull('resource_id')->first();
                     $materialItems = $requestModel->items->whereNotNull('resource_id');
-                    $decidedApprovals = $requestModel->approvals->whereIn('status', ['approved', 'rejected']);
                 @endphp
 
-                {{-- Facility Details — only shown if this request has a facility reservation --}}
+                {{-- Facility Details --}}
                 @if ($facilityItem)
                     <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
                         <p class="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-300 mb-3">
@@ -102,7 +148,7 @@
                     </div>
                 @endif
 
-                {{-- Materials — only shown if this request has attached materials --}}
+                {{-- Materials --}}
                 @if ($materialItems->isNotEmpty())
                     <div>
                         <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-neutral-500 mb-3">
