@@ -3,11 +3,11 @@
         {{-- Stats Grid --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
 
-            {{-- Total Facility Reservations --}}
+            {{-- Approved Facility Reservations --}}
             <div class="bg-white dark:bg-[#16281F] rounded-2xl shadow-sm border border-[#E4E1D8] dark:border-[#2A4B3A] p-3 sm:p-5 hover:shadow-md transition">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0">
-                        <p class="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 truncate">Facility Reservations</p>
+                        <p class="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 truncate">Approved Facility</p>
                         <p class="text-lg sm:text-2xl font-bold text-[#123524] dark:text-white mt-1">{{ $this->totalFacilityReservations }}</p>
                     </div>
                     <div class="p-2 sm:p-3 bg-[#123524]/8 dark:bg-[#123524]/25 rounded-full shrink-0">
@@ -16,7 +16,7 @@
                         </svg>
                     </div>
                 </div>
-                <div class="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-[10px] sm:text-xs">
+                <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[10px] sm:text-xs">
                     <span class="flex items-center gap-1 text-[#1C6B45] dark:text-[#7FBF8E]">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -32,11 +32,11 @@
                 </div>
             </div>
 
-            {{-- Total Material Requests --}}
+            {{-- Approved Material Requests --}}
             <div class="bg-white dark:bg-[#16281F] rounded-2xl shadow-sm border border-[#E4E1D8] dark:border-[#2A4B3A] p-3 sm:p-5 hover:shadow-md transition">
                 <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0">
-                        <p class="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 truncate">Material Requests</p>
+                        <p class="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 truncate">Approved Material</p>
                         <p class="text-lg sm:text-2xl font-bold text-[#123524] dark:text-white mt-1">{{ $this->totalMaterialRequests }}</p>
                     </div>
                     <div class="p-2 sm:p-3 bg-[#D4A537]/12 dark:bg-[#D4A537]/20 rounded-full shrink-0">
@@ -45,7 +45,7 @@
                         </svg>
                     </div>
                 </div>
-                <div class="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-[10px] sm:text-xs">
+                <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[10px] sm:text-xs">
                     <span class="flex items-center gap-1 text-[#1C6B45] dark:text-[#7FBF8E]">
                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -104,7 +104,7 @@
         {{-- Analytics Chart (Facility vs Material) --}}
         <div class="bg-white dark:bg-[#16281F] rounded-2xl shadow-sm border border-[#E4E1D8] dark:border-[#2A4B3A] p-4 sm:p-6 mb-6 sm:mb-8">
             <h3 class="text-base sm:text-lg font-semibold text-[#123524] dark:text-white mb-1" style="font-family: 'Fraunces', serif;">Analytics</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Request volume for the last 6 months — facility vs material</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Approved requests for the last 6 months — facility vs material</p>
 
             {{-- Summary numbers --}}
             <div class="grid grid-cols-3 gap-3 mb-6">

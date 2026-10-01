@@ -42,32 +42,31 @@
 
             <div class="p-6 space-y-6">
 
-                {{-- ✅ Rejection reason panel (only if rejected) --}}
+                {{-- Rejection reason panel (only if rejected) --}}
                 @if ($status === 'rejected' && $this->rejection?->remarks)
-                    <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-900/50">
-                        <div class="flex items-start gap-3">
-                            <div class="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
-                                </svg>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-400">
-                                    Rejection Reason
+                    <div class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-left dark:border-red-900/60 dark:bg-red-950/30">
+                        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-300">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 8v4m0 4h.01" />
+                            </svg>
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
+                                Rejection Reason
+                            </h3>
+
+                            <p class="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-red-900 dark:text-red-200">{{ trim($this->rejection->remarks) }}</p>
+
+                            @if ($this->rejection->approver)
+                                <p class="mt-2 text-[11px] text-red-700/70 dark:text-red-400/70">
+                                    Rejected by <span class="font-semibold">{{ $this->rejection->approver->name }}</span>
+                                    @if ($this->rejection->approved_at)
+                                        · {{ \Carbon\Carbon::parse($this->rejection->approved_at)->diffForHumans() }}
+                                    @endif
                                 </p>
-                                <p class="text-sm text-red-900 dark:text-red-200 mt-1 whitespace-pre-wrap break-words">
-                                    {{ $this->rejection->remarks }}
-                                </p>
-                                @if ($this->rejection->approver)
-                                    <p class="text-[11px] text-red-600/70 dark:text-red-400/70 mt-2">
-                                        Rejected by <strong>{{ $this->rejection->approver->name }}</strong>
-                                        @if ($this->rejection->approved_at)
-                                            · {{ \Carbon\Carbon::parse($this->rejection->approved_at)->diffForHumans() }}
-                                        @endif
-                                    </p>
-                                @endif
-                            </div>
+                            @endif
                         </div>
                     </div>
                 @endif
