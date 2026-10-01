@@ -14,6 +14,18 @@ new #[Layout('layouts.student-faculty')] class extends Component
 {
     use WithPagination;
 
+    public function mount(): void
+    {
+        // ✅ Matches seeder: faculty/student get material-requests.view
+        abort_unless(
+            auth()->user()->canAny([
+                'material-requests.view',
+                'material-requests.view-all',
+            ]),
+            403
+        );
+    }
+
     #[Computed]
     public function materialRequests()
     {
@@ -26,6 +38,12 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function cancelRequest($id)
     {
+        // ✅ Matches seeder: material-requests.cancel
+        abort_unless(
+            auth()->user()->can('material-requests.cancel'),
+            403
+        );
+
         $request = ResourceRequest::where('user_id', Auth::id())
             ->where('id', $id)
             ->where('status', 'pending')
@@ -41,6 +59,14 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function deleteRequest($id)
     {
+        // ⚠️ No `material-requests.delete` in seeder — this will always 403
+        // for faculty/student. Blade guards it with @can, so the button
+        // never renders. Kept here to match the blade's @can contract.
+        abort_unless(
+            auth()->user()->can('material-requests.delete'),
+            403
+        );
+
         $request = ResourceRequest::where('user_id', Auth::id())
             ->where('id', $id)
             ->where('status', 'cancelled')

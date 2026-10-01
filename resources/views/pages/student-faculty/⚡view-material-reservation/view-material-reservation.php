@@ -20,10 +20,22 @@ new #[Layout('layouts.student-faculty')] class extends Component
     public function mount(int $id)
     {
         $this->requestModel = ResourceRequest::where('user_id', Auth::id())
-            ->with('items')
+            ->with(['items', 'approvals.approver'])
             ->findOrFail($id);
 
         $this->isFacility = $this->requestModel->request_type_id === 1;
+    }
+
+    /**
+     * Latest rejection approval row (with reason), if the request was rejected.
+     * Mirrors the logic in view-single-button.php (coordinator's own request view).
+     */
+    public function getRejectionProperty()
+    {
+        return $this->requestModel->approvals
+            ->where('status', 'rejected')
+            ->sortByDesc('approved_at')
+            ->first();
     }
 
     public function cancelRequest()

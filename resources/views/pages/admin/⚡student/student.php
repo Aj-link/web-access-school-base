@@ -15,6 +15,16 @@ new #[Layout('layouts.admin')] class extends Component
     public string $roleFilter = 'all';
     public string $statusFilter = 'all';
 
+    // ✅ Reject dialog state
+    public ?int   $rejectingUserId = null;
+    public string $rejectReason    = '';
+
+    public function mount(): void
+    {
+        // ✅ Server-side guard — page requires `users.view`
+        abort_unless(auth()->user()->can('users.view'), 403);
+    }
+
     public function updatedSearch()
     {
         $this->resetPage();
@@ -60,6 +70,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function approve(int $userId)
     {
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('users.approve'), 403);
+
         $user = User::with('roles')->findOrFail($userId);
 
         if ($user->status !== 'pending') {
@@ -81,17 +94,59 @@ new #[Layout('layouts.admin')] class extends Component
         session()->flash('success', "{$user->name} has been approved.");
     }
 
-    public function reject(int $userId)
+    // ============================================================
+    // ✅ REJECT WITH REASON
+    // ============================================================
+    public function openReject(int $userId): void
     {
-        $user = User::findOrFail($userId);
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('users.approve'), 403);
+
+        $this->rejectingUserId = $userId;
+        $this->rejectReason    = '';
+    }
+
+    public function cancelReject(): void
+    {
+        $this->rejectingUserId = null;
+        $this->rejectReason    = '';
+    }
+
+    public function confirmReject(): void
+    {
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('users.approve'), 403);
+
+        if (! $this->rejectingUserId) {
+            return;
+        }
+
+        $user = User::with('roles')->findOrFail($this->rejectingUserId);
 
         if ($user->status !== 'pending') {
             session()->flash('error', 'This user has already been processed.');
+            $this->cancelReject();
             return;
         }
 
         $user->update(['status' => 'rejected']);
 
+        // Optional: log the reason (adjust as needed)
+        if ($this->rejectReason) {
+            \Illuminate\Support\Facades\Log::info(
+                "User {$user->id} ({$user->email}) rejected by admin. Reason: {$this->rejectReason}"
+            );
+        }
+
+        // Optional: send a notification with the reason
+        // try {
+        //     $user->notify(new \App\Notifications\AccountRejectedNotification($this->rejectReason));
+        // } catch (\Throwable $e) {
+        //     \Log::warning('Rejection notification failed: ' . $e->getMessage());
+        // }
+
         session()->flash('success', "{$user->name} has been rejected.");
+
+        $this->cancelReject();
     }
-};
+};  

@@ -53,6 +53,15 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function mount(): void
     {
+        // ✅ Matches seeder: faculty/student get facility-requests.create + material-requests.create
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.create',
+                'material-requests.create',
+            ]),
+            403
+        );
+
         $this->used_date = date('Y-m-d');
 
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
@@ -198,6 +207,15 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function submit()
     {
+        // ✅ Server-side guard — creating requires create permission on either type
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.create',
+                'material-requests.create',
+            ]),
+            403
+        );
+
         $this->validate();
 
         if (is_null(Auth::user()->department_id)) {

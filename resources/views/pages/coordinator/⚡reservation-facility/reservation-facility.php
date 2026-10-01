@@ -11,6 +11,10 @@ use Livewire\Component;
 
 new #[Layout('layouts.coordinator')] class extends Component
 {
+    // ✅ NEW: Reject dialog state
+    public ?int   $rejectingRequestId = null;
+    public string $rejectReason       = '';
+
     protected function scopedQuery()
     {
         return ResourceRequest::where('request_type_id', 1)
@@ -32,17 +36,18 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->get();
     }
 
+    // ============================================================
+    // APPROVE
+    // ============================================================
     public function accept(int $id)
     {
         $request = $this->scopedQuery()->with('items')->findOrFail($id);
 
-        // Guard 1 — still pending?
         if ($request->status !== 'pending') {
             session()->flash('error', 'This request has already been processed.');
             return;
         }
 
-        // Guard 2 — double-booking?
         $facilityItem = $request->items->firstWhere('resource_id', null);
 
         if ($facilityItem && $this->facilityHasConflict(
@@ -59,13 +64,11 @@ new #[Layout('layouts.coordinator')] class extends Component
         $departmentId = Auth::user()->department_id;
         $approverName = Auth::user()->name;
 
-        // ── NEW: deduct attached materials from the department's allocation ──
         $materialItems = $request->items->whereNotNull('resource_id');
 
         try {
             DB::transaction(function () use ($request, $materialItems, $departmentId) {
 
-                // Pass 1 — validate every material has enough allocated stock
                 foreach ($materialItems as $item) {
                     $allocation = DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -80,7 +83,6 @@ new #[Layout('layouts.coordinator')] class extends Component
                     }
                 }
 
-                // Pass 2 — deduct from department allocation
                 foreach ($materialItems as $item) {
                     DB::table('resource_all_locations')
                         ->where('resource_id', $item->resource_id)
@@ -88,10 +90,8 @@ new #[Layout('layouts.coordinator')] class extends Component
                         ->decrement('allocated_quantity', $item->quantity);
                 }
 
-                // Mark the request approved
                 $request->update(['status' => 'approved']);
 
-                // Record the approval
                 DB::table('request_approvals')->updateOrInsert(
                     ['request_id' => $request->id, 'approver_id' => Auth::id()],
                     [
@@ -108,7 +108,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        // Notification (outside the transaction — safe if it fails)
         $details = $facilityItem
             ? "{$facilityItem->item_name} on " . Carbon::parse($facilityItem->request_date)->format('M d, Y')
                 . " ({$facilityItem->start_time} - {$facilityItem->end_time})"
@@ -123,23 +122,41 @@ new #[Layout('layouts.coordinator')] class extends Component
         ]);
     }
 
-    public function reject(int $id)
+    // ============================================================
+    // ✅ REJECT WITH REASON
+    // ============================================================
+    public function openReject(int $id): void
     {
-        $request = $this->scopedQuery()->with('items')->findOrFail($id);
+        $this->rejectingRequestId = $id;
+        $this->rejectReason = '';
+    }
+
+    public function cancelReject(): void
+    {
+        $this->rejectingRequestId = null;
+        $this->rejectReason = '';
+    }
+
+    public function confirmReject(): void
+    {
+        if (! $this->rejectingRequestId) return;
+
+        $request = $this->scopedQuery()->with('items')->findOrFail($this->rejectingRequestId);
 
         if ($request->status !== 'pending') {
             session()->flash('error', 'This request has already been processed.');
+            $this->cancelReject();
             return;
         }
 
         $request->update(['status' => 'rejected']);
 
-        // ── Record the rejection ──
+        // ✅ Save rejection reason
         DB::table('request_approvals')->updateOrInsert(
             ['request_id' => $request->id, 'approver_id' => Auth::id()],
             [
                 'status'      => 'rejected',
-                'remarks'     => null,
+                'remarks'     => $this->rejectReason ?: null,
                 'approved_at' => now(),
                 'updated_at'  => now(),
                 'created_at'  => now(),
@@ -154,13 +171,22 @@ new #[Layout('layouts.coordinator')] class extends Component
                 . " ({$facilityItem->start_time} - {$facilityItem->end_time})"
             : $request->purpose;
 
+        $message = "{$approverName} rejected your facility reservation for {$details}.";
+        if ($this->rejectReason) {
+            $message .= ' Reason: ' . $this->rejectReason;
+        }
+
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,
-            'message'    => "{$approverName} rejected your facility reservation for {$details}.",
+            'message'    => $message,
             'type'       => 'Gmail',
             'status'     => 'pending',
         ]);
+
+        session()->flash('message', 'Reservation rejected and requester notified.');
+
+        $this->cancelReject();
     }
 
     protected function facilityHasConflict(

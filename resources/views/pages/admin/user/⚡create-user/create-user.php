@@ -25,16 +25,16 @@ new #[Layout('layouts.admin')] class extends Component
         return Department::orderBy('department_name')->get(['id', 'department_name']);
     }
 
-#[Computed()]
-public function roles()
-{
-    return \Spatie\Permission\Models\Role::orderBy('name')
-        ->get()
-        ->mapWithKeys(function ($role) {
-            return [$role->name => ucwords($role->name)];
-        })
-        ->toArray();
-}
+    #[Computed()]
+    public function roles()
+    {
+        return \Spatie\Permission\Models\Role::orderBy('name')
+            ->get()
+            ->mapWithKeys(function ($role) {
+                return [$role->name => ucwords($role->name)];
+            })
+            ->toArray();
+    }
 
     #[Computed()]
     public function defaultPassword(): string
@@ -46,7 +46,7 @@ public function roles()
     {
         return [
             'name'            => 'required|string|min:3',
-            'email'           => 'required|email|unique:users,email',
+            'email'           => 'required|email|unique:users,email|ends_with:@csav.edu.ph',
             'password'        => 'required|string|min:6|confirmed',
             'department_id'   => 'required|exists:departments,id',
             'role'            => 'required|in:program head,faculty,student',
@@ -59,6 +59,7 @@ public function roles()
         'email.required'         => 'Please enter an email address.',
         'email.email'            => 'Please enter a valid email address.',
         'email.unique'           => 'This email address is already registered.',
+        'email.ends_with'        => 'Email must end with @csav.edu.ph.',
         'password.required'      => 'Please enter a password.',
         'password.min'           => 'Password must be at least 6 characters.',
         'password.confirmed'     => 'Password confirmation does not match.',
@@ -68,7 +69,7 @@ public function roles()
         'role.in'                => 'Selected role is invalid.',
     ];
 
-    // ✅ NEW: Auto-fill name from email (only if name is empty)
+    // ✅ Auto-fill name from email (only if name is empty)
     public function updatedEmail($value): void
     {
         if (! empty($this->name)) {

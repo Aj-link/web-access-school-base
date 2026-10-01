@@ -23,6 +23,7 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function mount($id)
     {
+        abort_unless(auth()->user()->can('users.update'), 403);
         $this->user          = User::with('roles')->findOrFail($id);
         $this->name          = $this->user->name;
         $this->email         = $this->user->email;
@@ -92,6 +93,7 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function save()
     {
+        abort_unless(auth()->user()->can('users.update'), 403);
         $this->validate();
 
         $passwordChanged = filled($this->password);
@@ -131,6 +133,7 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function resetToDefaultPassword(): void
     {
+        abort_unless(auth()->user()->can('users.reset-password'), 403);
         if ($this->isAdmin) {
             session()->flash('success', 'Cannot reset the admin password from this page.');
             return;

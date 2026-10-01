@@ -36,7 +36,7 @@ new #[Layout('layouts.admin')] class extends Component
     public string $description       = '';
     public string $type_name         = '';
     public int    $initial_quantity  = 0;
-    public string $unit              = 'Ream'; // Ream, Ream, Box, Bottle, Set...
+    public string $unit              = 'Ream';
     public string $material_supplier = '';
 
     // Edit Material Form
@@ -49,6 +49,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function mount(): void
     {
+        // ✅ Server-side guard — page requires `stock-materials.view`
+        abort_unless(auth()->user()->can('stock-materials.view'), 403);
+
         $this->arrival_date = now()->format('Y-m-d');
     }
 
@@ -129,15 +132,28 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function openStockModal(int $id): void
     {
+        // ✅ Server-side guard — adding stock requires `stock-materials.create`
+        abort_unless(auth()->user()->can('stock-materials.create'), 403);
+
         $this->reset(['quantity_added', 'supplier', 'arrival_time', 'remarks']);
         $this->resource_id  = $id;
         $this->arrival_date = now()->format('Y-m-d');
         $this->showModal    = true;
     }
 
-    // Opens the Edit modal and pre-fills the form with the material's current data
+    public function openAddModal(): void
+    {
+        // ✅ Server-side guard — adding a material requires `stock-materials.create`
+        abort_unless(auth()->user()->can('stock-materials.create'), 403);
+
+        $this->showAddModal = true;
+    }
+
     public function openEditModal(int $id): void
     {
+        // ✅ Server-side guard — editing a material requires `stock-materials.update`
+        abort_unless(auth()->user()->can('stock-materials.update'), 403);
+
         $resource = Resource::with('resourceType')->findOrFail($id);
 
         $this->edit_id            = $resource->id;
@@ -171,6 +187,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function addStock(): void
     {
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('stock-materials.create'), 403);
+
         $this->validate([
             'resource_id'    => 'required|exists:resources,id',
             'quantity_added' => 'required|integer|min:1',
@@ -200,6 +219,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function addMaterial(): void
     {
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('stock-materials.create'), 403);
+
         $this->validate([
             'resource_name'     => 'required|string|max:255',
             'type_name'         => 'required|string|max:255|not_in:' . implode(',', $this->excludedTypes),
@@ -216,8 +238,8 @@ new #[Layout('layouts.admin')] class extends Component
                 'description'        => $this->description !== '' ? $this->description : $this->resource_name,
                 'resource_type_id'   => $resourceType->id,
                 'quantity_available' => $this->initial_quantity,
-                'unit'                => $this->unit,
-                'status'              => 'available',
+                'unit'               => $this->unit,
+                'status'             => 'available',
             ]);
 
             if ($this->initial_quantity > 0) {
@@ -242,10 +264,11 @@ new #[Layout('layouts.admin')] class extends Component
         }
     }
 
-    // Updates the material's details (name, description, type, unit, status)
-    // Does NOT touch quantity_available — use "Add Stock" for that.
     public function updateMaterial(): void
     {
+        // ✅ Server-side guard
+        abort_unless(auth()->user()->can('stock-materials.update'), 403);
+
         $this->validate([
             'edit_resource_name' => 'required|string|max:255',
             'edit_description'   => 'nullable|string',
@@ -277,6 +300,9 @@ new #[Layout('layouts.admin')] class extends Component
 
     public function delete(int $id): void
     {
+        // ✅ Server-side guard — deleting requires `stock-materials.delete`
+        abort_unless(auth()->user()->can('stock-materials.delete'), 403);
+
         Resource::findOrFail($id)->delete();
         session()->flash('success', 'Material deleted successfully.');
     }

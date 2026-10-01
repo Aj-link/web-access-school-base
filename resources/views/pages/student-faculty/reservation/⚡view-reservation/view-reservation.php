@@ -3,7 +3,6 @@
 namespace App\Livewire\Portal;
 
 use App\Models\Request as ResourceRequest;
-use App\Models\Resource;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -13,6 +12,18 @@ use Illuminate\Support\Facades\Auth;
 new #[Layout('layouts.student-faculty')] class extends Component
 {
     use WithPagination;
+
+    public function mount(): void
+    {
+        // ✅ Matches seeder: faculty/student get facility-requests.view + material-requests.view
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.view',
+                'material-requests.view',
+            ]),
+            403
+        );
+    }
 
     #[Computed]
     public function reservations()
@@ -24,8 +35,54 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->paginate(10);
     }
 
+    /**
+     * Can the current user edit this reservation?
+     */
+    public function canEdit(ResourceRequest $request): bool
+    {
+        if ($request->user_id !== Auth::id()) {
+            return false;
+        }
+
+        if ($request->status !== 'pending') {
+            return false;
+        }
+
+        return auth()->user()->canAny([
+            'facility-requests.update',
+            'material-requests.update',
+        ]);
+    }
+
+    /**
+     * Can the current user cancel this reservation?
+     */
+    public function canCancel(ResourceRequest $request): bool
+    {
+        if ($request->user_id !== Auth::id()) {
+            return false;
+        }
+
+        if ($request->status !== 'pending') {
+            return false;
+        }
+
+        return auth()->user()->canAny([
+            'facility-requests.cancel',
+            'material-requests.cancel',
+        ]);
+    }
+
     public function cancelReservation($id)
     {
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.cancel',
+                'material-requests.cancel',
+            ]),
+            403
+        );
+
         $request = ResourceRequest::with('items')->findOrFail($id);
 
         if ($request->user_id !== Auth::id()) {

@@ -177,23 +177,6 @@ lg:block lg:-translate-x-full lg:end-auto lg:bottom-0"
                 </ul>
             </div>
 
-            {{-- Mobile Others --}}
-            <div class="pt-3 mt-3 lg:hidden flex flex-col border-t border-gray-200 dark:border-neutral-700 first:border-t-0 first:pt-0 first:mt-0">
-                <span class="block ps-2.5 mb-2 font-medium text-[10px] tracking-wider uppercase text-[#B8862A]">Others</span>
-                <ul class="flex flex-col gap-y-1">
-                    <li>
-                        <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800" href="#">
-                            Docs
-                        </a>
-                    </li>
-                    <li>
-                        <a class="w-full flex items-center gap-x-2.5 py-2 px-2.5 text-sm text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-neutral-800" href="#">
-                            API
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
         </nav>
     </div>
 </div>

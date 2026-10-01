@@ -1,5 +1,5 @@
 <div class="select-none">
-     <div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+    <div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
 
         {{-- Quick Nav --}}
         <div class="flex flex-wrap gap-2 mb-4">
@@ -53,191 +53,182 @@
         </div>
 
         <!-- Card -->
-        <div class="flex flex-col">
-            <div class="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500">
-                <div class="min-w-full inline-block align-middle">
-                    <div class="bg-white border border-gray-200 rounded-xl shadow-2xs overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
-                        <!-- Header -->
-                        <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-neutral-700">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-                                    Role & Permissions
-                                </h2>
-                                <p class="text-sm text-gray-600 dark:text-neutral-400">
-                                    Manage role and permissions
-                                </p>
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
 
-                                <!-- Success message -->
-                                @if(session('success'))
-                                    <div class="mt-2 text-green-600 text-sm font-medium">
-                                        {{ session('success') }}
-                                    </div>
-                                @endif
-                            </div>
+            <!-- Header -->
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-gray-200 dark:border-neutral-700">
+                <div class="min-w-0">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                        Role &amp; Permissions
+                    </h2>
+                    <p class="text-sm text-gray-500 dark:text-neutral-400 mt-0.5">
+                        Manage role and permissions
+                    </p>
 
-                            <div>
-                                <div class="inline-flex gap-x-2">
-                                    <a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
-                                        href="#">
-                                        View all
-                                    </a>
-
-                                    <!-- ✅ Bulk Delete Button -->
-                                    <button type="button"
-                                            wire:click="deleteSelected"
-                                            onclick="return confirm('Are you sure you want to delete selected roles?')"
-                                            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-red-500 bg-red-600 text-black hover:bg-red-700 focus:outline-hidden focus:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
-                                        Delete Selected
-                                    </button>
-
-                                    <a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
-                                        href="{{ route('admin.roles.create') }}">
-                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24"
-                                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M5 12h14" />
-                                            <path d="M12 5v14" />
-                                        </svg>
-                                        Add Role
-                                    </a>
-                                </div>
-                            </div>
+                    @if(session('success'))
+                        <div class="mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
+                            {{ session('success') }}
                         </div>
-                        <!-- End Header -->
-
-                        <!-- Table -->
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-                            <thead class="bg-gray-50 dark:bg-neutral-800">
-                                <tr>
-                                    <th scope="col" class="ps-6 py-3 text-start">
-                                        <label for="hs-at-with-checkboxes-main" class="flex">
-                                            <input type="checkbox"
-                                                   wire:model="selectAll"
-                                                   class="shrink-0 border-gray-300 rounded-sm text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-600 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                                                   id="hs-at-with-checkboxes-main">
-                                            <span class="sr-only">Checkbox</span>
-                                        </label>
-                                    </th>
-
-                                    <th scope="col" class="ps-6 lg:ps-3 xl:ps-0 pe-6 py-3 text-start">
-                                        <div class="flex items-center gap-x-2">
-                                            <span class="text-xs font-semibold uppercase text-gray-800 dark:text-neutral-200">
-                                                Role
-                                            </span>
-                                        </div>
-                                    </th>
-
-                                    <th scope="col" class="px-6 py-3 text-start">
-                                        <div class="flex items-center gap-x-2">
-                                            <span class="text-xs font-semibold uppercase text-gray-800 dark:text-neutral-200">
-                                                Permissions
-                                            </span>
-                                        </div>
-                                    </th>
-
-                                    <th scope="col" class="px-6 py-3 text-start">
-                                        <div class="flex items-center gap-x-2">
-                                            <span class="text-xs font-semibold uppercase text-gray-800 dark:text-neutral-200">
-                                                Created at
-                                            </span>
-                                        </div>
-                                    </th>
-
-                                    <th scope="col" class="px-6 py-3 text-end"></th>
-                                </tr>
-                            </thead>
-
-                            <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
-
-                                @forelse ($this->roles as $role_key => $role )
-                                <tr wire:key="{{ $role_key }}">
-                                    <td class="size-px whitespace-nowrap">
-                                        <div class="ps-6 py-3">
-                                            <label for="hs-at-with-checkboxes-1" class="flex">
-                                                <input type="checkbox"
-                                                       value="{{ $role->id }}"
-                                                       wire:model="selectedRoles"
-                                                       class="shrink-0 border-gray-300 rounded-sm text-blue-600 focus:ring-blue-500 checked:border-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-600 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                                                       id="hs-at-with-checkboxes-1">
-                                                <span class="sr-only">Checkbox</span>
-                                            </label>
-                                        </div>
-                                    </td>
-                                    <td class="size-px whitespace-nowrap">
-                                        <div class="ps-6 lg:ps-3 xl:ps-0 pe-6 py-3">
-                                            <div class="flex items-center gap-x-3">
-                                                <span class="block text-sm font-semibold text-gray-800 dark:text-neutral-200 text-nowrap">
-                                                    {{ $role->name }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="h-px w-72 whitespace-nowrap">
-                                        <div class="px-6 py-3">
-                                            <span class="block text-sm text-gray-500 dark:text-neutral-500 text-wrap">
-                                                {{ $role->permissions->map(fn($p) => str_replace('_', ' ', Str::title($p->name)))->join(', ') ?: 'No permissions assigned' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="size-px whitespace-nowrap">
-                                        <div class="px-6 py-3">
-                                            <span class="text-sm text-gray-500 dark:text-neutral-500">
-                                                {{ $role->created_at->diffForHumans() }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="size-px whitespace-nowrap">
-                                        <div class="px-6 py-3 text-end">
-                                            <a href="{{ route('admin.roles.edit', $role->id) }}"
-                                               class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
-                                                Edit
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center">
-                                        <span class="text-sm text-gray-500 dark:text-neutral-400">
-                                            No roles found.
-                                        </span>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                        <!-- End Table -->
-
-                        <!-- Footer -->
-                        <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
-                            <div>
-                                <p class="text-sm text-gray-600 dark:text-neutral-400">
-                                    <span class="font-semibold text-gray-800 dark:text-neutral-200">12</span> results
-                                </p>
-                            </div>
-
-                            <div>
-                                <div class="inline-flex gap-x-2">
-                                    <button type="button" class="py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
-                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="m15 18-6-6 6-6" />
-                                        </svg>
-                                        Prev
-                                    </button>
-
-                                    <button type="button" class="py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
-                                        Next
-                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="m9 18 6-6-6-6" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                    @endif
+                    @if(session('error'))
+                        <div class="mt-2 text-red-600 dark:text-red-400 text-sm font-medium">
+                            {{ session('error') }}
                         </div>
-                        <!-- End Footer -->
-                    </div>
+                    @endif
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <button type="button"
+                            wire:click="deleteSelected"
+                            wire:confirm="Are you sure you want to delete selected roles?"
+                            class="py-2 px-3.5 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg
+                                   border border-transparent bg-red-600 text-white
+                                   hover:bg-red-700 focus:outline-none focus:bg-red-700
+                                   disabled:opacity-50 disabled:pointer-events-none transition">
+                        <svg class="shrink-0 size-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete Selected
+                    </button>
+
+                    <a href="{{ route('admin.roles.create') }}"
+                       wire:navigate
+                       class="py-2 px-3.5 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg
+                              border border-transparent bg-blue-600 text-white
+                              hover:bg-blue-700 focus:outline-none focus:bg-blue-700 transition">
+                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14" />
+                            <path d="M5 12h14" />
+                        </svg>
+                        Add Role
+                    </a>
                 </div>
             </div>
+            <!-- End Header -->
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+                    <thead class="bg-gray-50 dark:bg-neutral-900/50">
+                        <tr>
+                            {{-- Checkbox --}}
+                            <th scope="col" class="w-12 ps-6 py-3 text-start">
+                                <label for="roles-select-all" class="flex items-center">
+                                    <input type="checkbox"
+                                           wire:model.live="selectAll"
+                                           id="roles-select-all"
+                                           class="shrink-0 size-4 border-gray-300 rounded text-blue-600
+                                                  focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0
+                                                  dark:bg-neutral-800 dark:border-neutral-600
+                                                  dark:checked:bg-blue-600 dark:checked:border-blue-600">
+                                    <span class="sr-only">Select all roles</span>
+                                </label>
+                            </th>
+
+                            {{-- Role --}}
+                            <th scope="col" class="px-6 py-3 text-start">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
+                                    Role
+                                </span>
+                            </th>
+
+                            {{-- Created at --}}
+                            <th scope="col" class="px-6 py-3 text-start">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
+                                    Created at
+                                </span>
+                            </th>
+
+                            {{-- Actions --}}
+                            <th scope="col" class="px-6 py-3 text-end">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
+                                    Actions
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-100 dark:divide-neutral-700">
+                        @forelse ($this->roles as $role)
+                            <tr wire:key="role-{{ $role->id }}"
+                                class="hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition">
+
+                                {{-- Checkbox --}}
+                                <td class="ps-6 py-3.5 w-12">
+                                    <label for="role-checkbox-{{ $role->id }}" class="flex items-center">
+                                        <input type="checkbox"
+                                               value="{{ $role->id }}"
+                                               wire:model.live="selectedRoles"
+                                               id="role-checkbox-{{ $role->id }}"
+                                               class="shrink-0 size-4 border-gray-300 rounded text-blue-600
+                                                      focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0
+                                                      dark:bg-neutral-800 dark:border-neutral-600
+                                                      dark:checked:bg-blue-600 dark:checked:border-blue-600">
+                                        <span class="sr-only">Select {{ $role->name }}</span>
+                                    </label>
+                                </td>
+
+                                {{-- Role --}}
+                                <td class="px-6 py-3.5">
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-neutral-200">
+                                        {{ $role->name }}
+                                    </span>
+                                </td>
+
+                                {{-- Created at --}}
+                                <td class="px-6 py-3.5">
+                                    <span class="text-sm text-gray-500 dark:text-neutral-400">
+                                        {{ $role->created_at->diffForHumans() }}
+                                    </span>
+                                </td>
+
+                                {{-- Actions --}}
+                                <td class="px-6 py-3.5 text-end">
+                                    <div class="inline-flex items-center gap-3">
+                                        <a href="{{ route('admin.roles.view', $role->id) }}"
+                                           wire:navigate
+                                           class="text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline
+                                                  dark:text-neutral-400 dark:hover:text-neutral-100">
+                                            View
+                                        </a>
+                                        <a href="{{ route('admin.roles.edit', $role->id) }}"
+                                           wire:navigate
+                                           class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline
+                                                  dark:text-blue-400 dark:hover:text-blue-300">
+                                            Edit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <div class="size-12 rounded-full bg-gray-100 dark:bg-neutral-700 flex items-center justify-center">
+                                            <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                            </svg>
+                                        </div>
+                                        <p class="text-sm font-medium text-gray-600 dark:text-neutral-400">
+                                            No roles found
+                                        </p>
+                                        <a href="{{ route('admin.roles.create') }}"
+                                           wire:navigate
+                                           class="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                            <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+                                            </svg>
+                                            Add First Role
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <!-- End Table -->
+
         </div>
         <!-- End Card -->
     </div>

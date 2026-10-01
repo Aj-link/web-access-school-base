@@ -30,6 +30,8 @@
                     </div>
                 @endif
 
+                {{-- ✅ Only users with `users.create` can see & use this form --}}
+                @can('users.create')
                 <form wire:submit.prevent="save">
                     <div class="grid gap-4 lg:gap-6">
 
@@ -201,6 +203,8 @@
                         </a>
                     </div>
                 </form>
+                @endcan
+
             </div>
         </div>
     </div>

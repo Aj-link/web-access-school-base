@@ -70,16 +70,19 @@
 
                             <div>
                                 <div class="inline-flex gap-x-2">
-                                    <a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden"
-                                        href="{{ route('admin.user.create') }}">
-                                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24"
-                                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M5 12h14" />
-                                            <path d="M12 5v14" />
-                                        </svg>
-                                        Add User
-                                    </a>
+                                    {{-- ✅ Only users with `users.create` can add --}}
+                                    @can('users.create')
+                                        <a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden"
+                                            href="{{ route('admin.user.create') }}">
+                                             <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24"
+                                                height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M5 12h14" />
+                                                <path d="M12 5v14" />
+                                            </svg>
+                                            Add User
+                                        </a>
+                                    @endcan
                                 </div>
                             </div>
                         </div>
@@ -126,10 +129,13 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-3 text-end">
-                                            <a href="{{ route('admin.user.edit', $user->id) }}"
-                                               class="text-blue-600 hover:underline text-sm font-medium">
-                                                Edit
-                                            </a>
+                                            {{-- ✅ Only users with `users.update` can edit --}}
+                                            @can('users.update')
+                                                <a href="{{ route('admin.user.edit', $user->id) }}"
+                                                   class="text-blue-600 hover:underline text-sm font-medium">
+                                                    Edit
+                                                </a>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @empty

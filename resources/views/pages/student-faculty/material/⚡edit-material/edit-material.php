@@ -35,9 +35,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
         'items.*.quantity.min' => 'Quantity must be at least 1',
     ];
 
-    /**
-     * Format a raw quantity using the resource's unit (e.g. "50 Ream").
-     */
     protected function formatQuantity(int $qty, ?string $unit): string
     {
         $unit = trim($unit ?? '') ?: 'Ream';
@@ -47,13 +44,18 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function mount($id)
     {
+        // ✅ Matches seeder: faculty/student get material-requests.update
+        abort_unless(
+            auth()->user()->can('material-requests.update'),
+            403
+        );
+
         $this->requestId = $id;
         $request = ResourceRequest::with('items')
             ->where('user_id', Auth::id())
             ->where('id', $id)
             ->firstOrFail();
 
-        // Only allow editing if status is pending
         if ($request->status !== 'pending') {
             session()->flash('error', 'Only pending requests can be edited.');
             return redirect()->route('portal.material');
@@ -61,7 +63,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
         $user = Auth::user();
 
-        // ✅ Load this department's available materials, same as the create form
         if ($user->department_id) {
             $this->availableResources = DB::table('resource_all_locations')
                 ->join('resources', 'resources.id', '=', 'resource_all_locations.resource_id')
@@ -98,9 +99,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
         })->toArray();
     }
 
-    /**
-     * Look up a resource from $availableResources.
-     */
     public function getMaterialResource($resourceId)
     {
         if (!$resourceId) return null;
@@ -149,11 +147,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
         return null;
     }
 
-    /**
-     * Resources available for a given row's dropdown: everything minus
-     * whatever's already picked in OTHER rows (prevents duplicate materials
-     * across line items). The row's own current selection is always kept.
-     */
     public function getOptionsForRow(int $currentIndex): array
     {
         $selectedElsewhere = collect($this->items)
@@ -181,6 +174,12 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function update()
     {
+        // ✅ Server-side guard — updating requires material-requests.update
+        abort_unless(
+            auth()->user()->can('material-requests.update'),
+            403
+        );
+
         $this->validate();
 
         $request = ResourceRequest::where('user_id', Auth::id())
@@ -190,7 +189,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
         $user = Auth::user();
 
-        // ✅ Validate requested quantity against department allocation, same as create form
         foreach ($this->items as $i => $item) {
             $allocation = DB::table('resource_all_locations')
                 ->join('resources', 'resources.id', '=', 'resource_all_locations.resource_id')
@@ -208,18 +206,14 @@ new #[Layout('layouts.student-faculty')] class extends Component
             }
         }
 
-        // Update purpose
         $request->update(['purpose' => $this->purpose]);
 
-        // Get existing item IDs
         $existingIds = collect($this->items)->filter(fn($i) => isset($i['id']))->pluck('id')->toArray();
 
-        // Delete items that were removed
         RequestItem::where('request_id', $request->id)
             ->whereNotIn('id', $existingIds)
             ->delete();
 
-        // Update or create items
         foreach ($this->items as $item) {
             $resource = DB::table('resources')->where('id', $item['resource_id'])->first();
 
@@ -242,7 +236,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             }
         }
 
-        // Notify coordinators about the update
         $coordinators = User::role('program head')->get();
         foreach ($coordinators as $coordinator) {
             Notification::create([

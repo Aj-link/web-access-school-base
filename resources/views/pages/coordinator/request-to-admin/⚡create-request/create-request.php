@@ -25,10 +25,52 @@ new #[Layout('layouts.coordinator')] class extends Component
     public $end_time = '10:00';
     public array $facilityOptions = [];
 
-    // Materials — used for BOTH: optional add-on to a Facility Reservation,
-    // AND as the main list when request_type_id == 2 (Material Request)
+    // Materials
     public array $materials = [];
     public $availableResources = [];
+
+    public function mount(): void
+    {
+        // ✅ Server-side guard — creating a request to admin requires `program-head-requests.create`
+        abort_unless(auth()->user()->can('program-head-requests.create'), 403);
+
+        $facilityType = ResourceType::where('type_name', 'Facility')->first();
+
+        if ($facilityType) {
+            $this->facilityOptions = Resource::where('resource_type_id', $facilityType->id)
+                ->where('status', 'available')
+                ->orderBy('resource_name')
+                ->pluck('resource_name')
+                ->toArray();
+        } else {
+            $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
+                $q->where('type_name', 'like', '%facility%')
+            )
+            ->where('status', 'available')
+            ->orderBy('resource_name')
+            ->pluck('resource_name')
+            ->toArray();
+        }
+
+        $this->availableResources = Resource::where('status', 'available')
+            ->where('quantity_available', '>', 0)
+            ->where(function ($q) {
+                $q->whereHas('resourceType', function ($q2) {
+                    $q2->where('type_name', '!=', 'Facility')
+                       ->where('type_name', 'not like', '%facility%');
+                })->orWhereDoesntHave('resourceType');
+            })
+            ->orderBy('resource_name')
+            ->get()
+            ->map(function ($resource) {
+                $resource->available_formatted = $this->formatQuantity(
+                    (int) $resource->quantity_available,
+                    $resource->unit,
+                    $resource->pieces_per_pack
+                );
+                return $resource;
+            });
+    }
 
     protected function rules()
     {
@@ -86,46 +128,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
 
         return "{$qtyInPcs} ". ($unit ?: 'Ream');
-    }
-
-    public function mount()
-    {
-        $facilityType = ResourceType::where('type_name', 'Facility')->first();
-
-        if ($facilityType) {
-            $this->facilityOptions = Resource::where('resource_type_id', $facilityType->id)
-                ->where('status', 'available')
-                ->orderBy('resource_name')
-                ->pluck('resource_name')
-                ->toArray();
-        } else {
-            $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
-                $q->where('type_name', 'like', '%facility%')
-            )
-            ->where('status', 'available')
-            ->orderBy('resource_name')
-            ->pluck('resource_name')
-            ->toArray();
-        }
-
-        $this->availableResources = Resource::where('status', 'available')
-            ->where('quantity_available', '>', 0)
-            ->where(function ($q) {
-                $q->whereHas('resourceType', function ($q2) {
-                    $q2->where('type_name', '!=', 'Facility')
-                       ->where('type_name', 'not like', '%facility%');
-                })->orWhereDoesntHave('resourceType');
-            })
-            ->orderBy('resource_name')
-            ->get()
-            ->map(function ($resource) {
-                $resource->available_formatted = $this->formatQuantity(
-                    (int) $resource->quantity_available,
-                    $resource->unit,
-                    $resource->pieces_per_pack
-                );
-                return $resource;
-            });
     }
 
     #[Computed]
@@ -186,8 +188,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return null;
     }
 
-    // Returns the resource list for a given row, excluding resources
-    // already picked in OTHER rows (so the same material can't appear twice)
     public function getResourcesForRow(int $currentIndex)
     {
         $selectedElsewhere = collect($this->materials)
@@ -213,8 +213,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->materials = array_values($this->materials);
     }
 
-    // If the user somehow ends up picking a duplicate (e.g. two dropdowns
-    // still open on stale state), block it immediately and reset that field
     public function updatedMaterials($value, $key)
     {
         if (! str_ends_with($key, '.resource_id') || $value === '' || $value === null) {
@@ -243,7 +241,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->end_time   = '10:00';
     }
 
-    // ✅ NEW: live re-check every time facility/date/time changes
     public function updatedFacilityName()
     {
         $this->validateFacilityConflictLive();
@@ -267,15 +264,15 @@ new #[Layout('layouts.coordinator')] class extends Component
     }
 
     protected function validateTimeRangeLive(): void
-{
-    $this->resetErrorBag('end_time');
+    {
+        $this->resetErrorBag('end_time');
 
-    if ($this->request_type_id == 1 && $this->start_time && $this->end_time) {
-        if ($this->end_time <= $this->start_time) {
-            $this->addError('end_time', 'End time must be after start time.');
+        if ($this->request_type_id == 1 && $this->start_time && $this->end_time) {
+            if ($this->end_time <= $this->start_time) {
+                $this->addError('end_time', 'End time must be after start time.');
+            }
         }
     }
-}
 
     protected function validateFacilityConflictLive(): void
     {
@@ -286,8 +283,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         }
     }
 
-    // ✅ NEW: checks whether the chosen facility/date/time overlaps an
-    // ALREADY APPROVED reservation for the same facility.
     protected function facilityConflict(): ?string
     {
         if (!$this->facility_name || !$this->request_date || !$this->start_time || !$this->end_time) {
@@ -316,6 +311,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function submit()
     {
+        // ✅ Server-side guard — creating a request to admin requires `program-head-requests.create`
+        abort_unless(auth()->user()->can('program-head-requests.create'), 403);
+
         $this->validate();
 
         $user = Auth::user();
@@ -325,7 +323,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        // ✅ NEW: server-side block — can't rely on live check alone
         if ($this->request_type_id == 1) {
             if ($conflictMessage = $this->facilityConflict()) {
                 $this->addError('facility_name', $conflictMessage);
@@ -337,7 +334,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
 
-        // Server-side duplicate guard (in case of stale/tampered state)
         $duplicateIds = $selectedMaterials
             ->pluck('resource_id')
             ->map(fn ($id) => (int) $id)

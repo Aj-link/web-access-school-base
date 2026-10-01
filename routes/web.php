@@ -29,6 +29,7 @@ Route::middleware(['auth', 'approved', 'admin'])->prefix('admin')->group(functio
     Route::livewire('/roles', 'pages::admin.role.view-role')->name('admin.roles');
     Route::livewire('/roles/create', 'pages::admin.role.create-role')->name('admin.roles.create');
     Route::livewire('/roles/{role}/edit', 'pages::admin.role.edit-role')->name('admin.roles.edit');
+    Route::livewire('/roles/{role}/view', 'pages::admin.role.view-single-role')->name('admin.roles.view');
 
     //department
     Route::livewire('/departments', 'pages::admin.deparments.view-department')->name('admin.departments');

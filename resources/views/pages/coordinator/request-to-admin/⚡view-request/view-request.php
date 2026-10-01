@@ -67,6 +67,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function mount()
     {
+        // ✅ FIXED — new permission name
+        abort_unless(auth()->user()->can('program-head-requests.view'), 403);
+
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         $this->facilityOptions = $facilityType
@@ -191,6 +194,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function openEdit(int $id)
     {
+        // ✅ FIXED — new permission name
+        abort_unless(auth()->user()->can('program-head-requests.update'), 403);
+
         $request = ResourceRequest::with('items')->findOrFail($id);
 
         if ($request->user_id !== Auth::id()) {
@@ -251,6 +257,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function saveEdit()
     {
+        // ✅ FIXED — new permission name
+        abort_unless(auth()->user()->can('program-head-requests.update'), 403);
+
         $this->validate();
 
         $request = ResourceRequest::where('user_id', Auth::id())->findOrFail($this->editingId);
@@ -351,6 +360,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function delete(int $id)
     {
+        // ✅ FIXED — new permission name
+        abort_unless(auth()->user()->can('program-head-requests.delete'), 403);
+
         $request = ResourceRequest::where('user_id', Auth::id())->findOrFail($id);
 
         if ($request->status !== 'pending') {

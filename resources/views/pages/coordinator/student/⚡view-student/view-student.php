@@ -37,6 +37,12 @@ new #[Layout('layouts.coordinator')] class extends Component
     public string $editStatus    = '';
     public string $editRole      = '';
 
+    public function mount(): void
+    {
+        // ✅ Server-side guard — page requires `members.view`
+        abort_unless(auth()->user()->can('members.view'), 403);
+    }
+
     public function updatingSearch(): void       { $this->resetPage(); }
     public function updatingStatusFilter(): void { $this->resetPage(); }
     public function updatingRoleFilter(): void   { $this->resetPage(); }
@@ -108,6 +114,9 @@ new #[Layout('layouts.coordinator')] class extends Component
     // ── Create ──────────────────────────────────────────────
     public function openCreate(): void
     {
+        // ✅ Server-side guard — creating requires `members.create`
+        abort_unless(auth()->user()->can('members.create'), 403);
+
         $this->reset(['createName', 'createEmail', 'createPassword']);
         $this->createRole      = 'student';
         $this->showCreateModal = true;
@@ -115,6 +124,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function create(): void
     {
+        // ✅ Server-side guard — creating requires `members.create`
+        abort_unless(auth()->user()->can('members.create'), 403);
+
         $this->validate([
             'createName'     => 'required|string|max:255',
             'createEmail'    => 'required|email|unique:users,email|ends_with:@csav.edu.ph',
@@ -178,6 +190,9 @@ new #[Layout('layouts.coordinator')] class extends Component
     // ── Edit ────────────────────────────────────────────────
     public function openEdit(int $id): void
     {
+        // ✅ Server-side guard — editing requires `members.update`
+        abort_unless(auth()->user()->can('members.update'), 403);
+
         $user = User::with('roles')->findOrFail($id);
 
         if ($user->department_id !== $this->departmentId) return;
@@ -192,6 +207,9 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function update(): void
     {
+        // ✅ Server-side guard — updating requires `members.update`
+        abort_unless(auth()->user()->can('members.update'), 403);
+
         $this->validate([
             'editName'   => 'required|string|max:255',
             'editEmail'  => 'required|email|ends_with:@csav.edu.ph|unique:users,email,' . $this->editingId,
@@ -227,6 +245,9 @@ new #[Layout('layouts.coordinator')] class extends Component
     // ── Delete ──────────────────────────────────────────────
     public function delete(int $id): void
     {
+        // ✅ Server-side guard — deleting requires `members.delete`
+        abort_unless(auth()->user()->can('members.delete'), 403);
+
         $user = User::findOrFail($id);
 
         if ($user->department_id !== $this->departmentId) return;

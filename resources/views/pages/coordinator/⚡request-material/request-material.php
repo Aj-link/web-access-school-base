@@ -12,6 +12,16 @@ use Livewire\Component;
 
 new #[Layout('layouts.coordinator')] class extends Component
 {
+    // ✅ Reject dialog state
+    public ?int   $rejectingRequestId = null;
+    public string $rejectReason       = '';
+
+    public function mount(): void
+    {
+        // ✅ Program Head-only page — requires `requests.view-department`
+        abort_unless(auth()->user()->can('requests.view-department'), 403);
+    }
+
     protected function scopedQuery()
     {
         return ResourceRequest::where('request_type_id', 2)
@@ -31,8 +41,14 @@ new #[Layout('layouts.coordinator')] class extends Component
             ->get();
     }
 
+    // ============================================================
+    // APPROVE
+    // ============================================================
     public function accept(int $id)
     {
+        // ✅ Server-side guard — requires `requests.approve`
+        abort_unless(auth()->user()->can('requests.approve'), 403);
+
         $request = $this->scopedQuery()->with('items')->findOrFail($id);
 
         if ($request->status !== 'pending') {
@@ -94,48 +110,85 @@ new #[Layout('layouts.coordinator')] class extends Component
                 ]);
             });
 
+            session()->flash('message', 'Request approved. Department allocation updated.');
             unset($this->requests);
         } catch (\RuntimeException $e) {
             session()->flash('error', $e->getMessage());
         }
     }
 
-    public function reject(int $id)
+    // ============================================================
+    // ✅ REJECT WITH REASON
+    // ============================================================
+    public function openReject(int $id): void
     {
-        $request = $this->scopedQuery()->with('items')->findOrFail($id);
+        // ✅ Server-side guard — requires `requests.reject`
+        abort_unless(auth()->user()->can('requests.reject'), 403);
 
-        if ($request->status !== 'pending') {
-            session()->flash('error', 'This request has already been processed.');
+        $this->rejectingRequestId = $id;
+        $this->rejectReason       = '';
+    }
+
+    public function cancelReject(): void
+    {
+        $this->rejectingRequestId = null;
+        $this->rejectReason       = '';
+    }
+
+    public function confirmReject(): void
+    {
+        // ✅ Server-side guard — requires `requests.reject`
+        abort_unless(auth()->user()->can('requests.reject'), 403);
+
+        if (! $this->rejectingRequestId) {
             return;
         }
 
+        $request = $this->scopedQuery()->with('items')->findOrFail($this->rejectingRequestId);
+
+        if ($request->status !== 'pending') {
+            session()->flash('error', 'This request has already been processed.');
+            $this->cancelReject();
+            return;
+        }
+
+        // 1. Mark rejected
         $request->update(['status' => 'rejected']);
 
-        // ── Record the rejection ──
+        // 2. Save rejection row with reason
         DB::table('request_approvals')->updateOrInsert(
             ['request_id' => $request->id, 'approver_id' => Auth::id()],
             [
                 'status'      => 'rejected',
-                'remarks'     => null,
+                'remarks'     => $this->rejectReason ?: null,
                 'approved_at' => now(),
                 'updated_at'  => now(),
                 'created_at'  => now(),
             ]
         );
 
+        // 3. Notify requester
         $approverName = Auth::user()->name;
         $itemsList = $request->items
             ->map(fn ($i) => "{$i->item_name} (x{$i->quantity})")
             ->implode(', ');
 
+        $message = "{$approverName} rejected your material request: {$itemsList}.";
+        if ($this->rejectReason) {
+            $message .= ' Reason: ' . $this->rejectReason;
+        }
+
         Notification::create([
             'user_id'    => $request->user_id,
             'request_id' => $request->id,
-            'message'    => "{$approverName} rejected your material request: {$itemsList}.",
+            'message'    => $message,
             'type'       => 'Gmail',
             'status'     => 'pending',
         ]);
 
+        session()->flash('message', 'Request rejected and requester notified.');
+
+        $this->cancelReject();
         unset($this->requests);
     }
 };

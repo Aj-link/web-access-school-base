@@ -9,6 +9,9 @@
         </p>
     </div>
 
+    {{-- ✅ Allocations are readable by anyone with `allocations.view` --}}
+    @can('allocations.view')
+
     {{-- Summary Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 sm:mb-8">
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4">
@@ -216,6 +219,8 @@
             </table>
         </div>
     </div>
+
+    @endcan
 
 </div>
 </div>

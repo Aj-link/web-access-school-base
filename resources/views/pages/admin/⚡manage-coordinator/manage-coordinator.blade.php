@@ -169,66 +169,82 @@
 
                             {{-- Actions --}}
                             <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                <a href="{{ route('admin.view-request', $req->id) }}"
-                                    class="inline-flex items-center px-3 py-1 text-xs bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-                                    View
-                                </a>
+
+                                {{-- ✅ View — new permission name --}}
+                                @can('program-head-requests.view')
+                                    <a href="{{ route('admin.view-request', $req->id) }}"
+                                        class="inline-flex items-center px-3 py-1 text-xs bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                                        View
+                                    </a>
+                                @endcan
+
+                                {{-- Approve / Reject: only if user can approve AND request is pending --}}
                                 @if ($req->status === 'pending')
-                                    <button wire:click="approve({{ $req->id }})"
-                                        wire:confirm="Approve this request?"
-                                        class="px-3 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                                        Approve
-                                    </button>
-                                    <button wire:click="openReject({{ $req->id }})"
-                                        class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                                        Reject
-                                    </button>
+                                    {{-- ✅ Approve — new permission name --}}
+                                    @can('program-head-requests.approve')
+                                        <button wire:click="approve({{ $req->id }})"
+                                            wire:confirm="Approve this request?"
+                                            class="px-3 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                            Approve
+                                        </button>
+                                    @endcan
+
+                                    {{-- ✅ Reject — new permission name --}}
+                                    @can('program-head-requests.reject')
+                                        <button wire:click="openReject({{ $req->id }})"
+                                            class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                            Reject
+                                        </button>
+                                    @endcan
                                 @endif
+
                             </td>
 
                         </tr>
 
-                        {{-- ✅ Inline Reject Form --}}
-                        @if ($rejectingRequestId === $req->id)
-                            <tr class="bg-red-50/40 dark:bg-red-900/10">
-                                <td colspan="5" class="px-6 py-4">
-                                    <div class="max-w-2xl bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-900/50 rounded-lg p-4 space-y-3">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="size-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <circle cx="12" cy="12" r="10" />
-                                                <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
-                                            </svg>
-                                            <label class="text-sm font-semibold text-red-700 dark:text-red-400">
-                                                Reason for rejecting this request
-                                            </label>
-                                            <span class="text-xs text-gray-400 dark:text-neutral-500">(optional)</span>
+                        {{-- ✅ Inline Reject Form (also permission-gated) --}}
+                        @can('program-head-requests.reject')
+                            @if ($rejectingRequestId === $req->id)
+                                <tr class="bg-red-50/40 dark:bg-red-900/10">
+                                    <td colspan="5" class="px-6 py-4">
+                                        <div class="max-w-2xl bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-900/50 rounded-lg p-4 space-y-3">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="size-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
+                                                </svg>
+                                                <label class="text-sm font-semibold text-red-700 dark:text-red-400">
+                                                    Reason for rejecting this request
+                                                </label>
+                                                <span class="text-xs text-gray-400 dark:text-neutral-500">(optional)</span>
+                                            </div>
+
+                                            <textarea wire:model="rejectReason" rows="3"
+                                                placeholder="e.g. Missing documents, budget exceeded, conflicting schedule..."
+                                                class="w-full px-3 py-2 text-sm rounded-lg border border-red-200 dark:border-red-900/50 dark:bg-neutral-900 dark:text-neutral-200 focus:ring-2 focus:ring-red-300 focus:border-red-400"></textarea>
+
+                                            <p class="text-xs text-gray-500 dark:text-neutral-400">
+                                                This reason will be sent to <strong>{{ $req->user->name }}</strong> via in-app notification and email.
+                                            </p>
+
+                                            <div class="flex justify-end gap-2">
+                                                <button wire:click="cancelReject"
+                                                    class="px-4 py-2 text-sm font-medium bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-600 transition">
+                                                    Cancel
+                                                </button>
+                                                <button wire:click="confirmReject"
+                                                    wire:loading.attr="disabled"
+                                                    wire:loading.class="opacity-50 cursor-not-allowed"
+                                                    class="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                                    <span wire:loading.remove wire:target="confirmReject">Confirm Rejection</span>
+                                                    <span wire:loading wire:target="confirmReject">Rejecting...</span>
+                                                </button>
+                                            </div>
                                         </div>
-
-                                        <textarea wire:model="rejectReason" rows="3"
-                                            placeholder="e.g. Missing documents, budget exceeded, conflicting schedule..."
-                                            class="w-full px-3 py-2 text-sm rounded-lg border border-red-200 dark:border-red-900/50 dark:bg-neutral-900 dark:text-neutral-200 focus:ring-2 focus:ring-red-300 focus:border-red-400"></textarea>
-
-                                        <p class="text-xs text-gray-500 dark:text-neutral-400">
-                                            This reason will be sent to <strong>{{ $req->user->name }}</strong> via in-app notification and email.
-                                        </p>
-
-                                        <div class="flex justify-end gap-2">
-                                            <button wire:click="cancelReject"
-                                                class="px-4 py-2 text-sm font-medium bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-600 transition">
-                                                Cancel
-                                            </button>
-                                            <button wire:click="confirmReject"
-                                                wire:loading.attr="disabled"
-                                                wire:loading.class="opacity-50 cursor-not-allowed"
-                                                class="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                                                <span wire:loading.remove wire:target="confirmReject">Confirm Rejection</span>
-                                                <span wire:loading wire:target="confirmReject">Rejecting...</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endif
+                                    </td>
+                                </tr>
+                            @endif
+                        @endcan
 
                     @empty
                         <tr>

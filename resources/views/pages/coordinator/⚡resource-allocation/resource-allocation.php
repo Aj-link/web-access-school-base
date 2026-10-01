@@ -16,9 +16,7 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function mount()
     {
-        if (!Auth::user()->hasRole('program head')) {
-            abort(403, 'Only Program Heads can view department resources.');
-        }
+        abort_unless(auth()->user()->can('allocations.view'), 403);
     }
 
     protected function formatQuantity(int $qty, ?string $unit): string

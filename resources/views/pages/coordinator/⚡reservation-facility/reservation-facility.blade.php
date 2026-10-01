@@ -100,7 +100,7 @@
                     {{ \Illuminate\Support\Str::limit($reservation->purpose, 60) }}
                   </td>
 
-                  {{-- Status ── NEW --}}
+                  {{-- Status --}}
                   <td class="px-6 py-3 whitespace-nowrap">
                     @if($reservation->status === 'pending')
                       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
@@ -135,26 +135,81 @@
                   {{-- Actions --}}
                   <td class="px-6 py-3 text-right whitespace-nowrap">
                     <div class="inline-flex items-center gap-1.5">
-                      <a href="{{ route('coordinator.view-request-reserve', $reservation->id) }}" wire:navigate
-                         class="px-2.5 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600">
-                        View
-                      </a>
+
+                      {{-- View --}}
+                      @can('requests.view-department')
+                        <a href="{{ route('coordinator.view-request-reserve', $reservation->id) }}" wire:navigate
+                           class="px-2.5 py-1 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition dark:bg-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-600">
+                          View
+                        </a>
+                      @endcan
+
+                      {{-- Accept / Reject (only if pending) --}}
                       @if($reservation->status === 'pending')
-                        <button wire:click="accept({{ $reservation->id }})"
-                                wire:confirm="Accept this reservation?"
-                                class="px-2.5 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                          Accept
-                        </button>
-                        <button wire:click="reject({{ $reservation->id }})"
-                                wire:confirm="Reject this reservation?"
-                                class="px-2.5 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-                          Reject
-                        </button>
+                        @can('requests.approve')
+                          <button wire:click="accept({{ $reservation->id }})"
+                                  wire:confirm="Accept this reservation?"
+                                  class="px-2.5 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            Accept
+                          </button>
+                        @endcan
+
+                        @can('requests.reject')
+                          <button wire:click="openReject({{ $reservation->id }})"
+                                  class="px-2.5 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                            Reject
+                          </button>
+                        @endcan
                       @endif
                     </div>
                   </td>
 
                 </tr>
+
+                {{-- ✅ Inline reject form --}}
+                @can('requests.reject')
+                  @if($rejectingRequestId === $reservation->id)
+                    <tr class="bg-red-50/40 dark:bg-red-900/10">
+                      <td colspan="6" class="px-6 py-4">
+                        <div class="max-w-2xl bg-white dark:bg-neutral-800 border border-red-200 dark:border-red-900/50 rounded-lg p-4 space-y-3">
+                          <div class="flex items-center gap-2">
+                            <svg class="size-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10" />
+                              <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
+                            </svg>
+                            <label class="text-sm font-semibold text-red-700 dark:text-red-400">
+                              Reason for rejecting this reservation
+                            </label>
+                            <span class="text-xs text-gray-400 dark:text-neutral-500">(optional)</span>
+                          </div>
+
+                          <textarea wire:model="rejectReason" rows="3"
+                            placeholder="e.g. Facility already booked, insufficient equipment, safety concern..."
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-red-200 dark:border-red-900/50 dark:bg-neutral-900 dark:text-neutral-200 focus:ring-2 focus:ring-red-300 focus:border-red-400"></textarea>
+
+                          <p class="text-xs text-gray-500 dark:text-neutral-400">
+                            This reason will be sent to <strong>{{ $reservation->user->name }}</strong> via in-app notification and email.
+                          </p>
+
+                          <div class="flex justify-end gap-2">
+                            <button wire:click="cancelReject"
+                              class="px-4 py-2 text-sm font-medium bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-neutral-300 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-600 transition">
+                              Cancel
+                            </button>
+                            <button wire:click="confirmReject"
+                              wire:loading.attr="disabled"
+                              wire:loading.class="opacity-50 cursor-not-allowed"
+                              class="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                              <span wire:loading.remove wire:target="confirmReject">Confirm Rejection</span>
+                              <span wire:loading wire:target="confirmReject">Rejecting...</span>
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  @endif
+                @endcan
+
               @empty
                 <tr>
                   <td colspan="6" class="px-6 py-10 text-center">

@@ -24,6 +24,8 @@
                 </div>
             @endif
 
+            {{-- ✅ Only users with `program-head-requests.create` can see & submit this form --}}
+            @can('program-head-requests.create')
             <form wire:submit="submit" class="space-y-6">
 
                 {{-- Request Type --}}
@@ -257,6 +259,8 @@
                 @endif
 
             </form>
+            @endcan
+
         </div>
     </div>
 </div>

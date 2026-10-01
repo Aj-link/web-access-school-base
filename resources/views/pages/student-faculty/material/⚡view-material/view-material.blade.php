@@ -6,13 +6,17 @@
                 <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">My Material Requests</h2>
                 <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">View and manage your requested materials</p>
             </div>
-            <a href="{{ route('portal.create-material') }}"
-               class="inline-flex items-center shrink-0 px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition">
-                <svg class="w-4 h-4 mr-1.5 sm:mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>Create Material Request</span>
-            </a>
+
+            {{-- ✅ material-requests.create --}}
+            @can('material-requests.create')
+                <a href="{{ route('portal.create-material') }}"
+                   class="inline-flex items-center shrink-0 px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition">
+                    <svg class="w-4 h-4 mr-1.5 sm:mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Create Material Request</span>
+                </a>
+            @endcan
         </div>
 
         {{-- Flash Messages --}}
@@ -27,7 +31,7 @@
             </div>
         @endif
 
-        {{-- Mobile Cards View (Hidden on md and up) --}}
+        {{-- Mobile Cards View --}}
         <div class="block md:hidden space-y-4">
             @forelse($this->materialRequests as $request)
                 @php $status = $request->status; @endphp
@@ -55,38 +59,53 @@
                     </div>
 
                     <div class="pt-2 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-end gap-3">
+                        @can('material-requests.view')
                         <a href="{{ route('portal.view-material-reservation', $request->id) }}" wire:navigate
                            class="text-gray-600 hover:text-gray-800 dark:text-gray-400 text-sm font-medium">
                             View
                         </a>
+                        @endcan
+
                         @if($request->status === 'pending')
-                            <a href="{{ route('portal.edit-material', $request->id) }}"
-                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
-                                Edit
-                            </a>
-                            <button wire:click="cancelRequest({{ $request->id }})"
-                                    wire:confirm="Cancel this request?"
-                                    class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 text-sm font-medium">
-                                Cancel
-                            </button>
+                            {{-- ✅ material-requests.update --}}
+                            @can('material-requests.update')
+                                <a href="{{ route('portal.edit-material', $request->id) }}"
+                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
+                                    Edit
+                                </a>
+                            @endcan
+
+                            {{-- ✅ material-requests.cancel --}}
+                            @can('material-requests.cancel')
+                                <button wire:click="cancelRequest({{ $request->id }})"
+                                        wire:confirm="Cancel this request?"
+                                        class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 text-sm font-medium">
+                                    Cancel
+                                </button>
+                            @endcan
                         @elseif($request->status === 'cancelled')
-                            <button wire:click="deleteRequest({{ $request->id }})"
-                                    wire:confirm="Permanently delete this cancelled request?"
-                                    class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm font-medium">
-                                Delete
-                            </button>
+                            {{-- ⚠️ No delete permission granted in seeder — button hidden --}}
+                            @can('material-requests.delete')
+                                <button wire:click="deleteRequest({{ $request->id }})"
+                                        wire:confirm="Permanently delete this cancelled request?"
+                                        class="text-red-600 hover:text-red-800 dark:text-red-400 text-sm font-medium">
+                                    Delete
+                                </button>
+                            @endcan
                         @endif
                     </div>
                 </div>
             @empty
                 <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center text-gray-500 border border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
                     You haven't made any material requests yet.
-                    <a href="{{ route('portal.create-material') }}" class="text-blue-600 hover:underline ml-1">Create one now</a>
+                    @can('material-requests.create')
+                        <a href="{{ route('portal.create-material') }}" class="text-blue-600 hover:underline ml-1">Create one now</a>
+                    @endcan
                 </div>
             @endforelse
         </div>
 
-        {{-- Desktop Table View (Hidden on small screens) --}}
+        {{-- Desktop Table View --}}
         <div class="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -120,26 +139,39 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                                    @can('material-requests.view')
                                     <a href="{{ route('portal.view-material-reservation', $request->id) }}" wire:navigate
                                        class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-sm font-medium">
                                         View
                                     </a>
+                                    @endcan
+
                                     @if($request->status === 'pending')
-                                        <a href="{{ route('portal.edit-material', $request->id) }}"
-                                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                                            Edit
-                                        </a>
-                                        <button wire:click="cancelRequest({{ $request->id }})"
-                                                wire:confirm="Cancel this request?"
-                                                class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-sm font-medium">
-                                            Cancel
-                                        </button>
+                                        {{-- ✅ material-requests.update --}}
+                                        @can('material-requests.update')
+                                            <a href="{{ route('portal.edit-material', $request->id) }}"
+                                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                                Edit
+                                            </a>
+                                        @endcan
+
+                                        {{-- ✅ material-requests.cancel --}}
+                                        @can('material-requests.cancel')
+                                            <button wire:click="cancelRequest({{ $request->id }})"
+                                                    wire:confirm="Cancel this request?"
+                                                    class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-sm font-medium">
+                                                Cancel
+                                            </button>
+                                        @endcan
                                     @elseif($request->status === 'cancelled')
-                                        <button wire:click="deleteRequest({{ $request->id }})"
-                                                wire:confirm="Permanently delete this cancelled request?"
-                                                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">
-                                            Delete
-                                        </button>
+                                        {{-- ⚠️ No delete permission granted in seeder — button hidden --}}
+                                        @can('material-requests.delete')
+                                            <button wire:click="deleteRequest({{ $request->id }})"
+                                                    wire:confirm="Permanently delete this cancelled request?"
+                                                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium">
+                                                Delete
+                                            </button>
+                                        @endcan
                                     @endif
                                 </td>
                             </tr>
@@ -147,7 +179,9 @@
                             <tr>
                                 <td colspan="4" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                     You haven't made any material requests yet.
-                                    <a href="{{ route('portal.create-material') }}" class="text-blue-600 dark:text-blue-400 hover:underline ml-1">Create one now</a>
+                                    @can('material-requests.create')
+                                        <a href="{{ route('portal.create-material') }}" class="text-blue-600 dark:text-blue-400 hover:underline ml-1">Create one now</a>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforelse
@@ -159,7 +193,7 @@
             </div>
         </div>
 
-        {{-- Mobile Pagination Container --}}
+        {{-- Mobile Pagination --}}
         <div class="mt-4 md:hidden">
             {{ $this->materialRequests->links() }}
         </div>

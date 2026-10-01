@@ -22,8 +22,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
     public $purpose = '';
     public array $facilityOptions = [];
     public $availableResources = [];
-
-    // ['item_id' => existing RequestItem id or null, 'resource_id' => .., 'quantity' => ..]
     public array $materials = [];
 
     protected function rules()
@@ -54,6 +52,15 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function mount($id)
     {
+        // ✅ Matches seeder: faculty/student get facility-requests.update + material-requests.update
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.update',
+                'material-requests.update',
+            ]),
+            403
+        );
+
         $request = ResourceRequest::with('items')->findOrFail($id);
 
         if ($request->user_id !== Auth::id()) {
@@ -83,7 +90,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             'quantity'    => $item->quantity,
         ])->values()->toArray();
 
-        // Load facilities from the resources table managed by admin (same as Create form)
         $facilityType = ResourceType::where('type_name', 'Facility')->first();
 
         if ($facilityType) {
@@ -93,7 +99,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
                 ->pluck('resource_name')
                 ->toArray();
         } else {
-            // Fallback: any resource with "Facility" in the type name
             $this->facilityOptions = Resource::whereHas('resourceType', fn($q) =>
                 $q->where('type_name', 'like', '%facility%')
                   ->orWhere('type_name', 'like', '%Facility%')
@@ -104,14 +109,11 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->toArray();
         }
 
-        // Ensure the currently selected facility_name still appears in the dropdown
-        // even if it's since been renamed/deactivated in resources.
         if ($this->facility_name && !in_array($this->facility_name, $this->facilityOptions)) {
             $this->facilityOptions[] = $this->facility_name;
             sort($this->facilityOptions);
         }
 
-        // Load materials (non-facility resources) for the optional picker
         $this->availableResources = Resource::where('status', 'available')
             ->where('quantity_available', '>', 0)
             ->whereHas('resourceType', fn($q) =>
@@ -135,6 +137,15 @@ new #[Layout('layouts.student-faculty')] class extends Component
 
     public function update()
     {
+        // ✅ Server-side guard — updating requires update permission on either type
+        abort_unless(
+            auth()->user()->canAny([
+                'facility-requests.update',
+                'material-requests.update',
+            ]),
+            403
+        );
+
         $this->validate();
 
         $request = ResourceRequest::with('items')->findOrFail($this->reservation_id);
@@ -144,7 +155,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             return redirect()->route('portal.reservation');
         }
 
-        // ── FIX: block editing into a conflicting slot ──
         if ($this->facility_name && $this->used_date && $this->start_time && $this->end_time) {
             $conflict = \DB::table('request_items as ri')
                 ->join('requests as req', 'req.id', '=', 'ri.request_id')
@@ -167,8 +177,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
 
-        // Validate stock — credit back whatever this item already holds,
-        // so editing an existing material line doesn't fail against itself.
         foreach ($selectedMaterials as $i => $material) {
             $resource = Resource::find($material['resource_id']);
 
@@ -193,7 +201,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             }
         }
 
-        // Update the facility line item
         $facilityItem = $request->items->firstWhere('resource_id', null);
         if ($facilityItem) {
             $facilityItem->update([
@@ -204,7 +211,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             ]);
         }
 
-        // Sync material line items: update existing, create new, delete removed
         $keptItemIds = [];
 
         foreach ($selectedMaterials as $material) {
@@ -237,7 +243,6 @@ new #[Layout('layouts.student-faculty')] class extends Component
             }
         }
 
-        // Remove material items that were deleted in the form
         $request->items()
             ->whereNotNull('resource_id')
             ->whereNotIn('id', $keptItemIds)

@@ -46,6 +46,8 @@
                     @endif
                 </div>
 
+                {{-- ✅ Only users with `users.update` can edit --}}
+                @can('users.update')
                 <form wire:submit.prevent="save">
                     <div class="grid gap-4 lg:gap-6">
 
@@ -174,33 +176,35 @@
 
                         {{-- Quick Password Reset --}}
                         @unless ($this->isAdmin)
-                            <div class="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 p-4">
-                                <svg class="size-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                                        Quick Password Reset
-                                    </p>
-                                    <p class="text-xs text-amber-800 dark:text-amber-300 mt-1">
-                                        Reset this user's password to the default value
-                                        (<span class="font-mono font-semibold">{{ $this->defaultPassword }}</span>)
-                                        and send them a reset notification.
-                                    </p>
-                                    <button type="button"
-                                        wire:click="resetToDefaultPassword"
-                                        wire:confirm="Reset this user's password to the default? An email will be sent to them."
-                                        wire:loading.attr="disabled"
-                                        wire:loading.class="opacity-50 cursor-not-allowed"
-                                        class="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition">
-                                        <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                                        </svg>
-                                        <span wire:loading.remove wire:target="resetToDefaultPassword">Reset to Default Password</span>
-                                        <span wire:loading wire:target="resetToDefaultPassword">Resetting...</span>
-                                    </button>
+                            @can('users.reset-password')
+                                <div class="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 p-4">
+                                    <svg class="size-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                            Quick Password Reset
+                                        </p>
+                                        <p class="text-xs text-amber-800 dark:text-amber-300 mt-1">
+                                            Reset this user's password to the default value
+                                            (<span class="font-mono font-semibold">{{ $this->defaultPassword }}</span>)
+                                            and send them a reset notification.
+                                        </p>
+                                        <button type="button"
+                                            wire:click="resetToDefaultPassword"
+                                            wire:confirm="Reset this user's password to the default? An email will be sent to them."
+                                            wire:loading.attr="disabled"
+                                            wire:loading.class="opacity-50 cursor-not-allowed"
+                                            class="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition">
+                                            <svg class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                            </svg>
+                                            <span wire:loading.remove wire:target="resetToDefaultPassword">Reset to Default Password</span>
+                                            <span wire:loading wire:target="resetToDefaultPassword">Resetting...</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            @endcan
                         @endunless
 
                         {{-- Info note --}}
@@ -230,6 +234,7 @@
                         </a>
                     </div>
                 </form>
+                @endcan
             </div>
         </div>
     </div>

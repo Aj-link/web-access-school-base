@@ -24,6 +24,8 @@
                 </div>
             @endif
 
+            {{-- ✅ Only users with `program-head-requests.update` can see & submit this form --}}
+            @can('program-head-requests.update')
             <form wire:submit="update" class="space-y-6">
 
                 {{-- Request Type (locked — cannot change after creation) --}}
@@ -260,6 +262,7 @@
                 </div>
 
             </form>
+            @endcan
         </div>
     </div>
 </div>

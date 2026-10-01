@@ -26,13 +26,15 @@ new #[Layout('layouts.coordinator')] class extends Component
     public $end_time = '10:00';
     public array $facilityOptions = [];
 
-    // Materials — used for BOTH: optional add-on to a Facility Reservation,
-    // AND as the main list when request_type_id == 2 (Material Request)
+    // Materials
     public array $materials = [];
     public $availableResources = [];
 
     public function mount(int $id)
     {
+        // ✅ Server-side guard — requires `program-head-requests.update`
+        abort_unless(auth()->user()->can('program-head-requests.update'), 403);
+
         $request = ResourceRequest::with('items')->findOrFail($id);
 
         if ($request->user_id !== Auth::id()) {
@@ -250,8 +252,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         return null;
     }
 
-    // NEW: returns the resource list for a given row, excluding resources
-    // already picked in OTHER rows (so the same material can't appear twice)
     public function getResourcesForRow(int $currentIndex)
     {
         $selectedElsewhere = collect($this->materials)
@@ -277,8 +277,6 @@ new #[Layout('layouts.coordinator')] class extends Component
         $this->materials = array_values($this->materials);
     }
 
-    // NEW: if the user picks a resource that's already used in another row,
-    // block it immediately and reset that field
     public function updatedMaterials($value, $key)
     {
         if (! str_ends_with($key, '.resource_id') || $value === '' || $value === null) {
@@ -302,13 +300,15 @@ new #[Layout('layouts.coordinator')] class extends Component
 
     public function update()
     {
+        // ✅ Server-side guard — requires `program-head-requests.update`
+        abort_unless(auth()->user()->can('program-head-requests.update'), 403);
+
         $this->validate();
 
         $selectedMaterials = collect($this->materials)
             ->filter(fn ($m) => !empty($m['resource_id']))
             ->values();
 
-        // NEW: server-side duplicate guard
         $duplicateIds = $selectedMaterials
             ->pluck('resource_id')
             ->map(fn ($id) => (int) $id)
@@ -323,7 +323,6 @@ new #[Layout('layouts.coordinator')] class extends Component
             return;
         }
 
-        // Validate stock for any materials being requested
         foreach ($selectedMaterials as $i => $material) {
             $resource = Resource::find($material['resource_id']);
 
